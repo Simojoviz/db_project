@@ -27,7 +27,7 @@ class Prenotation(Base):
     __tablename__ = 'prenotations'
 
     id = Column(Integer, primary_key=True)
-    client = Column(Integer, ForeignKey('users.id'), nullable=False)
+    client_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     shift_id = Column(Integer, ForeignKey('shifts.id'), nullable=False)
 
     users = relationship("User", back_populates="prenotations")
@@ -42,13 +42,13 @@ class Shift(Base):
     h_end = Column(Time, nullable=False)
     capacity = Column(Time, nullable=False)
 
-    __table_args__ = (UniqueConstraint('date', 'h_start', 'h_end'),)
+    __table_args__ = (UniqueConstraint('date', 'h_start'),)
 
     prenotations = relationship("Prenotation", back_populates="shifts")
 
 
 Prenotation.shifts = relationship("Shift", back_populates="prenotations",
-                             order_by=Shift.date)
+                                    order_by=Shift.date)
 
 
 Base.metadata.create_all(engine)
