@@ -3,10 +3,8 @@ from sqlalchemy import Column, Integer, String, Date, Time
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, declarative_base, Session
 
-
 engine = create_engine('sqlite:///database.db', echo=True)
 Base = declarative_base()
-
 
 class User(Base):
     __tablename__ = 'users'
@@ -40,7 +38,7 @@ class Shift(Base):
     date = Column(Date, nullable=False)
     h_start = Column(Time, nullable=False)
     h_end = Column(Time, nullable=False)
-    capacity = Column(Time, nullable=False)
+    capacity = Column(Integer, nullable=False)
 
     __table_args__ = (UniqueConstraint('date', 'h_start'),)
 
