@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block pagebody %}
+
+  Welcome {{us}}
+  <br>
+
+  This is your prenotations:
+  <ul>
+   {% for p in prenotations %}
+      <li> {{ p }} </li>
+    {% endfor %}
+  </ul>
+  <form action="/logout">
+    <input type="submit", value="Logout">
+  </form>
+{% endblock %}
