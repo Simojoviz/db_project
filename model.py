@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.automap import automap_base
 import datetime
 import time
+import calendar
 from datetime import timedelta
 
 engine = create_engine('sqlite:///database.db', echo=True)
@@ -13,6 +14,7 @@ Base.prepare(engine, reflect=True)
 User = Base.classes.users
 Prenotation = Base.classes.prenotations
 Shift = Base.classes.shifts
+WeekSetting = Base.classes.week_setting
 
 
 
@@ -57,7 +59,7 @@ def get_all_emails(session):
 # Returns True if it was added correctly, False if the element was already contained
 def add_user(session, user=None, fullname=None, email=None, pwd=None):
     if user is not None:
-        exist = get_user(session, id=user.id)
+        exist = get_user(session, email=user.email)
         if exist is not None:
             return False
         else:
@@ -104,8 +106,14 @@ def get_shift(session, date=None, start=None, prenotation=None):
         return None
 
 
-# Generate a list of all shifts for a date given the date, the starting and ending hour, the shift_lenght ad the capacity
-def generate_daily_shifts(date, hour_start, hour_end, shift_lenght, capacity):
+# Generate a list of all shifts for a date given the date
+def generate_daily_shifts(session, date):
+    day_name = calendar.day_name[date.weekday()]
+    weeksetting = session.query(WeekSetting).filter(WeekSetting.day_name == day_name).one_or_none()
+    hour_start = weeksetting.starting
+    hour_end = weeksetting.ending
+    shift_lenght = weeksetting.lenght
+    capacity = weeksetting.capacity
     l = []
     start =     timedelta(hours=hour_start.hour,   minutes=hour_start.minute)
     lenght =    timedelta(hours=shift_lenght.hour, minutes=shift_lenght.minute)
@@ -121,6 +129,24 @@ def generate_daily_shifts(date, hour_start, hour_end, shift_lenght, capacity):
         start = end
         end = start + lenght
     return l
+
+# - Given the starting date and the number of days generate the shifts for all days in time-interval
+# - Given the starting date and the ending date    generate the shifts for all days in time-interval
+# If there were previous plans which are changed, the previous is removed
+def plan_shifts(session, starting, n=1, ending=None):
+    day = starting + timedelta(days=1)
+    if ending is None:
+        ending = day + timedelta(days=n)
+    while(day < ending):
+        day_name = calendar.day_name[day.weekday()]
+        ws = session.query(WeekSetting).filter(WeekSetting.day_name == day_name).one_or_none()
+        if ws.changed is True:
+            session.query(Shift).where(Shift.date==day).delete()
+            l = generate_daily_shifts(session, datetime.date(year=day.year, month=day.month, day=day.day))
+            add_shift_from_list(session, l)
+        day = day + timedelta(days=1)
+
+    session.query(WeekSetting).update({WeekSetting.changed:False}, synchronize_session = False)
 
 
 # Returns all user-id who has prenoted for the shift given
@@ -236,3 +262,60 @@ def add_prenotation_from_list(session, prenotation_list):
     for prenotation in prenotation_list:
         b &= add_prenotation(session, prenotation=prenotation)
     return b
+
+
+# ________________________________________ WEEK SETTING ________________________________________
+
+
+# Returns the WeekSetting with the corresponding day_name
+# Returns None if the day_name is not valid
+def get_week_setting(session, day_name):
+    return session.query(WeekSetting).filter(WeekSetting.day_name == day_name).one_or_none()
+
+# Update the WeekSetting with the given parameters
+def update_weekend_setting(session, day_name, starting=None, ending=None, lenght=None, capacity=None):
+    session.query(WeekSetting).update({WeekSetting.changed:False}, synchronize_session = False)
+    any_change = False
+
+    # TODO FARE CONTROLLI SUI DATI IN INPUT
+
+    if starting is not None:
+        session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.starting:starting}, synchronize_session = False)
+        any_change = True
+    if ending is not None:
+        session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.ending:ending}, synchronize_session = False)
+        any_change = True
+    if lenght is not None:
+        session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.lenght:lenght}, synchronize_session = False)
+        any_change = True
+    if capacity is not None:
+        session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.capacity:capacity}, synchronize_session = False)
+        any_change = True
+    session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.changed:any_change}, synchronize_session = False)
+    
+    
+
+# - Given a WeekSetting add it to the Database
+# - Given WeekSetting's day_name, starting, ending, lenght and capacity add it to the Database
+# Returns True if it was added correctly, False if the element was already contained
+def add_week_setting(session, week_setting=None, day_name=None, starting=None, ending=None, lenght=None, capacity=None, changed=True):
+    if week_setting is not None:
+        exist = get_week_setting(session, day_name=week_setting.day_name)
+        if exist is not None:
+            return False
+        else:
+            session.add(week_setting)
+            return True
+    elif day_name is not None and\
+         starting is not None and\
+         ending   is not None and\
+         lenght   is not None and\
+         capacity is not None:
+        exist = get_user(session, day_name=day_name)
+        if exist is not None:
+                return False
+        else:
+            session.add(WeekSetting(day_name=day_name, starting=starting, ending=ending, lenght=lenght, capacity=capacity, changed=changed))
+            return True
+    else:
+        return False

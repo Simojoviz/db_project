@@ -16,7 +16,6 @@ app = Flask ( __name__ )
 engine = create_engine('sqlite:///database.db', echo=True)
 # engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
 
-
 app.config ['SECRET_KEY'] = 'ubersecret'
 
 Base = automap_base()

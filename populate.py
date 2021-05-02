@@ -7,13 +7,13 @@ import datetime
 engine = create_engine('sqlite:///database.db', echo=True)
 # engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
 
-engine = create_engine('sqlite:///database.db', echo=True)
 Base = automap_base()
 Base.prepare(engine, reflect=True)
 
 User = Base.classes.users
 Prenotation = Base.classes.prenotations
 Shift = Base.classes.shifts
+WeekSetting = Base.classes.week_setting
 
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -25,26 +25,30 @@ users = [
     User(fullname = "Sebastiano Quintavalle", email='sebastiano@gmail.com', pwd='sebastiano1')
 ]
 
-shifts_1gen = generate_daily_shifts(
-    date = datetime.date(day = 1, month = 1, year = 2020),
-    hour_start = datetime.time(hour = 8, minute= 00),
-    hour_end = datetime.time(hour = 20, minute= 00),
-    shift_lenght = datetime.time(hour = 1, minute= 30),
-    capacity = 10
-)
-
-shifts_2gen = generate_daily_shifts(
-    date = datetime.date(day = 2, month = 1, year = 2020),
-    hour_start = datetime.time(hour = 14, minute= 00),
-    hour_end = datetime.time(hour = 22, minute= 00),
-    shift_lenght = datetime.time(hour = 2, minute= 00),
-    capacity = 8
-)
-
-
 add_user_from_list(session, users)
-add_shift_from_list(session, shifts_1gen)
-add_shift_from_list(session, shifts_2gen)
+
+week_settings = [
+    WeekSetting(day_name='Monday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), lenght=datetime.time(hour=1, minute=30), capacity = 10, changed = True),
+    WeekSetting(day_name='Tuesday',   starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), lenght=datetime.time(hour=2, minute=00), capacity = 12, changed = True),
+    WeekSetting(day_name='Wednesday', starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), lenght=datetime.time(hour=1, minute=30), capacity = 10, changed = True),
+    WeekSetting(day_name='Thursday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), lenght=datetime.time(hour=2, minute=00), capacity = 12, changed = True),
+    WeekSetting(day_name='Friday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), lenght=datetime.time(hour=1, minute=30), capacity = 10, changed = True),
+    WeekSetting(day_name='Saturday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=15, minute=00), lenght=datetime.time(hour=1, minute=30), capacity =  8, changed = True),
+    WeekSetting(day_name='Sunday',    starting=datetime.time(hour=0, minute=1),  ending=datetime.time(hour=00, minute=0),  lenght=datetime.time(hour=0, minute=0),  capacity =  0, changed = True),
+]
+
+
+for ws in week_settings:
+    add_week_setting(session, week_setting=ws)
+
+
+plan_shifts(session, starting=datetime.date.today(), n=90)
+
+# trial: uptade WeekSetting
+update_weekend_setting(session, day_name='Monday', lenght = datetime.time(hour=3, minute=00))
+
+plan_shifts(session, starting=datetime.date.today(), n=90)
+
 
 def add_prenotation_aux(session, email, day, month, year, hours, minutes):
     add_prenotation(
@@ -57,9 +61,15 @@ def add_prenotation_aux(session, email, day, month, year, hours, minutes):
         )
     )
 
-add_prenotation_aux(session, "andrea@gmail.com", 1, 1, 2020, 9, 30)
-add_prenotation_aux(session, "sebastiano@gmail.com", 1, 1, 2020, 11, 00)
-add_prenotation_aux(session, "simone@gmail.com", 2, 1, 2020, 20, 00)
+# Prenotatoin for the first Shift for that day
+def add_prenotation_aux_nostart(session, email, day, month, year):
+    sh = get_shift(session, date = datetime.date(day = day, month = month, year = year))
+    if sh is not None:
+        add_prenotation(session, user = get_user(session, email = email), shift= sh[0])
+
+add_prenotation_aux_nostart(session, "andrea@gmail.com",     1, 6, 2021)
+add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 2, 6, 2021)
+add_prenotation_aux_nostart(session, "simone@gmail.com",     3, 6, 2021)
 
 session.commit()
 session.close()

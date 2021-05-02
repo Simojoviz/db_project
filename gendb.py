@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy import Column, Integer, String, Date, Time
+from sqlalchemy import Column, Integer, Boolean, String, Date, Time
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, declarative_base, Session
 
@@ -48,8 +48,18 @@ class Shift(Base):
     prenotations = relationship("Prenotation", back_populates="shifts")
 
 
-Prenotation.shifts = relationship("Shift", back_populates="prenotations",
-                                    order_by=Shift.date)
+class WeekSetting(Base):
+    __tablename__ = 'week_setting'
+
+    day_name = Column(String, primary_key=True)
+    starting = Column(Time, nullable=False)
+    ending = Column(Time, nullable=False)
+    lenght = Column(Time, nullable=False)
+    capacity = Column(Integer, nullable=False)
+    changed = Column(Boolean, nullable=False)
+
+
+Prenotation.shifts = relationship("Shift", back_populates="prenotations", order_by=Shift.date)
 
 
 Base.metadata.create_all(engine)
