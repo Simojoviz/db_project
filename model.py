@@ -104,8 +104,8 @@ def get_shift(session, date=None, start=None, prenotation=None):
         return None
 
 
-# Returns the list of all shifts for a date given the date, the starting and ending hour, the shift_lenght ad the capacity
-def get_daily_shifts(date, hour_start, hour_end, shift_lenght, capacity):
+# Generate a list of all shifts for a date given the date, the starting and ending hour, the shift_lenght ad the capacity
+def generate_daily_shifts(date, hour_start, hour_end, shift_lenght, capacity):
     l = []
     start =     timedelta(hours=hour_start.hour,   minutes=hour_start.minute)
     lenght =    timedelta(hours=shift_lenght.hour, minutes=shift_lenght.minute)
