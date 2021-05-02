@@ -25,7 +25,7 @@ users = [
     User(fullname = "Sebastiano Quintavalle", email='sebastiano@gmail.com', pwd='sebastiano1')
 ]
 
-shifts_1gen = get_daily_shifts(
+shifts_1gen = generate_daily_shifts(
     date = datetime.date(day = 1, month = 1, year = 2020),
     hour_start = datetime.time(hour = 8, minute= 00),
     hour_end = datetime.time(hour = 20, minute= 00),
@@ -33,7 +33,7 @@ shifts_1gen = get_daily_shifts(
     capacity = 10
 )
 
-shifts_2gen = get_daily_shifts(
+shifts_2gen = generate_daily_shifts(
     date = datetime.date(day = 2, month = 1, year = 2020),
     hour_start = datetime.time(hour = 14, minute= 00),
     hour_end = datetime.time(hour = 22, minute= 00),
