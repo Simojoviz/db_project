@@ -46,50 +46,77 @@ def get_user_by_email(session, email):
 
 @login_manager.user_loader
 def load_user(user_id):
-    user = get_user(Session(), id = user_id)
+    session = Session()
+    user = get_user(session, id = user_id)
+    session.close()
     if user is not None:
         return User(user.id, user.email, user.pwd)
 
 @app.route('/')
 def home():
-    if current_user.is_authenticated:
-        return redirect(url_for('private'))
-    users = get_all_emails(Session())
-    return render_template("home.html", users=users)
+    session = Session()
+    try:
+        if current_user.is_authenticated:
+            return redirect(url_for('private'))
+        users = get_all_emails(session)
+
+        session.commit()
+        return render_template("home.html", users=users)
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        Session = sessionmaker(bind=engine)
         session = Session()
-        userReq = request.form['user']
-        passReq = request.form['pass']
-        userIn = get_user(session, email = userReq)
-        if(userIn is not None):
-            if (passReq == userIn.pwd):
-                user = get_user_by_email(session, userReq)
-                login_user(user)
-                return redirect(url_for('private'))
+        try:
+            userReq = request.form['user']
+            passReq = request.form['pass']
+            userIn = get_user(session, email = userReq)
+            if(userIn is not None):
+                if (passReq == userIn.pwd):
+                    user = get_user_by_email(session, userReq)
+                    login_user(user)
+                    session.commit()
+                    return redirect(url_for('private'))
+                else:
+                    session.commit()
+                    return redirect(url_for('home'))
             else:
+                session.commit()
                 return redirect(url_for('home'))
-        else:
-            return redirect(url_for('home'))
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
 
 @app.route('/private')
 @login_required
 def private():
     session = Session()
-    email = current_user.email
-    user = get_user(session, email = email)
-    prenotations = get_prenotation(session, user=user)
-    s = []
-    for p in prenotations:
-        sh = get_shift(session, prenotation = p)
-        s.append(to_string(shift=sh))
-    resp = make_response(render_template("private.html", us = user.fullname, prenotations=s))
-    
-    return resp
+    try:
+        email = current_user.email
+        user = get_user(session, email=email)
+        prenotations = get_prenotation(session, user=user)
+        s = []
+        for p in prenotations:
+            sh = get_shift(session, prenotation=p)
+            s.append(to_string(shift=sh))
+        resp = make_response(render_template("private.html", us = user.fullname, prenotations=s))
+        
+        session.commit()
+        return resp
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
 
 @app.route('/logout')
 @login_required
