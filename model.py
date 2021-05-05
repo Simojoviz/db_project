@@ -15,6 +15,8 @@ User = Base.classes.users
 Prenotation = Base.classes.prenotations
 Shift = Base.classes.shifts
 WeekSetting = Base.classes.week_setting
+Enrollment = Base.classes.enrollments
+Course = Base.classes.courses
 
 
 

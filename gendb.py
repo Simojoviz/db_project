@@ -18,6 +18,7 @@ class User(Base):
     pwd = Column(String, nullable=False)
 
     prenotations = relationship("Prenotation", back_populates="users")
+    enrollments = relationship("Enrollment", back_populates="users")
 
     def __repr__(self):
         return "<User(fullname='%s', email='%s')>" % (self.fullname,
@@ -58,6 +59,25 @@ class WeekSetting(Base):
     capacity = Column(Integer, nullable=False)
     changed = Column(Boolean, nullable=False)
 
+class Course(Base):
+    __tablename__= 'corsues'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    h_start = Column(Time, nullable=False)
+    h_end = Column(Time, nullable=False)
+    instructor = Column(Integer, ForeignKey('user.id'), nullable=False)
+
+    user = relationship("Enrollment", back_populates="courses")
+    #TO-DO: gestione giorni
+
+class Enrollment(Base):
+    __tablename__= 'enrollments'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    course_id = Column(Integer, ForeignKey('course.id'), nullable=False)
+    
 
 Prenotation.shifts = relationship("Shift", back_populates="prenotations", order_by=Shift.date)
 
