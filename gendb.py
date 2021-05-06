@@ -48,6 +48,12 @@ class Shift(Base):
     prenotations = relationship("Prenotation", back_populates="shifts")
 
 
+class GlobalSetting(Base):
+    __tablename__ = 'global_setting'
+    name = Column(String, primary_key=True)
+    value = Column(Integer, nullable=False)
+
+
 class WeekSetting(Base):
     __tablename__ = 'week_setting'
 

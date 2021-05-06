@@ -10,14 +10,18 @@ engine = create_engine('sqlite:///database.db', echo=True)
 Base = automap_base()
 Base.prepare(engine, reflect=True)
 
-User = Base.classes.users
-Prenotation = Base.classes.prenotations
-Shift = Base.classes.shifts
-WeekSetting = Base.classes.week_setting
+# Import classes
+User          = Base.classes.users
+Prenotation   = Base.classes.prenotations
+Shift         = Base.classes.shifts
+WeekSetting   = Base.classes.week_setting
+GloablSetting = Base.classes.global_setting
 
 Session = sessionmaker(bind=engine)
 session = Session()
 
+
+# Users
 users = [
     User(fullname = "Stefano Calzavara",      email='stefano@gmail.com',    pwd='stefano1'),
     User(fullname = "Simone Jovon",           email='simone@gmail.com',     pwd='simone1'),
@@ -27,6 +31,7 @@ users = [
 
 add_user_from_list(session, users)
 
+# WeekSetting
 week_settings = [
     WeekSetting(day_name='Monday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), lenght=datetime.time(hour=1, minute=30), capacity = 10, changed = True),
     WeekSetting(day_name='Tuesday',   starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), lenght=datetime.time(hour=2, minute=00), capacity = 12, changed = True),
@@ -38,9 +43,23 @@ week_settings = [
 ]
 
 
-for ws in week_settings:
-    add_week_setting(session, week_setting=ws)
+# GlobalSettings
+global_settings = [
+    GloablSetting(name='MaxCapacity',          value =  15),   # max-capacity of weight-room
+    GloablSetting(name='CovidCapacity',        value =  10),   # max-capacity of weight-room due to covid-rules
+    GloablSetting(name='MinutesShiftLength',   value =  90),   # stanadard shifts' length in minutes
+    GloablSetting(name='MaximumumShiftLength', value =  30),   # maximum shift's length
+    GloablSetting(name='MinimumShiftLength',   value = 180),   # minimum shift's length
+    GloablSetting(name='MinHourStart',         value =   8),   # gym opening hour
+    GloablSetting(name='MaxHourEnd',           value =  22),   # gym closing hour
+]
 
+
+for gs in global_settings:
+    add_global_setting(session, global_setting=ws)
+
+
+# Shifts
 
 plan_shifts(session, starting=datetime.date.today(), n=90)
 
@@ -49,6 +68,7 @@ update_weekend_setting(session, day_name='Monday', lenght = datetime.time(hour=3
 
 plan_shifts(session, starting=datetime.date.today(), n=90)
 
+# Prenotations
 
 def add_prenotation_aux(session, email, day, month, year, hours, minutes):
     add_prenotation(

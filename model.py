@@ -15,6 +15,7 @@ User = Base.classes.users
 Prenotation = Base.classes.prenotations
 Shift = Base.classes.shifts
 WeekSetting = Base.classes.week_setting
+GlobalSetting = Base.classes.global_setting
 
 
 
@@ -150,13 +151,32 @@ def plan_shifts(session, starting, n=1, ending=None):
 
 
 # Returns all user-id who has prenoted for the shift given
-def get_usersId_prenoted(session, Shift):
-    return session.query(User.id).join(Prenotation).filter(Prenotation.shift_id == Shift.id)
+def get_usersId_prenoted(session, shift):
+    return session.query(User.id).join(Prenotation).filter(Prenotation.shift_id == shift.id)
 
 
 # Returns the number of prenotations for the given Shift
 def get_prenoted_count(session, shift):
     return get_usersId_prenoted(session, Shift).count()
+
+
+# Returns the number of week-prenotations given the user and a date
+def count_weekly_prenotations(session, user, date):
+    # Move to monday
+    day = date
+    while(calendar.day_name[day.weekday()] != 'Monday')
+        day = day - timedelta(days = 1)
+
+    count = 0
+    for i in range(7):
+        shifts = get_shift(session, date = day):
+            for sh in shifts:
+               ids = get_usersId_prenoted(session, shift = sh)
+               if user.id in ids:
+                   count += 1
+        day = day + timedelta(days = 1)
+    
+    return count
 
 
 # - Given a Shift adds it to the database
@@ -280,6 +300,7 @@ def update_weekend_setting(session, day_name, starting=None, ending=None, lenght
     # TODO FARE CONTROLLI SUI DATI IN INPUT
 
     if starting is not None:
+
         session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.starting:starting}, synchronize_session = False)
         any_change = True
     if ending is not None:
@@ -319,3 +340,32 @@ def add_week_setting(session, week_setting=None, day_name=None, starting=None, e
             return True
     else:
         return False
+
+
+
+# ________________________________________ GLOBAL SETTING ________________________________________
+
+# Returns the GlobalSetting with the corresponding name
+# Returns None if the name is not valid
+def get_global_setting(session, name):
+    return session.query(GlobalSetting).filter(GlobalSetting.name == name).one_or_none()
+
+def add_global_setting(session, global_setting=None, name=None, value=None):
+    if global_setting is not None:
+        exist = get_global_setting(session, name=global_setting.name)
+        if exist is not None:
+            return False
+        else:
+            session.add(global_setting)
+            return True
+    elif name is not None and\
+         value is not None :
+        exist = get_user(session, name=name)
+        if exist is not None:
+                return False
+        else:
+            session.add(GlobalSetting(name=name, value=value)
+            return True
+    else:
+        return False
+    
