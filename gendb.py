@@ -60,7 +60,7 @@ class WeekSetting(Base):
     day_name = Column(String, primary_key=True)
     starting = Column(Time, nullable=False)
     ending = Column(Time, nullable=False)
-    lenght = Column(Time, nullable=False)
+    length = Column(Time, nullable=False)
     capacity = Column(Integer, nullable=False)
     changed = Column(Boolean, nullable=False)
 

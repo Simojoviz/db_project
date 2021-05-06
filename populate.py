@@ -33,25 +33,26 @@ add_user_from_list(session, users)
 
 # WeekSetting
 week_settings = [
-    WeekSetting(day_name='Monday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), lenght=datetime.time(hour=1, minute=30), capacity = 10, changed = True),
-    WeekSetting(day_name='Tuesday',   starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), lenght=datetime.time(hour=2, minute=00), capacity = 12, changed = True),
-    WeekSetting(day_name='Wednesday', starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), lenght=datetime.time(hour=1, minute=30), capacity = 10, changed = True),
-    WeekSetting(day_name='Thursday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), lenght=datetime.time(hour=2, minute=00), capacity = 12, changed = True),
-    WeekSetting(day_name='Friday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), lenght=datetime.time(hour=1, minute=30), capacity = 10, changed = True),
-    WeekSetting(day_name='Saturday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=15, minute=00), lenght=datetime.time(hour=1, minute=30), capacity =  8, changed = True),
-    WeekSetting(day_name='Sunday',    starting=datetime.time(hour=0, minute=1),  ending=datetime.time(hour=00, minute=0),  lenght=datetime.time(hour=0, minute=0),  capacity =  0, changed = True),
+    WeekSetting(day_name='Monday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), capacity = 10, changed = True),
+    WeekSetting(day_name='Tuesday',   starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00), capacity = 12, changed = True),
+    WeekSetting(day_name='Wednesday', starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), capacity = 10, changed = True),
+    WeekSetting(day_name='Thursday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00), capacity = 12, changed = True),
+    WeekSetting(day_name='Friday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), capacity = 10, changed = True),
+    WeekSetting(day_name='Saturday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=15, minute=00), length=datetime.time(hour=1, minute=30), capacity =  8, changed = True),
+    WeekSetting(day_name='Sunday',    starting=datetime.time(hour=0, minute=1),  ending=datetime.time(hour=00, minute=0),  length=datetime.time(hour=0, minute=0),  capacity =  0, changed = True),
 ]
 
 
 # GlobalSettings
 global_settings = [
+    GloablSetting(name='MaxWeeklyEntry',       value =   3),   # max-week entry
     GloablSetting(name='MaxCapacity',          value =  15),   # max-capacity of weight-room
     GloablSetting(name='CovidCapacity',        value =  10),   # max-capacity of weight-room due to covid-rules
     GloablSetting(name='MinutesShiftLength',   value =  90),   # stanadard shifts' length in minutes
     GloablSetting(name='MaximumumShiftLength', value =  30),   # maximum shift's length
     GloablSetting(name='MinimumShiftLength',   value = 180),   # minimum shift's length
-    GloablSetting(name='MinHourStart',         value =   8),   # gym opening hour
-    GloablSetting(name='MaxHourEnd',           value =  22),   # gym closing hour
+    GloablSetting(name='HourOpening',          value =   8),   # gym opening hour
+    GloablSetting(name='HourClosing',          value =  22),   # gym closing hour
 ]
 
 
@@ -64,7 +65,7 @@ for gs in global_settings:
 plan_shifts(session, starting=datetime.date.today(), n=90)
 
 # trial: uptade WeekSetting
-update_weekend_setting(session, day_name='Monday', lenght = datetime.time(hour=3, minute=00))
+update_weekend_setting(session, day_name='Monday', length = datetime.time(hour=3, minute=00))
 
 plan_shifts(session, starting=datetime.date.today(), n=90)
 

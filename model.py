@@ -18,6 +18,31 @@ WeekSetting = Base.classes.week_setting
 GlobalSetting = Base.classes.global_setting
 
 
+# ________________________________________ UTILITIES ________________________________________ 
+
+# Clamp the value X in the interval [A,B] given
+def clamp(x, a, b):
+    if x < a:
+        return a
+    elif x > b:
+        return b
+    else:
+        return x 
+
+
+# Max function
+def max(a, b):
+    if a>b:
+        return a
+    return b
+
+
+# Min function
+def min(a, b):
+    if a<b:
+        return a
+    return b
+
 
 # ________________________________________ TO STRING ________________________________________ 
 
@@ -113,13 +138,13 @@ def generate_daily_shifts(session, date):
     weeksetting = session.query(WeekSetting).filter(WeekSetting.day_name == day_name).one_or_none()
     hour_start = weeksetting.starting
     hour_end = weeksetting.ending
-    shift_lenght = weeksetting.lenght
+    shift_length = weeksetting.length
     capacity = weeksetting.capacity
     l = []
     start =     timedelta(hours=hour_start.hour,   minutes=hour_start.minute)
-    lenght =    timedelta(hours=shift_lenght.hour, minutes=shift_lenght.minute)
+    length =    timedelta(hours=shift_length.hour, minutes=shift_length.minute)
     hour_end_ = timedelta(hours=hour_end.hour,     minutes=hour_end.minute)
-    end = start + lenght
+    end = start + length
     while(end <= hour_end_):
         l.append(Shift(
             date=date,
@@ -128,7 +153,7 @@ def generate_daily_shifts(session, date):
             capacity=capacity
         ))
         start = end
-        end = start + lenght
+        end = start + length
     return l
 
 # - Given the starting date and the number of days generate the shifts for all days in time-interval
@@ -161,7 +186,7 @@ def get_prenoted_count(session, shift):
 
 
 # Returns the number of week-prenotations given the user and a date
-def count_weekly_prenotations(session, user, date):
+def get_count_weekly_prenotations(session, user, date):
     # Move to monday
     day = date
     while(calendar.day_name[day.weekday()] != 'Monday')
@@ -238,6 +263,7 @@ def get_prenotation(session, user=None, shift=None, date=None):
 # False if the element was already contained
 # or the maximum capacity has already been reached for that shift
 # or the User was already in that turn
+# or the User has reached week-limit hours
 def add_prenotation(session, user=None, shift=None, prenotation=None):
     if user is not None and shift is not None:
         exist = get_prenotation(session, user=user, shift=shift)
@@ -248,10 +274,18 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
             if(nprenoted < shift.capacity):
                 prenoted = get_usersId_prenoted(session, Shift)
                 if user.id not in prenoted:
-                    session.add(Prenotation(client_id=user.id, shift_id=shift.id))
+                    max_ = session.query(GlobalSetting).filter(GlobalSetting.name == 'MaxWeeklyEntry').update({GlobalSetting.value:MaxWeeklyEntry}, synchronize_session = False)
+                    count = get_count_weekly_prenotations(session, user, shift.date)
+                    if (count < max_):
+                        session.add(Prenotation(client_id=user.id, shift_id=shift.id))
+                    else:
+                        print("Week prenotation peak reached")
+                        return False
                 else:
+                    print("User already prenoted")
                     return False
             else:
+                print("Maximum capacity already reached")
                 return False
     elif prenotation is not None:
         user_  = get_user(session, prenotation=prenotation)
@@ -293,23 +327,32 @@ def get_week_setting(session, day_name):
     return session.query(WeekSetting).filter(WeekSetting.day_name == day_name).one_or_none()
 
 # Update the WeekSetting with the given parameters
-def update_weekend_setting(session, day_name, starting=None, ending=None, lenght=None, capacity=None):
-    session.query(WeekSetting).update({WeekSetting.changed:False}, synchronize_session = False)
+def update_weekend_setting(session, day_name, starting=None, ending=None, length=None, capacity=None):
+    
     any_change = False
 
-    # TODO FARE CONTROLLI SUI DATI IN INPUT
-
     if starting is not None:
-
+        h_start = session.query(GlobalSetting).filter(GlobalSetting.name == "HourStarting")
+        if starting.hour < h_start:
+            starting = datetime.time(hour=h_start)
         session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.starting:starting}, synchronize_session = False)
         any_change = True
     if ending is not None:
+        h_end = session.query(GlobalSetting).filter(GlobalSetting.name == "HourStarting")
+        if starting.hour < h_start:
+            starting = datetime.time(hour=h_start)
         session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.ending:ending}, synchronize_session = False)
         any_change = True
-    if lenght is not None:
-        session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.lenght:lenght}, synchronize_session = False)
+    if length is not None:
+        min_len = session.query(GlobalSetting).filter(GlobalSetting.name == "MinimumShiftLength")
+        max_len = session.query(GlobalSetting).filter(GlobalSetting.name == "MaximumShiftLength")
+        length_min = clamp(length.minute, min_len, max_len)
+        length = datetime.time(minute=length_min)
+        session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.length:length}, synchronize_session = False)
         any_change = True
     if capacity is not None:
+        covid_capacity = session.query(GlobalSetting).filter(GlobalSetting.name == "CovidCapacity")
+        capacity = clamp(capacity, 1, covid_capacity)
         session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.capacity:capacity}, synchronize_session = False)
         any_change = True
     session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.changed:any_change}, synchronize_session = False)
@@ -317,9 +360,9 @@ def update_weekend_setting(session, day_name, starting=None, ending=None, lenght
     
 
 # - Given a WeekSetting add it to the Database
-# - Given WeekSetting's day_name, starting, ending, lenght and capacity add it to the Database
+# - Given WeekSetting's day_name, starting, ending, length and capacity add it to the Database
 # Returns True if it was added correctly, False if the element was already contained
-def add_week_setting(session, week_setting=None, day_name=None, starting=None, ending=None, lenght=None, capacity=None, changed=True):
+def add_week_setting(session, week_setting=None, day_name=None, starting=None, ending=None, length=None, capacity=None, changed=True):
     if week_setting is not None:
         exist = get_week_setting(session, day_name=week_setting.day_name)
         if exist is not None:
@@ -330,13 +373,13 @@ def add_week_setting(session, week_setting=None, day_name=None, starting=None, e
     elif day_name is not None and\
          starting is not None and\
          ending   is not None and\
-         lenght   is not None and\
+         length   is not None and\
          capacity is not None:
         exist = get_user(session, day_name=day_name)
         if exist is not None:
                 return False
         else:
-            session.add(WeekSetting(day_name=day_name, starting=starting, ending=ending, lenght=lenght, capacity=capacity, changed=changed))
+            session.add(WeekSetting(day_name=day_name, starting=starting, ending=ending, length=length, capacity=capacity, changed=changed))
             return True
     else:
         return False
@@ -350,6 +393,10 @@ def add_week_setting(session, week_setting=None, day_name=None, starting=None, e
 def get_global_setting(session, name):
     return session.query(GlobalSetting).filter(GlobalSetting.name == name).one_or_none()
 
+
+# - Given a GlobalSetting add it to the Database
+# - Given GlobalSetting's name and value add it to the Database
+# Returns True if it was added correctly, False if the element was already contained
 def add_global_setting(session, global_setting=None, name=None, value=None):
     if global_setting is not None:
         exist = get_global_setting(session, name=global_setting.name)
@@ -368,4 +415,34 @@ def add_global_setting(session, global_setting=None, name=None, value=None):
             return True
     else:
         return False
+
+
+# Update the GlobalSetting with the given parameters
+def update_weekend_setting(session, CovidCapacity=None, MinutesShiftLength=None, MaxWeeklyEntry=None):
+    session.query(WeekSetting).update({WeekSetting.changed:False}, synchronize_session = False)
     
+    if CovidCapacity is not None:
+        CovidCapacity = clamp(
+            CovidCapacity,
+            1,
+            session.query(GlobalSetting).filter(GlobalSetting.name == "MaxCapacity")
+        )
+        session.query(GlobalSetting).filter(GlobalSetting.name == 'CovidCapacity').update({GlobalSetting.value:CovidCapacity}, synchronize_session = False)
+    
+    if MinutesShiftLength is not None:
+
+        MinutesShiftLength = clamp(
+            MinutesShiftLength,
+            session.query(GlobalSetting).filter(GlobalSetting.name == "MinimumShiftLength"),
+            session.query(GlobalSetting).filter(GlobalSetting.name == "MaximumShiftLength")
+        )
+        session.query(GlobalSetting).filter(GlobalSetting.name == 'MinutesShiftLength').update({GlobalSetting.value:MinutesShiftLength}, synchronize_session = False)
+
+    if MaxWeeklyEntry is not None:
+
+        MaxWeeklyEntry = clamp(
+            MaxWeeklyEntry,
+            1,
+            sys.maxint
+        )
+        session.query(GlobalSetting).filter(GlobalSetting.name == 'MaxWeeklyEntry').update({GlobalSetting.value:MaxWeeklyEntry}, synchronize_session = False)
