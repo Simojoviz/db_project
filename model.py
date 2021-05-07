@@ -143,9 +143,9 @@ def generate_daily_shifts(session, date):
     l = []
     start =     timedelta(hours=hour_start.hour,   minutes=hour_start.minute)
     length =    timedelta(hours=shift_length.hour, minutes=shift_length.minute)
-    hour_end_ = timedelta(hours=hour_end.hour,     minutes=hour_end.minute)
+    end_ =      timedelta(hours=hour_end.hour,     minutes=hour_end.minute)
     end = start + length
-    while(end <= hour_end_):
+    while(end <= end_):
         l.append(Shift(
             date=date,
             h_start= datetime.time(hour=start.seconds//3600, minute=(start.seconds//60)%60),
@@ -337,26 +337,30 @@ def update_weekend_setting(session, day_name, starting=None, ending=None, length
             starting = datetime.time(hour=h_start)
         session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.starting:starting}, synchronize_session = False)
         any_change = True
+
     if ending is not None:
-        h_end = session.query(GlobalSetting).filter(GlobalSetting.name == "HourStarting")
-        if starting.hour < h_start:
-            starting = datetime.time(hour=h_start)
+        h_end = session.query(GlobalSetting).filter(GlobalSetting.name == "HourEnding")
+        if ending.hour > h_end:
+            ending = datetime.time(hour=h_end)
         session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.ending:ending}, synchronize_session = False)
         any_change = True
+        
     if length is not None:
         min_len = session.query(GlobalSetting).filter(GlobalSetting.name == "MinimumShiftLength").one_or_none().value
         max_len = session.query(GlobalSetting).filter(GlobalSetting.name == "MaximumShiftLength").one_or_none().value
-        length_min = clamp(length.minute, min_len, max_len)
+        length_min = clamp(length.minute + length.hour * 60, min_len, max_len)
         length_hour = int(length_min / 60)
-        length_min = int(length_min % 60)
+        length_min =  int(length_min % 60)
         length = datetime.time(hour = length_hour, minute=length_min)
         session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.length:length}, synchronize_session = False)
         any_change = True
+
     if capacity is not None:
         covid_capacity = session.query(GlobalSetting).filter(GlobalSetting.name == "CovidCapacity").one_or_none().value
         capacity = clamp(capacity, 1, covid_capacity)
         session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.capacity:capacity}, synchronize_session = False)
         any_change = True
+
     session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.changed:any_change}, synchronize_session = False)
     
     

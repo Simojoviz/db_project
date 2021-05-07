@@ -39,7 +39,7 @@ week_settings = [
     WeekSetting(day_name='Thursday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00), capacity = 12, changed = True),
     WeekSetting(day_name='Friday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), capacity = 10, changed = True),
     WeekSetting(day_name='Saturday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=15, minute=00), length=datetime.time(hour=1, minute=30), capacity =  8, changed = True),
-    WeekSetting(day_name='Sunday',    starting=datetime.time(hour=0, minute=1),  ending=datetime.time(hour=00, minute=0),  length=datetime.time(hour=0, minute=0),  capacity =  0, changed = True),
+    WeekSetting(day_name='Sunday',    starting=datetime.time(hour=0, minute= 1),  ending=datetime.time(hour=00, minute=0),  length=datetime.time(hour=0, minute=0),  capacity =  0, changed = True),
 ]
 
 for ws in week_settings:
@@ -67,9 +67,9 @@ for gs in global_settings:
 plan_shifts(session, starting=datetime.date.today(), n=90)
 
 # trial: uptade WeekSetting
-update_weekend_setting(session, day_name='Monday', length = datetime.time(hour=3, minute=00))
+#update_weekend_setting(session, day_name='Monday', length = datetime.time(hour=3, minute=00))
 
-plan_shifts(session, starting=datetime.date.today(), n=90)
+#plan_shifts(session, starting=datetime.date.today(), n=90)
 
 # Prenotations
 
