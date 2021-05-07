@@ -5,8 +5,8 @@ import time
 import calendar
 from datetime import timedelta
 
-engine = create_engine('sqlite:///database.db', echo=True)
-# engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
+# engine = create_engine('sqlite:///database.db', echo=True)
+engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
 
 Base = automap_base()
 Base.prepare(engine, reflect=True)
@@ -189,16 +189,16 @@ def get_prenoted_count(session, shift):
 def get_count_weekly_prenotations(session, user, date):
     # Move to monday
     day = date
-    while(calendar.day_name[day.weekday()] != 'Monday')
+    while(calendar.day_name[day.weekday()] != 'Monday'):
         day = day - timedelta(days = 1)
 
     count = 0
     for i in range(7):
-        shifts = get_shift(session, date = day):
-            for sh in shifts:
-               ids = get_usersId_prenoted(session, shift = sh)
-               if user.id in ids:
-                   count += 1
+        shifts = get_shift(session, date = day)
+        for sh in shifts:
+            ids = get_usersId_prenoted(session, shift = sh)
+            if user.id in ids:
+                count += 1
         day = day + timedelta(days = 1)
     
     return count
@@ -274,7 +274,7 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
             if(nprenoted < shift.capacity):
                 prenoted = get_usersId_prenoted(session, Shift)
                 if user.id not in prenoted:
-                    max_ = session.query(GlobalSetting).filter(GlobalSetting.name == 'MaxWeeklyEntry').update({GlobalSetting.value:MaxWeeklyEntry}, synchronize_session = False)
+                    max_ = get_global_setting(session, name='MaxWeeklyEntry').value
                     count = get_count_weekly_prenotations(session, user, shift.date)
                     if (count < max_):
                         session.add(Prenotation(client_id=user.id, shift_id=shift.id))
@@ -344,14 +344,16 @@ def update_weekend_setting(session, day_name, starting=None, ending=None, length
         session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.ending:ending}, synchronize_session = False)
         any_change = True
     if length is not None:
-        min_len = session.query(GlobalSetting).filter(GlobalSetting.name == "MinimumShiftLength")
-        max_len = session.query(GlobalSetting).filter(GlobalSetting.name == "MaximumShiftLength")
+        min_len = session.query(GlobalSetting).filter(GlobalSetting.name == "MinimumShiftLength").one_or_none().value
+        max_len = session.query(GlobalSetting).filter(GlobalSetting.name == "MaximumShiftLength").one_or_none().value
         length_min = clamp(length.minute, min_len, max_len)
-        length = datetime.time(minute=length_min)
+        length_hour = int(length_min / 60)
+        length_min = int(length_min % 60)
+        length = datetime.time(hour = length_hour, minute=length_min)
         session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.length:length}, synchronize_session = False)
         any_change = True
     if capacity is not None:
-        covid_capacity = session.query(GlobalSetting).filter(GlobalSetting.name == "CovidCapacity")
+        covid_capacity = session.query(GlobalSetting).filter(GlobalSetting.name == "CovidCapacity").one_or_none().value
         capacity = clamp(capacity, 1, covid_capacity)
         session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.capacity:capacity}, synchronize_session = False)
         any_change = True
@@ -393,7 +395,6 @@ def add_week_setting(session, week_setting=None, day_name=None, starting=None, e
 def get_global_setting(session, name):
     return session.query(GlobalSetting).filter(GlobalSetting.name == name).one_or_none()
 
-
 # - Given a GlobalSetting add it to the Database
 # - Given GlobalSetting's name and value add it to the Database
 # Returns True if it was added correctly, False if the element was already contained
@@ -409,16 +410,16 @@ def add_global_setting(session, global_setting=None, name=None, value=None):
          value is not None :
         exist = get_user(session, name=name)
         if exist is not None:
-                return False
+            return False
         else:
-            session.add(GlobalSetting(name=name, value=value)
+            session.add(GlobalSetting(name=name, value=value))
             return True
     else:
         return False
 
 
 # Update the GlobalSetting with the given parameters
-def update_weekend_setting(session, CovidCapacity=None, MinutesShiftLength=None, MaxWeeklyEntry=None):
+def update_global_setting(session, CovidCapacity=None, MinutesShiftLength=None, MaxWeeklyEntry=None):
     session.query(WeekSetting).update({WeekSetting.changed:False}, synchronize_session = False)
     
     if CovidCapacity is not None:
@@ -433,8 +434,8 @@ def update_weekend_setting(session, CovidCapacity=None, MinutesShiftLength=None,
 
         MinutesShiftLength = clamp(
             MinutesShiftLength,
-            session.query(GlobalSetting).filter(GlobalSetting.name == "MinimumShiftLength"),
-            session.query(GlobalSetting).filter(GlobalSetting.name == "MaximumShiftLength")
+            session.query(GlobalSetting).filter(GlobalSetting.name == "MinimumShiftLength").one_or_none().value,
+            session.query(GlobalSetting).filter(GlobalSetting.name == "MaximumShiftLength").one_or_none().value
         )
         session.query(GlobalSetting).filter(GlobalSetting.name == 'MinutesShiftLength').update({GlobalSetting.value:MinutesShiftLength}, synchronize_session = False)
 
@@ -443,6 +444,6 @@ def update_weekend_setting(session, CovidCapacity=None, MinutesShiftLength=None,
         MaxWeeklyEntry = clamp(
             MaxWeeklyEntry,
             1,
-            sys.maxint
+            100
         )
         session.query(GlobalSetting).filter(GlobalSetting.name == 'MaxWeeklyEntry').update({GlobalSetting.value:MaxWeeklyEntry}, synchronize_session = False)

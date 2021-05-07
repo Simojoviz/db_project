@@ -4,8 +4,8 @@ from sqlalchemy.orm import sessionmaker
 from model import*
 import datetime
 
-engine = create_engine('sqlite:///database.db', echo=True)
-# engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
+# engine = create_engine('sqlite:///database.db', echo=True)
+engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
 
 Base = automap_base()
 Base.prepare(engine, reflect=True)
@@ -42,6 +42,8 @@ week_settings = [
     WeekSetting(day_name='Sunday',    starting=datetime.time(hour=0, minute=1),  ending=datetime.time(hour=00, minute=0),  length=datetime.time(hour=0, minute=0),  capacity =  0, changed = True),
 ]
 
+for ws in week_settings:
+    add_week_setting(session, week_setting=ws)
 
 # GlobalSettings
 global_settings = [
@@ -49,7 +51,7 @@ global_settings = [
     GloablSetting(name='MaxCapacity',          value =  15),   # max-capacity of weight-room
     GloablSetting(name='CovidCapacity',        value =  10),   # max-capacity of weight-room due to covid-rules
     GloablSetting(name='MinutesShiftLength',   value =  90),   # stanadard shifts' length in minutes
-    GloablSetting(name='MaximumumShiftLength', value =  30),   # maximum shift's length
+    GloablSetting(name='MaximumShiftLength',   value =  30),   # maximum shift's length
     GloablSetting(name='MinimumShiftLength',   value = 180),   # minimum shift's length
     GloablSetting(name='HourOpening',          value =   8),   # gym opening hour
     GloablSetting(name='HourClosing',          value =  22),   # gym closing hour
@@ -57,7 +59,7 @@ global_settings = [
 
 
 for gs in global_settings:
-    add_global_setting(session, global_setting=ws)
+    add_global_setting(session, global_setting=gs)
 
 
 # Shifts
