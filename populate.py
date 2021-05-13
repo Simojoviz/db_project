@@ -51,8 +51,8 @@ global_settings = [
     GloablSetting(name='MaxCapacity',          value =  15),   # max-capacity of weight-room
     GloablSetting(name='CovidCapacity',        value =  10),   # max-capacity of weight-room due to covid-rules
     GloablSetting(name='MinutesShiftLength',   value =  90),   # stanadard shifts' length in minutes
-    GloablSetting(name='MaximumShiftLength',   value =  30),   # maximum shift's length
-    GloablSetting(name='MinimumShiftLength',   value = 180),   # minimum shift's length
+    GloablSetting(name='MaximumShiftLength',   value = 180),   # maximum shift's length
+    GloablSetting(name='MinimumShiftLength',   value =  30),   # minimum shift's length
     GloablSetting(name='HourOpening',          value =   8),   # gym opening hour
     GloablSetting(name='HourClosing',          value =  22),   # gym closing hour
 ]
@@ -66,10 +66,10 @@ for gs in global_settings:
 
 plan_shifts(session, starting=datetime.date.today(), n=90)
 
-# trial: uptade WeekSetting
-#update_weekend_setting(session, day_name='Monday', length = datetime.time(hour=3, minute=00))
+#trial: updade WeekSetting
+update_weekend_setting(session, day_name='Monday', length = datetime.time(hour=3, minute=00))
 
-#plan_shifts(session, starting=datetime.date.today(), n=90)
+plan_shifts(session, starting=datetime.date.today(), n=90)
 
 # Prenotations
 
