@@ -5,8 +5,8 @@ import time
 import calendar
 from datetime import timedelta
 
-# engine = create_engine('sqlite:///database.db', echo=True)
-engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
+engine = create_engine('sqlite:///database.db', echo=True)
+# engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
 
 Base = automap_base()
 Base.prepare(engine, reflect=True)
@@ -16,6 +16,8 @@ Prenotation = Base.classes.prenotations
 Shift = Base.classes.shifts
 WeekSetting = Base.classes.week_setting
 GlobalSetting = Base.classes.global_setting
+Enrollment = Base.classes.enrollments
+Course = Base.classes.courses
 
 
 # ________________________________________ UTILITIES ________________________________________ 
