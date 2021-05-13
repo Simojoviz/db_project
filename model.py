@@ -6,6 +6,7 @@ import calendar
 from datetime import timedelta
 
 engine = create_engine('sqlite:///database.db', echo=True)
+# trial to make the merge
 # engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
 
 Base = automap_base()
