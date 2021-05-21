@@ -453,7 +453,12 @@ def update_global_setting(session, CovidCapacity=None, MinutesShiftLength=None, 
 # - Given the name,   returns the Room who has got that name if exists
 # Otherwise return None
 def get_room(session, id=None, name=None):
-    return None
+    if id is None:
+        return session.query(Room).filter(Room.name == name).one_or_none()
+    elif name is None:
+        return session.query(Room).filter(Room.id == id).one_or_none()
+    else:
+        return None
 
 # Returns all rooms id
 def get_all_room_ids(session):
@@ -468,7 +473,7 @@ def add_room(session, room=None, name=None, max_capacity=None):
     
 # Adds all Rooms from the list given to the Database
 # Returns True if all elements were added, False if at least one was already contained
-def add_user_from_list(session, rooms_list):
+def add_room_from_list(session, rooms_list):
     return None
 
 
@@ -478,7 +483,12 @@ def add_user_from_list(session, rooms_list):
 # - Given the name,   returns the Course who has got that name if exists
 # Otherwise return None
 def get_course(session, id=None, name=None):
-    return None
+    if id is None:
+        return session.query(Course).filter(Course.name == name).one_or_none()
+    elif name is None:
+        return session.query(Course).filter(Course.id == id).one_or_none()
+    else:
+        return None
 
 
 # - Given a Course adds it to the database
@@ -489,7 +499,7 @@ def add_course(session, course=None, starting=None, ending=None, max_partecipant
     
 # Adds all Courses from the list given to the Database
 # Returns True if all elements were added, False if at least one was already contained
-def add_user_from_list(session, courses_list):
+def add_course_from_list(session, courses_list):
     return None
 
 
@@ -499,8 +509,12 @@ def add_user_from_list(session, courses_list):
 # - Given the course_id,   returns all his CoursePrograms
 # Otherwise return None
 def get_course_program(session, id=None, course_id=None):
-    return None
-
+    if id is None:
+        return session.query(CourseProgram).filter(CourseProgram.course_id == course_id).one_or_none()
+    elif course_id is None:
+        return session.query(CourseProgram).filter(CourseProgram.id == id).one_or_none()
+    else:
+        return None
 
 # - Given a CourseProgram adds it to the database
 # - Given week_day, turn_number, room_id and cours_id of a CourseProgram adds it to the database
@@ -510,7 +524,7 @@ def add_course(session, course_program=None, week_day=None, turn_number=None, ro
     
 # Adds all CoursePrograms from the list given to the Database
 # Returns True if all elements were added, False if at least one was already contained
-def add_user_from_list(session, course_programs_list):
+def add_course_program_from_list(session, course_programs_list):
     return None
 
 
@@ -521,7 +535,12 @@ def add_user_from_list(session, course_programs_list):
 # - Given a Course     returns all his course signs up
 # Returns None otherwise
 def get_course_sign_up(session, user=None, course=None):
-    return None
+    if user is None:
+        return session.query(CourseSignUp).filter(CourseSignUp.course == course).one_or_none()
+    elif course is None:
+        return session.query(CourseSignUp).filter(CourseSignUp.user == user)
+    else:
+        return None
 
 
 # Adds a CourseSignUp to the Database given the User and the Course or the CourseSignUp
