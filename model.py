@@ -12,13 +12,15 @@ engine = create_engine('sqlite:///database.db', echo=True)
 Base = automap_base()
 Base.prepare(engine, reflect=True)
 
-User = Base.classes.users
-Prenotation = Base.classes.prenotations
-Shift = Base.classes.shifts
-WeekSetting = Base.classes.week_setting
+User          = Base.classes.users
+Prenotation   = Base.classes.prenotations
+Shift         = Base.classes.shifts
+WeekSetting   = Base.classes.week_setting
 GlobalSetting = Base.classes.global_setting
-Enrollment = Base.classes.enrollments
-Course = Base.classes.courses
+Course        = Base.classes.courses
+CourseProgram = Base.classes.course_programs
+Room          = Base.classes.rooms
+CourseSignUp  = Base.classes.course_signs_up
 
 
 # ________________________________________ UTILITIES ________________________________________ 
