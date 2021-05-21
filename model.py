@@ -80,7 +80,7 @@ def get_user(session, id=None, email=None, prenotation=None):
         return None
 
 
-# Returns all user emails
+# Returns all emails
 def get_all_emails(session):
     return session.query(User.email).all()
 
@@ -99,12 +99,7 @@ def add_user(session, user=None, fullname=None, email=None, pwd=None):
     elif fullname is not None and\
          email    is not None and\
          pwd      is not None:
-        exist = get_user(session, id=id)
-        if exist is not None:
-                return False
-        else:
-            session.add(User(fullname=fullname, email=email, pwd=pwd))
-            return True
+        add_user(session, user=User(fullname=fullname, email=email, pwd=pwd))
     else:
         return False
 
