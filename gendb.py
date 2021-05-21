@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, Boolean, String, Date, Time
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, declarative_base, Session
+from sqlalchemy.sql.expression import null
 
 # engine = create_engine('sqlite:///database.db', echo=True)
 engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
@@ -37,7 +38,7 @@ class Shift(Base):
     room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
     course_id = Column(Integer, ForeignKey('courses.id'), nullable=False)
 
-    __table_args__ = (UniqueConstraint('date', 'h_start'),)
+    __table_args__ = (UniqueConstraint('date', 'h_start'))
 
     prenotations = relationship("Prenotation", back_populates="shifts")
     courses = relationship("Course", back_populates="shifts")
@@ -80,7 +81,8 @@ class Course(Base):
     name = Column(String, nullable=False)
     starting = Column(Time, nullable=False)
     ending = Column(Time, nullable=False)
-    instructor = Column(Integer, ForeignKey('users.id'), nullable=False)
+    max_partecipants = Column(Integer, nullable=False)
+    instructor_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 
     # VA NELLA SOTTOCLASSE ISTRUTTORE
     # users = relationship("User", back_populates="courses") 
@@ -106,6 +108,7 @@ class Room(Base):
     __tablename__= 'rooms'
 
     id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
     max_capacity = Column(Integer, nullable=False)
 
     shifts = relationship("Shift", back_populates="rooms")
