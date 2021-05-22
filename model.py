@@ -469,12 +469,26 @@ def get_all_room_ids(session):
 # - Given name and max_capacity of a Room adds it to the database
 # Returns True if it was added correctly, False if the element was already contained
 def add_room(session, room=None, name=None, max_capacity=None):
-    return None
+    if room is not None:
+        exist = get_room(session, name)
+        if exist is not None:
+            return False
+        else:
+            session.add(room)
+            return True
+    elif name is not None and max_capacity is not None:
+        exist = get_room(session, name)
+        add_room(session, room = Room(name = name, max_capacity = max_capacity))
+    else:
+        return False
     
 # Adds all Rooms from the list given to the Database
 # Returns True if all elements were added, False if at least one was already contained
 def add_room_from_list(session, rooms_list):
-    return None
+    b = True
+    for room in rooms_list:
+        b &= add_room(session, room=room)
+    return b
 
 
 # ________________________________________ COURSE ________________________________________
@@ -519,7 +533,7 @@ def get_course_program(session, id=None, course_id=None):
 # - Given a CourseProgram adds it to the database
 # - Given week_day, turn_number, room_id and cours_id of a CourseProgram adds it to the database
 # Returns True if it was added correctly, False if the element was already contained
-def add_course(session, course_program=None, week_day=None, turn_number=None, room_id=None, course_id=None):
+def add_course_program(session, course_program=None, week_day=None, turn_number=None, room_id=None, course_id=None):
     return None
     
 # Adds all CoursePrograms from the list given to the Database
