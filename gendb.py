@@ -38,7 +38,7 @@ class Shift(Base):
     room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
     course_id = Column(Integer, ForeignKey('courses.id'), nullable=False)
 
-    __table_args__ = (UniqueConstraint('date', 'h_start'))
+    __table_args__ = (UniqueConstraint('date', 'h_start'),)
 
     prenotations = relationship("Prenotation", back_populates="shifts")
     courses = relationship("Course", back_populates="shifts")
@@ -79,8 +79,8 @@ class Course(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-    starting = Column(Time, nullable=False)
-    ending = Column(Time, nullable=False)
+    starting = Column(Date, nullable=False)
+    ending = Column(Date, nullable=False)
     max_partecipants = Column(Integer, nullable=False)
     instructor_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 
