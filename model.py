@@ -5,8 +5,8 @@ import time
 import calendar
 from datetime import timedelta
 
-engine = create_engine('sqlite:///database.db', echo=True)
-# engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
+# engine = create_engine('sqlite:///database.db', echo=True)
+engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
 
 Base = automap_base()
 Base.prepare(engine, reflect=True)
@@ -135,11 +135,10 @@ def get_shift(session, date=None, start=None, prenotation=None, course_id=None):
 # Generate a list of all shifts for a date given the date
 def generate_daily_shifts(session, date):
     day_name = calendar.day_name[date.weekday()]
-    weeksetting = session.query(WeekSetting).filter(WeekSetting.day_name == day_name).one_or_none()
+    weeksetting = get_week_setting(session, day_name)
     hour_start = weeksetting.starting
     hour_end = weeksetting.ending
     shift_length = weeksetting.length
-    capacity = weeksetting.capacity
     course_id = get_course(session, name = 'OwnTraining').id
     l = []
     start =     timedelta(hours=hour_start.hour,   minutes=hour_start.minute)
@@ -169,7 +168,7 @@ def plan_shifts(session, starting, n=1, ending=None):
         ending = day + timedelta(days=n)
     while(day < ending):
         day_name = calendar.day_name[day.weekday()]
-        ws = session.query(WeekSetting).filter(WeekSetting.day_name == day_name).one_or_none()
+        ws = get_week_setting(session, day_name=day_name)
         if ws.changed is True:
             session.query(Shift).where(Shift.date==day).delete()
             l = generate_daily_shifts(session, datetime.date(year=day.year, month=day.month, day=day.day))
@@ -271,7 +270,8 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
             return False
         else:
             nprenoted = get_prenoted_count(session, shift=shift)
-            if(nprenoted < shift.capacity):
+            room_capacity = get_room(session, id=shift.room_id).capacity
+            if(nprenoted < room_capacity):
                 prenoted = get_usersId_prenoted(session, Shift)
                 if user.id not in prenoted:
                     max_ = get_global_setting(session, name='MaxWeeklyEntry').value

@@ -4,8 +4,8 @@ from sqlalchemy.orm import sessionmaker
 from model import*
 import datetime
 
-engine = create_engine('sqlite:///database.db', echo=True)
-# engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
+# engine = create_engine('sqlite:///database.db', echo=True)
+engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
 
 Base = automap_base()
 Base.prepare(engine, reflect=True)
@@ -15,10 +15,20 @@ User          = Base.classes.users
 Prenotation   = Base.classes.prenotations
 Shift         = Base.classes.shifts
 WeekSetting   = Base.classes.week_setting
-GloablSetting = Base.classes.global_setting
+GlobalSetting = Base.classes.global_setting
+Course        = Base.classes.courses
+CourseProgram = Base.classes.course_programs
+Room          = Base.classes.rooms
+CourseSignUp  = Base.classes.course_signs_up
+
 
 Session = sessionmaker(bind=engine)
 session = Session()
+
+# Rooms
+
+
+# CourseProgram
 
 
 # Users
@@ -30,6 +40,17 @@ users = [
 ]
 
 add_user_from_list(session, users)
+
+
+# Course
+add_course(
+    session,
+    name = 'OwnTraining',
+    starting = datetime.datetime(year=2021, month=5, day=1),
+    ending =   datetime.datetime(year=2021, month=7, day=31),
+    max_partecipants=10,
+    instructor_id=get_user(session, email="stefano@gmail.com").id
+)
 
 # WeekSetting
 week_settings = [
@@ -47,14 +68,14 @@ for ws in week_settings:
 
 # GlobalSettings
 global_settings = [
-    GloablSetting(name='MaxWeeklyEntry',       value =   3),   # max-week entry
-    GloablSetting(name='MaxCapacity',          value =  15),   # max-capacity of weight-room
-    GloablSetting(name='CovidCapacity',        value =  10),   # max-capacity of weight-room due to covid-rules
-    GloablSetting(name='MinutesShiftLength',   value =  90),   # stanadard shifts' length in minutes
-    GloablSetting(name='MaximumShiftLength',   value = 180),   # maximum shift's length
-    GloablSetting(name='MinimumShiftLength',   value =  30),   # minimum shift's length
-    GloablSetting(name='HourOpening',          value =   8),   # gym opening hour
-    GloablSetting(name='HourClosing',          value =  22),   # gym closing hour
+    GlobalSetting(name='MaxWeeklyEntry',       value =   3),   # max-week entry
+    GlobalSetting(name='MaxCapacity',          value =  15),   # max-capacity of weight-room
+    GlobalSetting(name='CovidCapacity',        value =  10),   # max-capacity of weight-room due to covid-rules
+    GlobalSetting(name='MinutesShiftLength',   value =  90),   # stanadard shifts' length in minutes
+    GlobalSetting(name='MaximumShiftLength',   value = 180),   # maximum shift's length
+    GlobalSetting(name='MinimumShiftLength',   value =  30),   # minimum shift's length
+    GlobalSetting(name='HourOpening',          value =   8),   # gym opening hour
+    GlobalSetting(name='HourClosing',          value =  22),   # gym closing hour
 ]
 
 
@@ -67,10 +88,11 @@ for gs in global_settings:
 plan_shifts(session, starting=datetime.date.today(), n=90)
 
 #trial: updade WeekSetting
-update_weekend_setting(session, day_name='Monday', length = datetime.time(hour=3, minute=00))
+#update_weekend_setting(session, day_name='Monday', length = datetime.time(hour=3, minute=00))
 
-plan_shifts(session, starting=datetime.date.today(), n=90)
+# plan_shifts(session, starting=datetime.date.today(), n=90)
 
+"""
 # Prenotations
 
 def add_prenotation_aux(session, email, day, month, year, hours, minutes):
@@ -93,6 +115,6 @@ def add_prenotation_aux_nostart(session, email, day, month, year):
 add_prenotation_aux_nostart(session, "andrea@gmail.com",     1, 6, 2021)
 add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 2, 6, 2021)
 add_prenotation_aux_nostart(session, "simone@gmail.com",     3, 6, 2021)
-
+"""
 session.commit()
 session.close()
