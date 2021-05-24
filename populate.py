@@ -27,11 +27,11 @@ session = Session()
 
 # Rooms
 rooms = [
-    Room(name = "stanza 1", max_capacity = 25),
-    Room(name = "stanza 2", max_capacity = 30),
-    Room(name = "stanza 3", max_capacity = 25),
-    Room(name = "stanza 4", max_capacity = 40),
-    Room(name = "stanza 5", max_capacity = 25)
+    Room(name = "Main Room", max_capacity = 25),
+    Room(name = "Weight Room", max_capacity = 30),
+    Room(name = "Fitness Room", max_capacity = 25),
+    Room(name = "Swimming Pool", max_capacity = 40),
+    Room(name = "Boxing Room", max_capacity = 25)
 ]
 
 add_room_from_list(session, rooms)
@@ -99,15 +99,12 @@ for gs in global_settings:
 
 
 # Shifts
-
+plan_shifts(session, starting=datetime.date.today(), n=90)
+update_weekend_setting(session, 'Monday', length=datetime.time(hour=1, minute=30))
 plan_shifts(session, starting=datetime.date.today(), n=90)
 
-#trial: updade WeekSetting
-#update_weekend_setting(session, day_name='Monday', length = datetime.time(hour=3, minute=00))
+# CourseProgram
 
-# plan_shifts(session, starting=datetime.date.today(), n=90)
-
-"""
 # Prenotations
 
 def add_prenotation_aux(session, email, day, month, year, hours, minutes):
@@ -127,9 +124,10 @@ def add_prenotation_aux_nostart(session, email, day, month, year):
     if sh is not None:
         add_prenotation(session, user = get_user(session, email = email), shift= sh[0])
 
-add_prenotation_aux_nostart(session, "andrea@gmail.com",     1, 6, 2021)
-add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 2, 6, 2021)
-add_prenotation_aux_nostart(session, "simone@gmail.com",     3, 6, 2021)
-"""
+add_prenotation_aux_nostart(session, "andrea@gmail.com",     22, 6, 2021)
+add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 23, 6, 2021)
+add_prenotation_aux_nostart(session, "simone@gmail.com",     24, 6, 2021)
+
+
 session.commit()
 session.close()

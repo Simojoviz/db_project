@@ -112,9 +112,9 @@ def add_user_from_list(session, user_list):
 # ________________________________________ SHIFT ________________________________________ 
 
 
-# - Given a date returns all Shifts in that day
 # - Given a date and a starting hour returns the corresponding Shift if exists
-# - Given a date and a course_id returns the Shifts of that course in that day if exixsts
+# - Given a date and a course_id returns all the Shifts of that course in that day if exixsts
+# - Given a date returns all Shifts in that day
 # - Given a prenotation returns the corresponding Shift
 # Otherwise return None
 def get_shift(session, date=None, start=None, prenotation=None, course_id=None):
@@ -125,12 +125,10 @@ def get_shift(session, date=None, start=None, prenotation=None, course_id=None):
             return session.query(Shift).filter(Shift.date == date, Shift.course_id == course_id).all()
         else:
             return session.query(Shift).filter(Shift.date == date).all()
-
     elif prenotation is not None:
         return session.query(Shift).filter(Shift.id == prenotation.shift_id).one_or_none()
     else:
         return None
-
 
 # Generate a list of all shifts for a date given the date
 def generate_daily_shifts(session, date):
@@ -140,21 +138,25 @@ def generate_daily_shifts(session, date):
     hour_end = weeksetting.ending
     shift_length = weeksetting.length
     course_id = get_course(session, name = 'OwnTraining').id
+    rooms = get_room(session, all=True)
+    
     l = []
     start =     timedelta(hours=hour_start.hour,   minutes=hour_start.minute)
     length =    timedelta(hours=shift_length.hour, minutes=shift_length.minute)
     end_ =      timedelta(hours=hour_end.hour,     minutes=hour_end.minute)
     end = start + length
+
     while(end <= end_):
-        ids = get_all_room_ids(session)
-        for id in ids:
-            l.append(Shift(
-                date=date,
-                h_start = datetime.time(hour=start.seconds//3600, minute=(start.seconds//60)%60),
-                h_end =   datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
-                room_id = id,
-                course_id = course_id
-            ))
+        for room in rooms:
+            l.append(
+                Shift(
+                    date=date,
+                    h_start = datetime.time(hour=start.seconds//3600, minute=(start.seconds//60)%60),
+                    h_end =   datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
+                    room_id = room.id,
+                    course_id = course_id
+                )
+            )
         start = end
         end = start + length
     return l
@@ -196,7 +198,7 @@ def get_count_weekly_prenotations(session, user, date):
         day = day - timedelta(days = 1)
     count = 0
     for i in range(7):
-        shifts = get_shift(session, date = day, course_id = get_course(session, course_name='OwnTraining').id)
+        shifts = get_shift(session, date = day, course_id = get_course(session, name='OwnTraining').id)
         for sh in shifts:
             ids = get_usersId_prenoted(session, shift = sh)
             if user.id in ids:
@@ -233,6 +235,7 @@ def add_shift(session, shift=None, date=None, start=None, end=None, room_id=None
 def add_shift_from_list(session, shift_list):
     b = True
     for shift in shift_list:
+        print('S')
         b &= add_shift(session, shift=shift)
     return b
 
@@ -270,7 +273,7 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
             return False
         else:
             nprenoted = get_prenoted_count(session, shift=shift)
-            room_capacity = get_room(session, id=shift.room_id).capacity
+            room_capacity = get_room(session, id=shift.room_id).max_capacity
             if(nprenoted < room_capacity):
                 prenoted = get_usersId_prenoted(session, Shift)
                 if user.id not in prenoted:
@@ -445,20 +448,19 @@ def update_global_setting(session, CovidCapacity=None, MinutesShiftLength=None, 
 
 # ________________________________________ ROOM ________________________________________
 
-# - Given the id,     returns the Room who has got that id if exixsts
-# - Given the name,   returns the Room who has got that name if exists
-# Otherwise return None
-def get_room(session, id=None, name=None):
+# - Given the id,        returns the Room who has got that id if exixsts
+# - Given the name,      returns the Room who has got that name if exists
+# - If all flag is true, returns all Rooms
+# Otherwise returns None
+def get_room(session, id=None, name=None, all=False):
     if id is not None:
         return session.query(Room).filter(Room.id == id).one_or_none()
     elif name is not None:
         return session.query(Room).filter(Room.name == name).one_or_none()
+    elif all is True:
+        return session.query(Room).all()
     else:
-        return None
-
-# Returns all rooms id
-def get_all_room_ids(session):
-    return session.query(Room.id).all()
+        None
 
 
 # - Given a Room adds it to the database
