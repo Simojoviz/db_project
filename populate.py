@@ -25,10 +25,10 @@ CourseSignUp  = Base.classes.course_signs_up
 Session = sessionmaker(bind=engine)
 session = Session()
 
+
 # Rooms
+add_room(session, name='Main Room', max_capacity=10)
 
-
-# CourseProgram
 
 
 # Users
@@ -84,15 +84,12 @@ for gs in global_settings:
 
 
 # Shifts
-
+plan_shifts(session, starting=datetime.date.today(), n=90)
+update_weekend_setting(session, 'Monday', length=datetime.time(hour=1, minute=30))
 plan_shifts(session, starting=datetime.date.today(), n=90)
 
-#trial: updade WeekSetting
-#update_weekend_setting(session, day_name='Monday', length = datetime.time(hour=3, minute=00))
+# CourseProgram
 
-# plan_shifts(session, starting=datetime.date.today(), n=90)
-
-"""
 # Prenotations
 
 def add_prenotation_aux(session, email, day, month, year, hours, minutes):
@@ -112,9 +109,10 @@ def add_prenotation_aux_nostart(session, email, day, month, year):
     if sh is not None:
         add_prenotation(session, user = get_user(session, email = email), shift= sh[0])
 
-add_prenotation_aux_nostart(session, "andrea@gmail.com",     1, 6, 2021)
-add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 2, 6, 2021)
-add_prenotation_aux_nostart(session, "simone@gmail.com",     3, 6, 2021)
-"""
+add_prenotation_aux_nostart(session, "andrea@gmail.com",     22, 6, 2021)
+add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 23, 6, 2021)
+add_prenotation_aux_nostart(session, "simone@gmail.com",     24, 6, 2021)
+
+
 session.commit()
 session.close()
