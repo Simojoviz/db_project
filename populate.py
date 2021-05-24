@@ -25,6 +25,8 @@ CourseSignUp  = Base.classes.course_signs_up
 Session = sessionmaker(bind=engine)
 session = Session()
 
+
+
 # Rooms
 rooms = [
     Room(name = "Main Room", max_capacity = 25),
@@ -58,15 +60,6 @@ add_course(
     instructor_id=get_user(session, email="stefano@gmail.com").id
 )
 
-#CourseProgram
-add_course_program(
-    session,
-    week_day=None,
-    turn_number= None,
-    room_id = get_course(session, name = 'OwnTraining').id,
-    course_id = get_room(session, name = 'stanza 1')
-)
-
 # WeekSetting
 week_settings = [
     WeekSetting(day_name='Monday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), capacity = 10, changed = True),
@@ -97,10 +90,7 @@ global_settings = [
 for gs in global_settings:
     add_global_setting(session, global_setting=gs)
 
-
 # Shifts
-plan_shifts(session, starting=datetime.date.today(), n=90)
-update_weekend_setting(session, 'Monday', length=datetime.time(hour=1, minute=30))
 plan_shifts(session, starting=datetime.date.today(), n=90)
 
 # CourseProgram
@@ -119,15 +109,14 @@ def add_prenotation_aux(session, email, day, month, year, hours, minutes):
     )
 
 # Prenotatoin for the first Shift for that day
-def add_prenotation_aux_nostart(session, email, day, month, year):
-    sh = get_shift(session, date = datetime.date(day = day, month = month, year = year))
+def add_prenotation_aux_nostart(session, email, day, month, year, room):
+    sh = get_shift(session, date = datetime.date(day = day, month = month, year = year), room_id=get_room(session, name=room).id)
     if sh is not None:
         add_prenotation(session, user = get_user(session, email = email), shift= sh[0])
 
-add_prenotation_aux_nostart(session, "andrea@gmail.com",     22, 6, 2021)
-add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 23, 6, 2021)
-add_prenotation_aux_nostart(session, "simone@gmail.com",     24, 6, 2021)
-
+add_prenotation_aux_nostart(session, "andrea@gmail.com",     22, 6, 2021, 'Main Room')
+add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 23, 6, 2021, 'Weight Room')
+add_prenotation_aux_nostart(session, "simone@gmail.com",     24, 6, 2021, 'Fitness Room')
 
 session.commit()
 session.close()

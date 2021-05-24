@@ -115,9 +115,11 @@ def add_user_from_list(session, user_list):
 # - Given a prenotation              returns the corresponding Shift
 # - If all flag is true,             returns all Shifts
 # Otherwise return None
-def get_shift(session, date=None, start=None, prenotation=None, course_id=None, all=False):
+def get_shift(session, date=None, start=None, prenotation=None, course_id=None, room_id=None, all=False):
     if date is not None:
-        if start is not None:
+        if start is not None and room_id is not None:
+            return session.query(Shift).filter(Shift.date == date, Shift.h_start == start, Shift.room_id == room_id).one_or_none()
+        elif start is not None:
             return session.query(Shift).filter(Shift.date == date, Shift.h_start == start).one_or_none()
         elif course_id is not None:
             return session.query(Shift).filter(Shift.date == date, Shift.course_id == course_id).all()
@@ -159,6 +161,7 @@ def generate_daily_shifts(session, date):
             )
         start = end
         end = start + length
+
     return l
 
 # - Given the starting date and the number of days generate the shifts for all days in time-interval
@@ -213,7 +216,7 @@ def get_count_weekly_prenotations(session, user, date):
 # Returns True if it was added correctly, False if the element was already contained
 def add_shift(session, shift=None, date=None, start=None, end=None, room_id=None, course_id=None):
     if shift is not None:
-        exist = get_shift(session, date=shift.date, start=shift.h_start)
+        exist = get_shift(session, date=shift.date, start=shift.h_start, room_id=shift.room_id)
         if exist is not None:
             return False
         else:
@@ -235,8 +238,8 @@ def add_shift(session, shift=None, date=None, start=None, end=None, room_id=None
 def add_shift_from_list(session, shift_list):
     b = True
     for shift in shift_list:
-        print('S')
         b &= add_shift(session, shift=shift)
+
     return b
 
 

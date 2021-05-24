@@ -38,7 +38,7 @@ class Shift(Base):
     room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
     course_id = Column(Integer, ForeignKey('courses.id'), nullable=False)
 
-    __table_args__ = (UniqueConstraint('date', 'h_start'),)
+    #__table_args__ = (UniqueConstraint('date', 'h_start', 'room_id'),)
 
     prenotations = relationship("Prenotation", back_populates="shifts")
     courses = relationship("Course", back_populates="shifts")
