@@ -26,9 +26,15 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 # Rooms
+rooms = [
+    Room(name = "stanza 1", max_capacity = 25),
+    Room(name = "stanza 2", max_capacity = 30),
+    Room(name = "stanza 3", max_capacity = 25),
+    Room(name = "stanza 4", max_capacity = 40),
+    Room(name = "stanza 5", max_capacity = 25)
+]
 
-
-# CourseProgram
+add_room_from_list(session, rooms)
 
 
 # Users
@@ -50,6 +56,15 @@ add_course(
     ending =   datetime.datetime(year=2021, month=7, day=31),
     max_partecipants=10,
     instructor_id=get_user(session, email="stefano@gmail.com").id
+)
+
+#CourseProgram
+add_course_program(
+    session,
+    week_day=None,
+    turn_number= None,
+    room_id = get_course(session, name = 'OwnTraining').id,
+    course_id = get_room(session, name = 'stanza 1')
 )
 
 # WeekSetting
