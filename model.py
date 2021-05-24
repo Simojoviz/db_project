@@ -66,20 +66,17 @@ def to_string(user=None, shift=None):
 
 # - Given the email,     returns the User who has got that email if exixsts
 # - Given the id,        returns the User who has got that id if exists
+# - If all flag is true, returns all Users
 # Otherwise return None
-def get_user(session, id=None, email=None, prenotation=None, course_signing_up=None):
+def get_user(session, id=None, email=None, prenotation=None, course_signing_up=None, all=False):
     if id is not None:
         return session.query(User).filter(User.id == id).one_or_none()
     elif email is not None:
         return session.query(User).filter(User.email == email).one_or_none()
+    elif all is True:
+        return session.query(User).all()
     else:
         return None
-
-
-# Returns all emails
-def get_all_emails(session):
-    return session.query(User.email).all()
-
 
 # - Given a User adds it to the database
 # - Given fullname, email and password of a User adds it to the database
@@ -113,11 +110,12 @@ def add_user_from_list(session, user_list):
 
 
 # - Given a date and a starting hour returns the corresponding Shift if exists
-# - Given a date and a course_id returns all the Shifts of that course in that day if exixsts
-# - Given a date returns all Shifts in that day
-# - Given a prenotation returns the corresponding Shift
+# - Given a date and a course_id     returns all the Shifts of that course in that day if exixsts
+# - Given a date                     returns all Shifts in that day
+# - Given a prenotation              returns the corresponding Shift
+# - If all flag is true,             returns all Shifts
 # Otherwise return None
-def get_shift(session, date=None, start=None, prenotation=None, course_id=None):
+def get_shift(session, date=None, start=None, prenotation=None, course_id=None, all=False):
     if date is not None:
         if start is not None:
             return session.query(Shift).filter(Shift.date == date, Shift.h_start == start).one_or_none()
@@ -127,6 +125,8 @@ def get_shift(session, date=None, start=None, prenotation=None, course_id=None):
             return session.query(Shift).filter(Shift.date == date).all()
     elif prenotation is not None:
         return session.query(Shift).filter(Shift.id == prenotation.shift_id).one_or_none()
+    elif all is True:
+        return session.query(Shift).all()
     else:
         return None
 
@@ -247,8 +247,9 @@ def add_shift_from_list(session, shift_list):
 # - Given a User             returns all his prenotations
 # - Given a Shift            returns all prenotations for that Shift
 # - Given a date             returns all prenotations for that day
+# - If all flag is true,     returns all Prenotations
 # Returns None otherwise
-def get_prenotation(session, user=None, shift=None, date=None):
+def get_prenotation(session, user=None, shift=None, date=None, all=False):
     if user is not None and shift is not None:
         return session.query(Prenotation).filter(Prenotation.client_id == user.id, Prenotation.shift_id == shift.id).one_or_none()
     elif user is not None:
@@ -257,6 +258,8 @@ def get_prenotation(session, user=None, shift=None, date=None):
         return session.query(Prenotation.client_id).filter(Prenotation.shift_id == shift.id).all()
     elif date is not None:
         return session.query(Prenotation).join(Shift).filter(Shift.date == date).all()
+    elif all is True:
+        return session.query(Prenotation).all()
     else:
         return None   
 
@@ -313,8 +316,15 @@ def add_prenotation_from_list(session, prenotation_list):
 
 # Returns the WeekSetting with the corresponding day_name
 # Returns None if the day_name is not valid
-def get_week_setting(session, day_name):
-    return session.query(WeekSetting).filter(WeekSetting.day_name == day_name).one_or_none()
+# If all flag is true, returns all WeekSettings
+
+def get_week_setting(session, day_name=None, all=False):
+    if day_name is not None:
+        return session.query(WeekSetting).filter(WeekSetting.day_name == day_name).one_or_none()
+    elif all is True:
+        return session.query(WeekSetting).all()
+    else:
+        return None
 
 # Update the WeekSetting with the given parameters
 def update_weekend_setting(session, day_name, starting=None, ending=None, length=None, capacity=None):
@@ -385,9 +395,16 @@ def add_week_setting(session, week_setting=None, day_name=None, starting=None, e
 # ________________________________________ GLOBAL SETTING ________________________________________
 
 # Returns the GlobalSetting with the corresponding name
+# If all flag is true, returns all GlobalSettings
 # Returns None if the name is not valid
-def get_global_setting(session, name):
-    return session.query(GlobalSetting).filter(GlobalSetting.name == name).one_or_none()
+
+def get_global_setting(session, name=None, all=False):
+    if name is not None:
+        return session.query(GlobalSetting).filter(GlobalSetting.name == name).one_or_none()
+    elif all is True:
+        return session.query(GlobalSetting).all()
+    else:
+        return None
 
 # - Given a GlobalSetting add it to the Database
 # - Given GlobalSetting's name and value add it to the Database
@@ -491,14 +508,17 @@ def add_room_from_list(session, rooms_list):
 
 # ________________________________________ COURSE ________________________________________
 
-# - Given the id,     returns the Course who has got that id if exixsts
-# - Given the name,   returns the Course who has got that name if exists
+# - Given the id,        returns the Course who has got that id if exixsts
+# - Given the name,      returns the Course who has got that name if exists
+# - If all flag is true, returns all Courses
 # Otherwise return None
-def get_course(session, id=None, name=None):
+def get_course(session, id=None, name=None, all=False):
     if id is not None:
         return session.query(Course).filter(Course.id == id).one_or_none()
     elif name is not None:
         return session.query(Course).filter(Course.name == name).one_or_none()
+    elif all is True:
+        return session.query(Course).all()
     else:
         return None
 
@@ -536,12 +556,15 @@ def add_course_from_list(session, courses_list):
 
 # - Given the id,          returns the CourseProgram who has got that id if exixsts
 # - Given the course_id,   returns all his CoursePrograms
+# - If all flag is true,   returns all CoursePrograms
 # Otherwise return None
-def get_course_program(session, id=None, course_id=None):
+def get_course_program(session, id=None, course_id=None, all=False):
     if id is not None:
         return session.query(CourseProgram).filter(CourseProgram.id == id).one_or_none()
     elif course_id is not None:
         return session.query(CourseProgram).filter(CourseProgram.course_id == course_id).all()
+    elif all is True:
+        return session.query(CourseProgram).all()
     else:
         return None
 
@@ -577,16 +600,19 @@ def add_course_program_from_list(session, course_programs_list):
 # ________________________________________ COURSE SIGN UP ________________________________________
 
 
-# - Given a User       returns all his course signs up
-# - Given a Course     returns all his course signs up
+# - Given a User         returns all his course signs up
+# - Given a Course       returns all his course signs up
+# - If all flag is true, returns all CourseSignsUp
 # Returns None otherwise
-def get_course_sign_up(session, user=None, course=None):
+def get_course_sign_up(session, user=None, course=None, all=False):
     if user is not None and course is not None:
         return session.query(CourseSignUp).filter(CourseSignUp.user_id == user.id, CourseSignUp.course_id == course.id).one_or_none()
     elif user is not None:
         return session.query(CourseSignUp).filter(CourseSignUp.user_id == user.id).all()
     elif course is not None:
         return session.query(CourseSignUp).filter(CourseSignUp.course_id == course.id).all()
+    elif all is True:
+        return session.query(CourseSignUp).all()
     else:
         return None
 
