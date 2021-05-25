@@ -96,7 +96,7 @@ class CourseProgram(Base):
 
     id = Column(Integer, primary_key=True)
     week_day = Column(String, nullable=False)
-    turn_number = Column(Time, nullable=False)
+    turn_number = Column(Integer, nullable=False)
     room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
     course_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
 

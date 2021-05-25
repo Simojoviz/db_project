@@ -109,22 +109,50 @@ def add_user_from_list(session, user_list):
 # ________________________________________ SHIFT ________________________________________ 
 
 
-# - Given a date and a starting hour returns the corresponding Shift if exists
-# - Given a date and a course_id     returns all the Shifts of that course in that day if exixsts
-# - Given a date                     returns all Shifts in that day
-# - Given a prenotation              returns the corresponding Shift
-# - If all flag is true,             returns all Shifts
+# - Given a combination of date, starting hour, course_id and room id returns the corresponding Shift or Shifts
+# - Given a prenotation returns the corresponding Shift
+# - If all flag is true, returns all Shifts
 # Otherwise return None
 def get_shift(session, date=None, start=None, prenotation=None, course_id=None, room_id=None, all=False):
-    if date is not None:
-        if start is not None and room_id is not None:
-            return session.query(Shift).filter(Shift.date == date, Shift.h_start == start, Shift.room_id == room_id).one_or_none()
-        elif start is not None:
-            return session.query(Shift).filter(Shift.date == date, Shift.h_start == start).one_or_none()
-        elif course_id is not None:
-            return session.query(Shift).filter(Shift.date == date, Shift.course_id == course_id).all()
-        else:
-            return session.query(Shift).filter(Shift.date == date).all()
+
+    # 4
+    if date is not None and start is not None and room_id is not None and course_id is not None:
+        return session.query(Shift).filter(Shift.date == date, Shift.h_start == start, Shift.room_id == room_id, Shift.course_id == course_id).one_or_none()
+    
+    # 3
+    elif start is not None and date is not None and course_id is not None:
+        return session.query(Shift).filter(Shift.h_start == start, Shift.date == date, Shift.course_id == Shift.course_id).one_or_none()
+    elif start is not None and date is not None and room_id is not None:
+        return session.query(Shift).filter(Shift.h_start == start, Shift.date == date, Shift.room_id == room_id).one_or_none()
+    elif start is not None and room_id is not None and course_id is not None:
+        return session.query(Shift).filter(Shift.h_start == start, Shift.room_id == room_id, Shift.course_id == Shift.course_id).all()
+    elif room_id is not None and date is not None and course_id is not None:
+        return session.query(Shift).filter(Shift.room_id == room_id, Shift.date == date, Shift.course_id == Shift.course_id).all()
+    
+    # 2
+    elif start is not None and date is not None:
+        return session.query(Shift).filter(Shift.h_start == start, Shift.date == date).all()
+    elif start is not None and course_id is not None:
+        return session.query(Shift).filter(Shift.h_start == start, Shift.course_id == course_id).all()
+    elif start is not None and room_id is not None:
+        return session.query(Shift).filter(Shift.h_start == start, Shift.room_id == room_id).all()
+    elif course_id is not None and date is not None:
+        return session.query(Shift).filter(Shift.course_id == course_id, Shift.date == date).all()
+    elif room_id is not None and date is not None:
+        return session.query(Shift).filter(Shift.room_id == room_id, Shift.date == date).all()
+    elif course_id is not None and room_id is not None:
+        return session.query(Shift).filter(Shift.course_id == course_id, Shift.room_id == room_id).all()
+
+    # 1
+    elif start is not None:
+        return session.query(Shift).filter(Shift.h_start == start).all()
+    elif date is not None:
+        return session.query(Shift).filter(Shift.date == date).all()
+    elif course_id is not None:
+        return session.query(Shift).filter(Shift.course_id == course_id).all()
+    elif room_id is not None:
+        return session.query(Shift).filter(Shift.room_id == room_id).all()
+    
     elif prenotation is not None:
         return session.query(Shift).filter(Shift.id == prenotation.shift_id).one_or_none()
     elif all is True:
@@ -217,6 +245,7 @@ def get_count_weekly_prenotations(session, user, date):
 def add_shift(session, shift=None, date=None, start=None, end=None, room_id=None, course_id=None):
     if shift is not None:
         exist = get_shift(session, date=shift.date, start=shift.h_start, room_id=shift.room_id)
+        print(exist!=None)
         if exist is not None:
             return False
         else:
@@ -227,7 +256,6 @@ def add_shift(session, shift=None, date=None, start=None, end=None, room_id=None
          end       is not None and\
          room_id   is not None and\
          course_id is not None:
-        exist = get_shift(session, date=date, start=start)
         add_shift(session, shift=Shift(date=date, h_start=start, h_end=end, room_id=room_id, course_id=course_id))
     else:
         return False
@@ -238,8 +266,9 @@ def add_shift(session, shift=None, date=None, start=None, end=None, room_id=None
 def add_shift_from_list(session, shift_list):
     b = True
     for shift in shift_list:
-        b &= add_shift(session, shift=shift)
-
+        c = add_shift(session, shift=shift)
+        print(c)
+        b &= c
     return b
 
 
@@ -525,6 +554,51 @@ def get_course(session, id=None, name=None, all=False):
     else:
         return None
 
+# Given the name of the Course plan his Shifts
+# If the course overlap with any other the plan fails
+def plan_course(session, name):
+
+    def get_shift_turn(session, date, room_id, turn):
+        shifts = get_shift(session, date=date, room_id=room_id)
+        if len(shifts) >= turn:
+            return shifts[turn]
+        else:
+            return None
+
+    def update_shift_course(session, shift_id, new_course_id):
+        session.query(Shift).filter(Shift.id == shift_id).update({Shift.course_id:new_course_id}, synchronize_session = False)
+        
+
+    course = get_course(session, name=name)
+    courses_program = get_course_program(session, course_id=course.id)
+    own_training_id = get_course(session, name='OwnTraining').id
+    print("OWN")
+    print(own_training_id)
+    end = course.ending + timedelta(days=0)
+    for prog in courses_program:
+        dayname = prog.week_day
+        turn = prog.turn_number
+        room_id = prog.room_id
+        day = course.starting + timedelta(days=0)
+        while(calendar.day_name[day.weekday()] != dayname): # Move to the correct week day
+            day = day + timedelta(days = 1)
+        while(day < end):
+            shift = get_shift_turn(session, date=datetime.date(year=day.year, month=day.month, day=day.day), room_id=room_id, turn=turn)
+            if shift is None:
+                print("There is not that turn in that day")
+                return False
+            if(shift.course_id != own_training_id):
+                print("Course cannot be planned: it overlaps with an other course!")
+                # TODO capire come fare la rollback degli shift che sono stati cambiati
+                # Session interna e non quella ricevuta come argomento?
+                return False
+            else:
+                # Delete all Prenotation in that Shift
+                session.query(Prenotation).where(Prenotation.shift_id==shift.id).delete()
+                update_shift_course(session, shift.id, course.id)
+            day = day + timedelta(days=7)
+            
+        
 
 # - Given a Course adds it to the database
 # - Given name, starting and ending date, max_partecipants and the instructor_id of a Course adds it to the database

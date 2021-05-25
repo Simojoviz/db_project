@@ -60,6 +60,19 @@ add_course(
     instructor_id=get_user(session, email="stefano@gmail.com").id
 )
 
+courses = [
+    Course(name = 'Boxe',
+        starting=datetime.datetime(year=2021, month=6, day=1), ending = datetime.datetime(year=2021, month=6, day=30), max_partecipants = 7, 
+        instructor_id = get_user(session, email='sebastiano@gmail.com').id
+    ),
+    Course(name = 'Zumba',
+        starting=datetime.datetime(year=2021, month=7, day=1), ending = datetime.datetime(year=2021, month=7, day=30), max_partecipants = 12, 
+        instructor_id = get_user(session, email='andrea@gmail.com').id
+    )
+]
+
+add_course_from_list(session, courses)
+
 # WeekSetting
 week_settings = [
     WeekSetting(day_name='Monday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), capacity = 10, changed = True),
@@ -93,7 +106,30 @@ for gs in global_settings:
 # Shifts
 plan_shifts(session, starting=datetime.date.today(), n=90)
 
+
 # CourseProgram
+courses_program = [
+    CourseProgram(
+        week_day = 'Monday', turn_number = 3,
+        room_id = get_room(session, name='Boxing Room').id,
+        course_id =get_course(session, name='Boxe').id
+    ),
+    CourseProgram(
+        week_day = 'Tuesday', turn_number = 4,
+        room_id = get_room(session, name='Fitness Room').id,
+        course_id = get_course(session, name='Zumba').id
+    ),
+    CourseProgram(
+        week_day = 'Friday', turn_number = 5,
+        room_id = get_room(session, name='Fitness Room').id,
+        course_id = get_course(session, name='Zumba').id
+    )
+]
+
+add_course_program_from_list(session, courses_program)
+
+plan_course(session, "Boxe")
+plan_course(session, "Zumba")
 
 # Prenotations
 
