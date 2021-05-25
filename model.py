@@ -113,7 +113,7 @@ def add_user_from_list(session, user_list):
 # - Given a prenotation returns the corresponding Shift
 # - If all flag is true, returns all Shifts
 # Otherwise return None
-def get_shift(session, date=None, start=None, prenotation=None, course_id=None, room_id=None, all=False):
+def get_shift(session, date=None, start=None, prenotation=None, id=None, course_id=None, room_id=None, all=False):
 
     # 4
     if date is not None and start is not None and room_id is not None and course_id is not None:
@@ -144,8 +144,6 @@ def get_shift(session, date=None, start=None, prenotation=None, course_id=None, 
         return session.query(Shift).filter(Shift.course_id == course_id, Shift.room_id == room_id).all()
 
     # 1
-    elif start is not None:
-        return session.query(Shift).filter(Shift.h_start == start).all()
     elif date is not None:
         return session.query(Shift).filter(Shift.date == date).all()
     elif course_id is not None:
@@ -153,6 +151,10 @@ def get_shift(session, date=None, start=None, prenotation=None, course_id=None, 
     elif room_id is not None:
         return session.query(Shift).filter(Shift.room_id == room_id).all()
     
+    elif id is not None:
+        return session.query(Shift).filter(Shift.id == id).one_or_none()
+    elif prenotation is not None:
+        return session.query(Shift).filter(Shift.id == prenotation.shift_id).one_or_none()
     elif prenotation is not None:
         return session.query(Shift).filter(Shift.id == prenotation.shift_id).one_or_none()
     elif all is True:
@@ -307,24 +309,31 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
         if exist is not None:
             return False
         else:
-            nprenoted = get_prenoted_count(session, shift=shift)
-            room_capacity = get_room(session, id=shift.room_id).max_capacity
-            if(nprenoted < room_capacity):
-                prenoted = get_usersId_prenoted(session, Shift)
-                if user.id not in prenoted:
-                    max_ = get_global_setting(session, name='MaxWeeklyEntry').value
-                    count = get_count_weekly_prenotations(session, user, shift.date)
-                    if (count < max_):
-                        session.add(Prenotation(client_id=user.id, shift_id=shift.id))
+            if shift.course_id == get_course(session, name='OwnTraining'):
+                # Prenotation for OwnTraining: need some control
+                nprenoted = get_prenoted_count(session, shift=shift)
+                room_capacity = get_room(session, id=shift.room_id).max_capacity
+                if(nprenoted < room_capacity):
+                    prenoted = get_usersId_prenoted(session, Shift)
+                    if user.id not in prenoted:
+                        max_ = get_global_setting(session, name='MaxWeeklyEntry').value
+                        count = get_count_weekly_prenotations(session, user, shift.date)
+                        if (count < max_):
+                            session.add(Prenotation(client_id=user.id, shift_id=shift.id))
+                            return True
+                        else:
+                            print("Week prenotation peak reached")
+                            return False
                     else:
-                        print("Week prenotation peak reached")
+                        print("User already prenoted")
                         return False
                 else:
-                    print("User already prenoted")
+                    print("Maximum capacity already reached")
                     return False
             else:
-                print("Maximum capacity already reached")
-                return False
+                # Prenotation for a course: need no control
+                session.add(Prenotation(client_id=user.id, shift_id=shift.id))
+                return True
     elif prenotation is not None:
         user_  = get_user(session, id=prenotation.client_id)
         shift_ = get_shift(session, id=prenotation.shift_id)
@@ -677,44 +686,66 @@ def add_course_program_from_list(session, course_programs_list):
 # ________________________________________ COURSE SIGN UP ________________________________________
 
 
-# - Given a User         returns all his course signs up
-# - Given a Course       returns all his course signs up
+# - Given a UserID       returns all his course signs up
+# - Given a CourseId     returns all his course signs up
 # - If all flag is true, returns all CourseSignsUp
 # Returns None otherwise
-def get_course_sign_up(session, user=None, course=None, all=False):
-    if user is not None and course is not None:
-        return session.query(CourseSignUp).filter(CourseSignUp.user_id == user.id, CourseSignUp.course_id == course.id).one_or_none()
-    elif user is not None:
-        return session.query(CourseSignUp).filter(CourseSignUp.user_id == user.id).all()
-    elif course is not None:
-        return session.query(CourseSignUp).filter(CourseSignUp.course_id == course.id).all()
+def get_course_sign_up(session, user_id=None, course_id=None, all=False):
+    if user_id is not None and course_id is not None:
+        return session.query(CourseSignUp).filter(CourseSignUp.user_id == user_id, CourseSignUp.course_id == course_id).one_or_none()
+    elif user_id is not None:
+        return session.query(CourseSignUp).filter(CourseSignUp.user_id == user_id).all()
+    elif course_id is not None:
+        return session.query(CourseSignUp).filter(CourseSignUp.course_id == course_id).all()
     elif all is True:
         return session.query(CourseSignUp).all()
     else:
         return None
 
+def count_course_sign_up(session, name):
+    course = get_course(session, name=name)
+    courses_signs_up = get_course_sign_up(session, course_id=course.id)
+    return len(courses_signs_up)
+
 
 # Adds a CourseSignUp to the Database given the User and the Course or the CourseSignUp
 # Returns True if it was added correctly,
 # False if
-# TODO the user has already SignedUp to the course
-# TODO the capacity peak has already been reached
+#   the user has already SignedUp to the course
+#   the capacity peak has already been reached
 # TODO the course in in conflict with other courses the user has SignedIn
 # 
 def add_course_sign_up(session, user=None, course=None, course_sign_up=None):
 
     if user is not None and course is not None:
-        exist = get_course_sign_up(session, user=user, course=course)
+        exist = get_course_sign_up(session, user_id=user.id, course_id=course.id)
         if exist is not None:
             return False
         else:
-            # TODO controls
-            session.add(CourseSignUp(user_id=user.id, course_id=course.id))
-            return True
+            n_signed = count_course_sign_up(session, course.name)
+            n_max = course.max_partecipants
+            if  n_signed>= n_max:
+                print("Course peak has already been reached")
+                return False
+            else:
+                course_signs = get_course_sign_up(session, user_id=user.id)
+                ids = []
+                for sign in course_signs:
+                    ids.append(sign.course_id)
+                if course.id in ids:
+                    print("User has already signed up for the course")
+                    return False
+                else:
+                    session.add(CourseSignUp(user_id=user.id, course_id=course.id))
+                    shifts = get_shift(session, course_id=course.id)
+                    prenotations = []
+                    for sh in shifts:
+                        add_prenotation(session, user=user, shift=sh)
+                    return True
     elif course_sign_up is not None:
         user_  =  get_user(session, id=course_sign_up.user_id)
         course_ = get_shift(session, id=course_sign_up.user_id)
-        add_course_program(session, user=user_, course=course_)
+        add_course_sign_up(session, user=user_, course=course_)
     else:
         return False
 

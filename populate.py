@@ -154,5 +154,24 @@ add_prenotation_aux_nostart(session, "andrea@gmail.com",     22, 6, 2021, 'Main 
 add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 23, 6, 2021, 'Weight Room')
 add_prenotation_aux_nostart(session, "simone@gmail.com",     24, 6, 2021, 'Fitness Room')
 
+add_course_sign_up(
+    session,
+    user=get_user(session, email='sebastiano@gmail.com'),
+    course=get_course(session, name='Boxe'),
+)
+
+add_course_sign_up(
+    session,
+    user=get_user(session, email='andrea@gmail.com'),
+    course=get_course(session, name='Zumba'),
+)
+
+add_course_sign_up(
+    session,
+    user=get_user(session, email='simone@gmail.com'),
+    course=get_course(session, name='Zumba'),
+)
+
+
 session.commit()
 session.close()
