@@ -12,6 +12,7 @@ Base.prepare(engine, reflect=True)
 
 # Import classes
 User          = Base.classes.users
+Trainer       = Base.classes.trainers
 Prenotation   = Base.classes.prenotations
 Shift         = Base.classes.shifts
 WeekSetting   = Base.classes.week_setting
@@ -24,7 +25,6 @@ CourseSignUp  = Base.classes.course_signs_up
 
 Session = sessionmaker(bind=engine)
 session = Session()
-
 
 
 # Rooms
@@ -42,6 +42,7 @@ add_room_from_list(session, rooms)
 # Users
 users = [
     User(fullname = "Stefano Calzavara",      email='stefano@gmail.com',    pwd='stefano1'),
+    User(fullname = "Alessandra Raffaetà",    email='alessandra@gmail.com', pwd='alessandra1'),
     User(fullname = "Simone Jovon",           email='simone@gmail.com',     pwd='simone1'),
     User(fullname = "Andrea Rosa",            email='andrea@gmail.com',     pwd='andrea1'),
     User(fullname = "Sebastiano Quintavalle", email='sebastiano@gmail.com', pwd='sebastiano1')
@@ -49,29 +50,42 @@ users = [
 
 add_user_from_list(session, users)
 
+trainers = [
+    get_user(session, email='stefano@gmail.com'),
+    get_user(session, email='alessandra@gmail.com')
+]
+
+add_trainer_from_list(session, trainers)
+add_trainer(session, fullname='Riccardo Focardi', email='riccardo@gmail.com', pwd='riccardo1')
+
+
+
 
 # Course
+
 add_course(
     session,
     name = 'OwnTraining',
     starting = datetime.datetime(year=2021, month=5, day=1),
     ending =   datetime.datetime(year=2021, month=7, day=31),
     max_partecipants=10,
-    instructor_id=get_user(session, email="stefano@gmail.com").id
+    instructor_id=1
+    #get_trainer(session, email="stefano@gmail.com").id
 )
 
 courses = [
     Course(name = 'Boxe',
         starting=datetime.datetime(year=2021, month=6, day=1), ending = datetime.datetime(year=2021, month=6, day=30), max_partecipants = 7, 
-        instructor_id = get_user(session, email='sebastiano@gmail.com').id
+        instructor_id = get_trainer(session, email='stefano@gmail.com').id
     ),
     Course(name = 'Zumba',
         starting=datetime.datetime(year=2021, month=7, day=1), ending = datetime.datetime(year=2021, month=7, day=30), max_partecipants = 12, 
-        instructor_id = get_user(session, email='andrea@gmail.com').id
+        instructor_id = get_trainer(session, email='alessandra@gmail.com').id
     )
 ]
 
 add_course_from_list(session, courses)
+
 
 # WeekSetting
 week_settings = [
@@ -131,6 +145,8 @@ add_course_program_from_list(session, courses_program)
 plan_course(session, "Boxe")
 plan_course(session, "Zumba")
 
+
+
 # Prenotations
 
 def add_prenotation_aux(session, email, day, month, year, hours, minutes):
@@ -153,6 +169,7 @@ def add_prenotation_aux_nostart(session, email, day, month, year, room):
 add_prenotation_aux_nostart(session, "andrea@gmail.com",     22, 6, 2021, 'Main Room')
 add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 23, 6, 2021, 'Weight Room')
 add_prenotation_aux_nostart(session, "simone@gmail.com",     24, 6, 2021, 'Fitness Room')
+
 
 add_course_sign_up(
     session,

@@ -20,12 +20,18 @@ class User(Base):
 
     prenotations = relationship("Prenotation", back_populates="users")
     course_signs_up = relationship("CourseSignUp", back_populates="users")
-    # VA NELLA SOTTOCLASSE ISTRUTTORE
-    # courses = relationship("Course", back_popoulates="users")
 
     def __repr__(self):
         return "<User(fullname='%s', email='%s')>" % (self.fullname,
                                                          self.email)
+
+class Trainer(Base):
+    __tablename__ = 'trainers' 
+
+    id = Column(Integer, ForeignKey('users.id'), primary_key=True, nullable=False)
+
+    courses = relationship("Course", back_populates="trainers")
+    users = relationship("User", back_populates="trainers")
 
 
 class Shift(Base):
@@ -82,10 +88,10 @@ class Course(Base):
     starting = Column(Date, nullable=False)
     ending = Column(Date, nullable=False)
     max_partecipants = Column(Integer, nullable=False)
-    instructor_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    instructor_id = Column(Integer, ForeignKey('trainers.id'), nullable=False)
 
-    # VA NELLA SOTTOCLASSE ISTRUTTORE
-    # users = relationship("User", back_populates="courses") 
+    
+    trainers = relationship("Trainer", back_populates="courses") 
     course_signing_up = relationship("CourseSignUp", back_populates="courses")
     shifts = relationship("Shift", back_populates="courses")
     course_programs = relationship("CourseProgram", back_populates="courses")

@@ -5,6 +5,8 @@ import time
 import calendar
 from datetime import timedelta
 
+from sqlalchemy.sql.operators import exists
+
 # engine = create_engine('sqlite:///database.db', echo=True)
 engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
 
@@ -12,6 +14,7 @@ Base = automap_base()
 Base.prepare(engine, reflect=True)
 
 User          = Base.classes.users
+Trainer       = Base.classes.trainers
 Prenotation   = Base.classes.prenotations
 Shift         = Base.classes.shifts
 WeekSetting   = Base.classes.week_setting
@@ -103,6 +106,64 @@ def add_user_from_list(session, user_list):
     b = True
     for user in user_list:
         b &= add_user(session, user=user)
+    return b
+
+
+# ________________________________________ TRAINER ________________________________________ 
+
+
+# - Given the email,     returns the Trainer who has got that email if exixsts
+# - Given the id,        returns the Trainer who has got that id if exists
+# - If all flag is true, returns all Trainers
+# Otherwise return None
+def get_trainer(session, id=None, email=None, all=False):
+    if id is not None:
+        return session.query(Trainer).filter(Trainer.id == id).one_or_none()
+    elif email is not None:
+        user = session.query(User).filter(User.email == email).one_or_none()
+        if user is not None:
+            return get_user(session, id=user.id)
+        else:
+            return None
+    elif all is True:
+        return session.query(Trainer).all()
+    else:
+        return None
+
+# - Given User who is not a Trainer adds it to the database as a Trainer
+# - Given fullname, email and password of a User who is not in the database adds it to Users and Trainers
+# Returns True if it was added correctly, False if the element was already contained
+def add_trainer(session, user=None, fullname=None, email=None, pwd=None):
+    if user is not None:
+        exist = get_trainer(session, id=user.id)
+        if exist is None:
+            session.add(Trainer(id=user.id))
+            return True
+        else:
+            print("The user is already a Trainer")
+            return False
+    elif fullname is not None and\
+         email    is not None and\
+         pwd      is not None:
+        exists = get_user(session, email = email)
+        if exists is not None:
+            # User with this email already exists, add it as a Trainer
+            add_trainer(session, user = get_user(session, email=exists.email))
+        else:
+            # User does not exixsts, it is added as a User and then as a Trainer
+            add_user(session, fullname=fullname, email=email, pwd=pwd)
+            us = get_user(session, email=email)
+            add_trainer(session, user=us)
+    else:
+        return False
+
+    
+# Adds all Trainers from the list given to the Database
+# Returns True if all elements were added, False if at least one was already contained
+def add_trainer_from_list(session, user_list):
+    b = True
+    for us in user_list:
+        b &= add_trainer(session, user=us)
     return b
 
 
