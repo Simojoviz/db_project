@@ -1,8 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, Boolean, String, Date, Time
 from sqlalchemy import ForeignKey, UniqueConstraint
-from sqlalchemy.orm import relationship, declarative_base, Session
-from sqlalchemy.sql.expression import null
+from sqlalchemy.orm import relationship, declarative_base
 
 # engine = create_engine('sqlite:///database.db', echo=True)
 #engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
@@ -10,6 +9,7 @@ engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo
 
 
 Base = declarative_base()
+
 
 class User(Base):
     __tablename__ = 'users'
@@ -19,20 +19,19 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     pwd = Column(String, nullable=False)
 
-    prenotations = relationship("Prenotation", back_populates="users")
-    course_signs_up = relationship("CourseSignUp", back_populates="users")
+    prenotations = relationship("Prenotation", back_populates="user")
 
     def __repr__(self):
         return "<User(fullname='%s', email='%s')>" % (self.fullname,
                                                          self.email)
 
+
 class Trainer(Base):
-    __tablename__ = 'trainers' 
+    __tablename__ = 'trainers'
 
     id = Column(Integer, ForeignKey('users.id'), primary_key=True, nullable=False)
 
-    courses = relationship("Course", back_populates="trainers")
-    users = relationship("User", back_populates="trainers")
+    courses = relationship("Course", back_populates="trainer")
 
 
 class Shift(Base):
@@ -43,13 +42,13 @@ class Shift(Base):
     h_start = Column(Time, nullable=False)
     h_end = Column(Time, nullable=False)
     room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
-    course_id = Column(Integer, ForeignKey('courses.id'), nullable=False)
+    course_id = Column(Integer, ForeignKey('courses.id'))
 
-    #__table_args__ = (UniqueConstraint('date', 'h_start', 'room_id'),)
+    __table_args__ = (UniqueConstraint('date', 'h_start', 'room_id'),)
 
-    prenotations = relationship("Prenotation", back_populates="shifts")
-    courses = relationship("Course", back_populates="shifts")
-    rooms = relationship("Room", back_populates="shifts")
+    prenotations = relationship("Prenotation", back_populates="shift")
+    course = relationship("Course", back_populates="shifts")
+    room = relationship("Room", back_populates="shifts")
 
 
 class Prenotation(Base):
@@ -59,8 +58,8 @@ class Prenotation(Base):
     client_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     shift_id = Column(Integer, ForeignKey('shifts.id'), nullable=False)
 
-    users = relationship("User", back_populates="prenotations")
-    shifts = relationship("Shift", back_populates="prenotations")
+    user = relationship("User", back_populates="prenotations")
+    shift = relationship("Shift", back_populates="prenotations")
 
 
 class GlobalSetting(Base):
@@ -82,7 +81,7 @@ class WeekSetting(Base):
 
 
 class Course(Base):
-    __tablename__= 'courses'
+    __tablename__ = 'courses'
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
@@ -91,43 +90,41 @@ class Course(Base):
     max_partecipants = Column(Integer, nullable=False)
     instructor_id = Column(Integer, ForeignKey('trainers.id'), nullable=False)
 
-    
-    trainers = relationship("Trainer", back_populates="courses") 
-    course_signing_up = relationship("CourseSignUp", back_populates="courses")
-    shifts = relationship("Shift", back_populates="courses")
-    course_programs = relationship("CourseProgram", back_populates="courses")
-    
+    trainer = relationship("Trainer", back_populates="courses")
+    shifts = relationship("Shift", back_populates="course")
+    course_programs = relationship("CourseProgram", back_populates="course")
+
 
 class CourseProgram(Base):
-    __tablename__= 'course_programs'
+    __tablename__ = 'course_programs'
 
     id = Column(Integer, primary_key=True)
     week_day = Column(String, nullable=False)
     turn_number = Column(Integer, nullable=False)
     room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
-    course_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
+    course_id = Column(Integer, ForeignKey('course.id'), nullable=False)
 
-    rooms = relationship("Room", back_populates="course_programs")
-    courses = relationship("Course", back_populates="course_programs")
+    room = relationship("Room", back_populates="course_programs")
+    course = relationship("Course", back_populates="course_programs")
 
-  
+
 class Room(Base):
-    __tablename__= 'rooms'
+    __tablename__ = 'rooms'
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     max_capacity = Column(Integer, nullable=False)
 
-    shifts = relationship("Shift", back_populates="rooms")
-    course_programs = relationship("CourseProgram", back_populates="rooms")
+    shifts = relationship("Shift", back_populates="room")
+    course_programs = relationship("CourseProgram", back_populates="room")
 
 
 class CourseSignUp(Base):
-    __tablename__= 'course_signs_up'
+    __tablename__ = 'course_signs_up'
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     course_id = Column(Integer, ForeignKey('courses.id'), nullable=False)
-    
+
 
 Base.metadata.create_all(engine)
