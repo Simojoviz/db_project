@@ -292,7 +292,7 @@ def get_count_weekly_prenotations(session, user, date):
         day = day - timedelta(days = 1)
     count = 0
     for i in range(7):
-        shifts = get_shift(session, date = day, course=None)
+        shifts = get_shift(session, date = day)
         for sh in shifts:
             ids = get_usersId_prenoted(session, shift = sh)
             if user.id in ids:
