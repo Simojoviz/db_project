@@ -9,7 +9,7 @@ from sqlalchemy.sql.operators import exists
 
 # engine = create_engine('sqlite:///database.db', echo=True)
 #engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
-engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=True)
+engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym')
 
 Base = automap_base()
 Base.prepare(engine, reflect=True)
@@ -137,8 +137,9 @@ def get_trainer(session, id=None, email=None, all=False):
 # Returns True if it was added correctly, False if the element was already contained
 def add_trainer(session, fullname=None, email=None, pwd=None, user=None):
     if user is not None:
-        if get_user(session, id=user.id) is None:
-            add_user(user)
+        if get_user(session, email=user.email) is None:
+            add_user(session,user=user)
+            dopo = get_user(session, email=user.email)
             session.add(Trainer(id=user.id))
             return True
         elif get_trainer(session, id=user.id) is None:
@@ -390,8 +391,7 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
                     print("Maximum capacity already reached")
                     return False
             else:
-                # Prenotation for a course: need no control
-                session.add(Prenotation(client_id=user.id, shift_id=shift.id))
+                print("Shift occupied by a course")
                 return True
     elif prenotation is not None:
         user_  = get_user(session, id=prenotation.client_id)
