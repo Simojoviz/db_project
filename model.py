@@ -229,7 +229,7 @@ def generate_daily_shifts(session, date):
     hour_start = weeksetting.starting
     hour_end = weeksetting.ending
     shift_length = weeksetting.length
-    course_id = get_course(session, name = 'OwnTraining').id
+    course_id = None
     rooms = get_room(session, all=True)
     
     l = []
@@ -291,7 +291,7 @@ def get_count_weekly_prenotations(session, user, date):
         day = day - timedelta(days = 1)
     count = 0
     for i in range(7):
-        shifts = get_shift(session, date = day, course_id = get_course(session, name='OwnTraining').id)
+        shifts = get_shift(session, date = day)
         for sh in shifts:
             ids = get_usersId_prenoted(session, shift = sh)
             if user.id in ids:
@@ -369,7 +369,7 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
         if exist is not None:
             return False
         else:
-            if shift.course_id == get_course(session, name='OwnTraining'):
+            if shift.course_id == None:
                 # Prenotation for OwnTraining: need some control
                 nprenoted = get_prenoted_count(session, shift=shift)
                 room_capacity = get_room(session, id=shift.room_id).max_capacity
@@ -639,7 +639,7 @@ def plan_course(session, name):
 
     course = get_course(session, name=name)
     courses_program = get_course_program(session, course_id=course.id)
-    own_training_id = get_course(session, name='OwnTraining').id
+    own_training_id = None
     print("OWN")
     print(own_training_id)
     end = course.ending + timedelta(days=0)

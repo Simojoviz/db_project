@@ -61,19 +61,6 @@ add_trainer(session, fullname='Riccardo Focardi', email='riccardo@gmail.com', pw
 
 
 
-
-# Course
-
-add_course(
-    session,
-    name = 'OwnTraining',
-    starting = datetime.datetime(year=2021, month=5, day=1),
-    ending =   datetime.datetime(year=2021, month=7, day=31),
-    max_partecipants=10,
-    instructor_id=1
-    #get_trainer(session, email="stefano@gmail.com").id
-)
-
 courses = [
     Course(name = 'Boxe',
         starting=datetime.datetime(year=2021, month=6, day=1), ending = datetime.datetime(year=2021, month=6, day=30), max_partecipants = 7, 
