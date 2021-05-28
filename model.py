@@ -22,7 +22,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     pwd = Column(String, nullable=False)
 
-    prenotations = relationship("Prenotation", back_populates="user", uselist=False)
+    prenotations = relationship("Prenotation", back_populates="user")
     courses = relationship("Course", secondary="course_signs_up", back_populates="users")
 
     def __repr__(self):
