@@ -8,11 +8,12 @@ from datetime import timedelta
 
 
 # engine = create_engine('sqlite:///database.db', echo=True)
-#engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
-engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym')
+engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
+#engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym')
 
 Base = declarative_base()
 
+# ________________________________________ TABLES ________________________________________ 
 
 class User(Base):
     __tablename__ = 'users'
@@ -25,8 +26,10 @@ class User(Base):
     prenotations = relationship("Prenotation", back_populates="user")
 
     def __repr__(self):
-        return "<User(fullname='%s', email='%s')>" % (self.fullname,
-                                                         self.email)
+        return "<User(fullname='%s', email='%s')>" % (
+            self.fullname,
+            self.email
+        )
 
 
 class Trainer(Base):
@@ -35,6 +38,13 @@ class Trainer(Base):
     id = Column(Integer, ForeignKey('users.id'), primary_key=True, nullable=False)
 
     courses = relationship("Course", back_populates="trainer")
+    user = relationship("User", back_populates="trainer")
+
+    def __repr__(self):
+        return "<Trainer(fullname='%s', email='%s')>" % (
+            self.user[0].fullname,
+            self.user[0].email
+        )
 
 
 class Shift(Base):
@@ -53,6 +63,15 @@ class Shift(Base):
     course = relationship("Course", back_populates="shifts")
     room = relationship("Room", back_populates="shifts")
 
+    def _repr_(self):
+        return "<Shift(date='%d/%d/%d', start='%d:%d', end='%d:%d', room:'%s', course:'%s')>" % (
+            self.date.day, self.date.month, self.date.year,
+            self.h_start.hour, self.h_start.minute,
+            self.h_end.hour,   self.h_end.minute,
+            self.room[0].name,
+            self.course[0].name
+        )
+
 
 class Prenotation(Base):
     __tablename__ = 'prenotations'
@@ -63,6 +82,12 @@ class Prenotation(Base):
 
     user = relationship("User", back_populates="prenotations")
     shift = relationship("Shift", back_populates="prenotations")
+    
+    # TODO relationship for n:m
+    def _repr_(self):
+        return "<CourseSignUp(user='%s', course='%s')>" % (
+            "todo", "todo"
+        )
 
 
 class GlobalSetting(Base):
@@ -70,6 +95,12 @@ class GlobalSetting(Base):
 
     name = Column(String, primary_key=True)
     value = Column(Integer, nullable=False)
+
+    def _repr_(self):
+        return "<GlobalSetting(name='%s', value='%d')>" % (
+            self.name,
+            self.value
+        )
 
 
 class WeekSetting(Base):
@@ -81,6 +112,15 @@ class WeekSetting(Base):
     length = Column(Time, nullable=False)
     capacity = Column(Integer, nullable=False)
     changed = Column(Boolean, nullable=False)
+
+    def _repr_(self):
+        return "<WeekSetting(day='%s', starting='%d:%d', ending='%d:%d', length='%d:%d', capacity='%d')>" % (
+            self.day_name,
+            self.starting.hour, self.starting.minute,
+            self.ending.hour,   self.ending.minute,
+            self.length.hour,   self.length.minute,
+            self.capacity
+        )
 
 
 class Course(Base):
@@ -97,6 +137,15 @@ class Course(Base):
     shifts = relationship("Shift", back_populates="course")
     course_programs = relationship("CourseProgram", back_populates="course")
 
+    def _repr_(self):
+        return "<Course(name='%s', starting='%d/%d/%d', ending='%d/%d/%d', max_partecipants='%d', trainer='%s')>" % (
+            self.name,
+            self.starting.day, self.starting.month, self.starting.year,
+            self.ending.day, self.ending.month, self.ending.year,
+            self.max_partecipants,
+            self.trainer[0].user[0].fullname
+        )
+
 
 class CourseProgram(Base):
     __tablename__ = 'course_programs'
@@ -110,6 +159,14 @@ class CourseProgram(Base):
     room = relationship("Room", back_populates="course_programs")
     course = relationship("Course", back_populates="course_programs")
 
+    def _repr_(self):
+        return "<CourseProgram(weekday='%s', turn number='%d', room='%s', course='%s')>" % (
+            self.week_day,
+            self.turn_number,
+            self.room[0].name,
+            self.course[0].name,
+        )
+
 
 class Room(Base):
     __tablename__ = 'rooms'
@@ -121,6 +178,12 @@ class Room(Base):
     shifts = relationship("Shift", back_populates="room")
     course_programs = relationship("CourseProgram", back_populates="room")
 
+    def _repr_(self):
+        return "<Room(name='%s', capacity='%d')>" % (
+            self.name,
+            self.max_capacity,
+        )
+
 
 class CourseSignUp(Base):
     __tablename__ = 'course_signs_up'
@@ -128,6 +191,12 @@ class CourseSignUp(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     course_id = Column(Integer, ForeignKey('courses.id'), nullable=False)
+
+    # TODO relationship for n:m
+    def _repr_(self):
+        return "<CourseSignUp(user='%s', course='%s')>" % (
+            "todo", "todo"
+        )
 
 
 # ________________________________________ UTILITIES ________________________________________ 
@@ -154,19 +223,6 @@ def min(a, b):
     if a<b:
         return a
     return b
-
-
-# ________________________________________ TO STRING ________________________________________ 
-
-
-# Return the given input as a string
-def to_string(user=None, shift=None):
-    if user is not None:
-        return user.fullname + "(" + user.email + ")\n"
-    elif shift is not None:
-        return "Day: " + shift.date.strftime("%Y-%m-%d") +\
-               " ("    + shift.h_start.strftime("%H:%M") +\
-               " --> " + shift.h_end.strftime("%H:%M") + ")\n"
 
 
 # ________________________________________ USER ________________________________________ 
