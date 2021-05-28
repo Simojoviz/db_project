@@ -22,7 +22,8 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     pwd = Column(String, nullable=False)
 
-    prenotations = relationship("Prenotation", back_populates="user")
+    prenotations = relationship("Prenotation", back_populates="user", uselist=False)
+    courses = relationship("Course", secondary="course_signs_up", back_populates="users")
 
     def __repr__(self):
         return "<User(fullname='%s', email='%s')>" % (self.fullname,
@@ -95,6 +96,7 @@ class Course(Base):
 
     trainer = relationship("Trainer", back_populates="courses")
     shifts = relationship("Shift", back_populates="course")
+    users = relationship("User", secondary="course_signs_up", back_populates="courses")
     course_programs = relationship("CourseProgram", back_populates="course")
 
 
@@ -105,7 +107,7 @@ class CourseProgram(Base):
     week_day = Column(String, nullable=False)
     turn_number = Column(Integer, nullable=False)
     room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
-    course_id = Column(Integer, ForeignKey('course.id'), nullable=False)
+    course_id = Column(Integer, ForeignKey('courses.id'), nullable=False)
 
     room = relationship("Room", back_populates="course_programs")
     course = relationship("Course", back_populates="course_programs")
@@ -913,7 +915,7 @@ def add_course_sign_up(session, user=None, course=None, course_sign_up=None):
         return False
 
 
-# Adds all CourseSignUp from the list given to the Database
+# Adds all CourseSignUp from the list given to the sDatabase
 # Returns True if all elements were added,
 # False if at least one was already contained or the maximum capacity has already been reached for that shift
 def add_course_sign_up_from_list(session, course_sign_up_list):
