@@ -39,7 +39,7 @@ class Trainer(Base):
     id = Column(Integer, ForeignKey('users.id'), primary_key=True, nullable=False)
 
     courses = relationship("Course", back_populates="trainer")
-    user = relationship("User", back_populates="trainer")
+    #user = relationship("User", back_populates="trainer")
 
     def __repr__(self):
         return "<Trainer(fullname='%s', email='%s')>" % (
@@ -571,7 +571,7 @@ def get_week_setting(session, day_name=None, all=False):
         return None
 
 # Update the WeekSetting with the given parameters
-def update_weekend_setting(session, day_name, starting=None, ending=None, length=None, capacity=None):
+def update_weekend_setting(session, day_name, starting=None, ending=None, length=None):
     
     any_change = False
 
@@ -599,20 +599,14 @@ def update_weekend_setting(session, day_name, starting=None, ending=None, length
         session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.length:length}, synchronize_session = False)
         any_change = True
 
-    if capacity is not None:
-        covid_capacity = get_global_setting(session, name='CovidCapacity').value
-        capacity = clamp(capacity, 1, covid_capacity)
-        session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.capacity:capacity}, synchronize_session = False)
-        any_change = True
-
     session.query(WeekSetting).filter(WeekSetting.day_name == day_name).update({WeekSetting.changed:any_change}, synchronize_session = False)
     
     
 
 # - Given a WeekSetting add it to the Database
-# - Given WeekSetting's day_name, starting, ending, length and capacity add it to the Database
+# - Given WeekSetting's day_name, starting, ending and length  add it to the Database
 # Returns True if it was added correctly, False if the element was already contained
-def add_week_setting(session, day_name=None, starting=None, ending=None, length=None, capacity=None, changed=True, week_setting=None):
+def add_week_setting(session, day_name=None, starting=None, ending=None, length=None, week_setting=None):
     if week_setting is not None:
         exist = get_week_setting(session, day_name=week_setting.day_name)
         if exist is not None:
@@ -854,7 +848,7 @@ def get_course_program(session, id=None, course_id=None, all=False):
 # Returns True if it was added correctly, False if the element was already contained
 def add_course_program(session, week_day=None, turn_number=None, room_id=None, course_id=None, course_program=None,):
     if course_program is not None:
-        exist = get_course_program(session, name=course_program.name)
+        exist = get_course_program(session, id=course_program.id)
         if exist is not None:
             return False
         else:

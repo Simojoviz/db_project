@@ -84,7 +84,6 @@ class WeekSetting(Base):
     starting = Column(Time, nullable=False)
     ending = Column(Time, nullable=False)
     length = Column(Time, nullable=False)
-    capacity = Column(Integer, nullable=False)
     changed = Column(Boolean, nullable=False)
 
 
@@ -196,7 +195,7 @@ week_settings = [
     WeekSetting(day_name='Thursday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00), changed = True),
     WeekSetting(day_name='Friday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), changed = True),
     WeekSetting(day_name='Saturday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=15, minute=00), length=datetime.time(hour=1, minute=30), changed = True),
-    WeekSetting(day_name='Sunday',    starting=datetime.time(hour=0, minute= 1),  ending=datetime.time(hour=00, minute=0),  length=datetime.time(hour=0, minute=0), changed = True),
+    WeekSetting(day_name='Sunday',    starting=datetime.time(hour=0, minute= 1),  ending=datetime.time(hour=00, minute=0), length=datetime.time(hour=0, minute=0), changed = True),
 ]
 
 for ws in week_settings:
