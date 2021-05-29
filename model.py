@@ -24,8 +24,6 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     pwd = Column(String, nullable=False)
 
-    __table_args__ = (UniqueConstraint('email'),)
-
     prenotations = relationship("Prenotation", viewonly=True)
     prenotations_shifts = relationship("Shift", secondary="prenotations", back_populates="users_prenotated")
     courses = relationship("Course", secondary="course_signs_up", back_populates="users")
@@ -130,14 +128,11 @@ class Course(Base):
     __tablename__ = 'courses'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
+    name = Column(String, unique=True, nullable=False)
     starting = Column(Date, nullable=False)
     ending = Column(Date, nullable=False)
     max_partecipants = Column(Integer, nullable=False)
     instructor_id = Column(Integer, ForeignKey('trainers.id'), nullable=False)
-
-    __table_args__ = (UniqueConstraint('name'),)
-
 
     trainer = relationship("Trainer", back_populates="courses")
     shifts = relationship("Shift", back_populates="course")
@@ -179,10 +174,8 @@ class Room(Base):
     __tablename__ = 'rooms'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
+    name = Column(String, unique=True, nullable=False)
     max_capacity = Column(Integer, nullable=False)
-
-    __table_args__ = (UniqueConstraint('name'),)
 
     shifts = relationship("Shift", back_populates="room")
     course_programs = relationship("CourseProgram", back_populates="room")
