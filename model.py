@@ -267,7 +267,7 @@ def add_trainer(session, fullname=None, email=None, pwd=None, user=None):
         return False
 
     
-# Adds all Trainers from the list given to the Database
+# Adds all Trainers from the user_list given to the Database
 # Returns True if all elements were added, False if at least one was already contained
 def add_trainer_from_list(session, user_list):
     b = True
@@ -285,11 +285,11 @@ def add_trainer_from_list(session, user_list):
 # Otherwise return None
 def get_shift(session, date=None, start=None, prenotation=None, id=None, course_id=None, room_id=None, all=False):
 
-    # 4
+    # Four parameters
     if date is not None and start is not None and room_id is not None and course_id is not None:
         return session.query(Shift).filter(Shift.date == date, Shift.h_start == start, Shift.room_id == room_id, Shift.course_id == course_id).one_or_none()
     
-    # 3
+    # Three parameters
     elif start is not None and date is not None and course_id is not None:
         return session.query(Shift).filter(Shift.h_start == start, Shift.date == date, Shift.course_id == Shift.course_id).one_or_none()
     elif start is not None and date is not None and room_id is not None:
@@ -299,7 +299,7 @@ def get_shift(session, date=None, start=None, prenotation=None, id=None, course_
     elif room_id is not None and date is not None and course_id is not None:
         return session.query(Shift).filter(Shift.room_id == room_id, Shift.date == date, Shift.course_id == Shift.course_id).all()
     
-    # 2
+    # Two parameters
     elif start is not None and date is not None:
         return session.query(Shift).filter(Shift.h_start == start, Shift.date == date).all()
     elif start is not None and course_id is not None:
@@ -313,7 +313,7 @@ def get_shift(session, date=None, start=None, prenotation=None, id=None, course_
     elif course_id is not None and room_id is not None:
         return session.query(Shift).filter(Shift.course_id == course_id, Shift.room_id == room_id).all()
 
-    # 1
+    # One parameter
     elif date is not None:
         return session.query(Shift).filter(Shift.date == date).all()
     elif course_id is not None:
@@ -321,12 +321,11 @@ def get_shift(session, date=None, start=None, prenotation=None, id=None, course_
     elif room_id is not None:
         return session.query(Shift).filter(Shift.room_id == room_id).all()
     
+
     elif id is not None:
         return session.query(Shift).filter(Shift.id == id).one_or_none()
     elif prenotation is not None:
-        return session.query(Shift).filter(Shift.id == prenotation.shift_id).one_or_none()
-    elif prenotation is not None:
-        return session.query(Shift).filter(Shift.id == prenotation.shift_id).one_or_none()
+        return prenotation.shift 
     elif all is True:
         return session.query(Shift).all()
     else:
@@ -384,13 +383,13 @@ def plan_shifts(session, starting, n=1, ending=None):
 
 
 # Returns all user-id who has prenoted for the shift given
-def get_usersId_prenoted(session, shift):
-    return session.query(User.id).join(Prenotation).filter(Prenotation.shift_id == shift.id)
+#def get_usersId_prenoted(session, shift):
+#   return session.query(User.id).join(Prenotation).filter(Prenotation.shift_id == shift.id)
 
 
 # Returns the number of prenotations for the given Shift
-def get_prenoted_count(session, shift):
-    return get_usersId_prenoted(session, Shift).count()
+#def get_prenoted_count(session, shift):
+ #   return get_usersId_prenoted(session, Shift).count()
 
 
 # Returns the number of own-training-week-prenotations for the  given the user and a date
@@ -403,8 +402,8 @@ def get_count_weekly_prenotations(session, user, date):
     for i in range(7):
         shifts = get_shift(session, date = day)
         for sh in shifts:
-            ids = get_usersId_prenoted(session, shift = sh)
-            if user.id in ids:
+            users = sh.users_prenotated
+            if user in users:
                 count += 1
         day = day + timedelta(days = 1)
     
@@ -479,11 +478,14 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
         else:
             if shift.course_id == None:
                 # Prenotation for OwnTraining: need some control
-                nprenoted = get_prenoted_count(session, shift=shift)
+                #nprenoted = get_prenoted_count(session, shift=shift)
+                nprenoted = len(shift.users_prenotated)
                 room_capacity = get_room(session, id=shift.room_id).max_capacity
                 if(nprenoted < room_capacity):
-                    prenoted = get_usersId_prenoted(session, Shift)
-                    if user.id not in prenoted:
+                    #prenoted = get_usersId_prenoted(session, shift)
+                    #if user.id not in prenoted:
+                    user_prenoted = shift.users_prenotated
+                    if user not in user_prenoted:
                         max_ = get_global_setting(session, name='MaxWeeklyEntry').value
                         count = get_count_weekly_prenotations(session, user, shift.date)
                         if (count < max_):
