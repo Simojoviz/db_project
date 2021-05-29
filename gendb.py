@@ -21,7 +21,9 @@ class User(Base):
 
     __table_args__ = (UniqueConstraint('email'),)
 
-    prenotations = relationship("Prenotation", back_populates="user")
+    prenotations = relationship("Prenotation", viewonly=True)
+    prenotations_shifts = relationship("Shift", secondary="prenotations", back_populates="users_prenotated")
+    courses = relationship("Course", secondary="course_signs_up", back_populates="users")
 
     def __repr__(self):
         return "<User(fullname='%s', email='%s')>" % (self.fullname,
@@ -48,7 +50,8 @@ class Shift(Base):
 
     __table_args__ = (UniqueConstraint('date', 'h_start', 'room_id'),)
 
-    prenotations = relationship("Prenotation", back_populates="shift")
+    prenotations = relationship("Prenotation", viewonly=True)
+    users_prenotated = relationship("User", secondary="prenotations", back_populates="prenotations_shifts")
     course = relationship("Course", back_populates="shifts")
     room = relationship("Room", back_populates="shifts")
 
@@ -60,8 +63,8 @@ class Prenotation(Base):
     client_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     shift_id = Column(Integer, ForeignKey('shifts.id'), nullable=False)
 
-    user = relationship("User", back_populates="prenotations")
-    shift = relationship("Shift", back_populates="prenotations")
+    user = relationship("User", viewonly=True)
+    shift = relationship("Shift", viewonly=True)
 
 
 class GlobalSetting(Base):
@@ -95,6 +98,7 @@ class Course(Base):
 
     trainer = relationship("Trainer", back_populates="courses")
     shifts = relationship("Shift", back_populates="course")
+    users = relationship("User", secondary="course_signs_up", back_populates="courses")
     course_programs = relationship("CourseProgram", back_populates="course")
 
 
