@@ -179,7 +179,7 @@ def to_string(user=None, shift=None):
 # - Given the id,        returns the User who has got that id if exists
 # - If all flag is true, returns all Users
 # Otherwise return None
-def get_user(session, id=None, email=None, prenotation=None, course_signing_up=None, all=False):
+def get_user(session, id=None, email=None, all=False):
     if id is not None:
         return session.query(User).filter(User.id == id).one_or_none()
     elif email is not None:
@@ -229,7 +229,7 @@ def get_trainer(session, id=None, email=None, all=False):
     if id is not None:
         return session.query(Trainer).filter(Trainer.id == id).one_or_none()
     elif email is not None:
-        user = session.query(User).filter(User.email == email).one_or_none()
+        user = get_user(session, email=email)
         if user is not None:
             return get_trainer(session, id=user.id)
         else:
@@ -239,26 +239,29 @@ def get_trainer(session, id=None, email=None, all=False):
     else:
         return None
 
-# - Given User who is not a Trainer adds it to the database as a Trainer
-# - Given fullname, email and password of a User who is not in the database adds it to Users and Trainers
+# - Given a User, if it's neither a User nor a Trainer, adds it to the database both as User and Trainer; returns True
+#                 if it's a User yet, but not a Trainer, adds it to the database as a Trainer; return True
+#                 if it's both a User and Trainer yet, returns False
+# - Given fullname, email and password of a User does the same as above
 # Returns True if it was added correctly, False if the element was already contained
 def add_trainer(session, fullname=None, email=None, pwd=None, user=None):
     if user is not None:
         if get_user(session, email=user.email) is None:
+            # a) Neither a User nor a Trainer
             add_user(session,user=user)
-            dopo = get_user(session, email=user.email)
-            session.add(Trainer(id=user.id))
+            new = get_user(session, email=user.email)
+            session.add(Trainer(id=new.id))
             return True
         elif get_trainer(session, id=user.id) is None:
+            # b) User yet, but not a Trainer
             session.add(Trainer(id=user.id))
             return True
-        else:            
-            print("The user is already a Trainer")
+        else:  
+            # c) Both a User and a Trainer
             return False
     elif fullname is not None and\
          email    is not None and\
          pwd      is not None: 
-        exists = get_user(session, email = email)
         return add_trainer(session, user=User(fullname=fullname, email=email, pwd=pwd))
     else:
         return False
@@ -435,7 +438,6 @@ def add_shift_from_list(session, shift_list):
     b = True
     for shift in shift_list:
         c = add_shift(session, shift=shift)
-        print(c)
         b &= c
     return b
 
@@ -746,8 +748,6 @@ def plan_course(session, name):
     course = get_course(session, name=name)
     courses_program = get_course_program(session, course_id=course.id)
     own_training_id = None
-    print("OWN")
-    print(own_training_id)
     end = course.ending + timedelta(days=0)
     for prog in courses_program:
         dayname = prog.week_day
