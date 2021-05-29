@@ -8,11 +8,10 @@ from datetime import timedelta
 
 
 # engine = create_engine('sqlite:///database.db', echo=True)
-#engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
-engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym')
+engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
+# engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym')
 
 Base = declarative_base()
-
 
 class User(Base):
     __tablename__ = 'users'
@@ -90,7 +89,7 @@ class Course(Base):
     __tablename__ = 'courses'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
+    name = Column(String, unique=True, nullable=False)
     starting = Column(Date, nullable=False)
     ending = Column(Date, nullable=False)
     max_partecipants = Column(Integer, nullable=False)
@@ -119,7 +118,7 @@ class Room(Base):
     __tablename__ = 'rooms'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
+    name = Column(String, unique=True, nullable=False)
     max_capacity = Column(Integer, nullable=False)
 
     shifts = relationship("Shift", back_populates="room")
@@ -415,7 +414,6 @@ def get_count_weekly_prenotations(session, user, date):
 def add_shift(session, shift=None, date=None, start=None, end=None, room_id=None, course_id=None):
     if shift is not None:
         exist = get_shift(session, date=shift.date, start=shift.h_start, room_id=shift.room_id)
-        print(exist!=None)
         if exist is not None:
             return False
         else:
