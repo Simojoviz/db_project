@@ -19,6 +19,8 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     pwd = Column(String, nullable=False)
 
+    __table_args__ = (UniqueConstraint('email'),)
+
     prenotations = relationship("Prenotation", back_populates="user")
 
     def __repr__(self):
@@ -76,7 +78,6 @@ class WeekSetting(Base):
     starting = Column(Time, nullable=False)
     ending = Column(Time, nullable=False)
     length = Column(Time, nullable=False)
-    capacity = Column(Integer, nullable=False)
     changed = Column(Boolean, nullable=False)
 
 
@@ -89,6 +90,8 @@ class Course(Base):
     ending = Column(Date, nullable=False)
     max_partecipants = Column(Integer, nullable=False)
     instructor_id = Column(Integer, ForeignKey('trainers.id'), nullable=False)
+
+    __table_args__ = (UniqueConstraint('name'),)
 
     trainer = relationship("Trainer", back_populates="courses")
     shifts = relationship("Shift", back_populates="course")
@@ -114,6 +117,8 @@ class Room(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     max_capacity = Column(Integer, nullable=False)
+
+    __table_args__ = (UniqueConstraint('name'),)
 
     shifts = relationship("Shift", back_populates="room")
     course_programs = relationship("CourseProgram", back_populates="room")

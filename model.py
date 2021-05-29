@@ -23,6 +23,8 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     pwd = Column(String, nullable=False)
 
+    __table_args__ = (UniqueConstraint('email'),)
+
     prenotations = relationship("Prenotation", back_populates="user")
     courses = relationship("Course", secondary="course_signs_up", back_populates="users")
 
@@ -43,8 +45,8 @@ class Trainer(Base):
 
     def __repr__(self):
         return "<Trainer(fullname='%s', email='%s')>" % (
-            self.user[0].fullname,
-            self.user[0].email
+            self.user.fullname,
+            self.user.email
         )
 
 
@@ -69,8 +71,8 @@ class Shift(Base):
             self.date.day, self.date.month, self.date.year,
             self.h_start.hour, self.h_start.minute,
             self.h_end.hour,   self.h_end.minute,
-            self.room[0].name,
-            self.course[0].name
+            self.room.name,
+            self.course.name
         )
 
 
@@ -111,16 +113,14 @@ class WeekSetting(Base):
     starting = Column(Time, nullable=False)
     ending = Column(Time, nullable=False)
     length = Column(Time, nullable=False)
-    capacity = Column(Integer, nullable=False)
     changed = Column(Boolean, nullable=False)
 
     def _repr_(self):
-        return "<WeekSetting(day='%s', starting='%d:%d', ending='%d:%d', length='%d:%d', capacity='%d')>" % (
+        return "<WeekSetting(day='%s', starting='%d:%d', ending='%d:%d', length='%d:%d')>" % (
             self.day_name,
             self.starting.hour, self.starting.minute,
             self.ending.hour,   self.ending.minute,
             self.length.hour,   self.length.minute,
-            self.capacity
         )
 
 
@@ -134,6 +134,9 @@ class Course(Base):
     max_partecipants = Column(Integer, nullable=False)
     instructor_id = Column(Integer, ForeignKey('trainers.id'), nullable=False)
 
+    __table_args__ = (UniqueConstraint('name'),)
+
+
     trainer = relationship("Trainer", back_populates="courses")
     shifts = relationship("Shift", back_populates="course")
     users = relationship("User", secondary="course_signs_up", back_populates="courses")
@@ -145,7 +148,7 @@ class Course(Base):
             self.starting.day, self.starting.month, self.starting.year,
             self.ending.day, self.ending.month, self.ending.year,
             self.max_partecipants,
-            self.trainer[0].user[0].fullname
+            self.trainer.user.fullname
         )
 
 
@@ -165,8 +168,8 @@ class CourseProgram(Base):
         return "<CourseProgram(weekday='%s', turn number='%d', room='%s', course='%s')>" % (
             self.week_day,
             self.turn_number,
-            self.room[0].name,
-            self.course[0].name,
+            self.room.name,
+            self.course.name,
         )
 
 
@@ -176,6 +179,8 @@ class Room(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     max_capacity = Column(Integer, nullable=False)
+
+    __table_args__ = (UniqueConstraint('name'),)
 
     shifts = relationship("Shift", back_populates="room")
     course_programs = relationship("CourseProgram", back_populates="room")
@@ -194,14 +199,19 @@ class CourseSignUp(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     course_id = Column(Integer, ForeignKey('courses.id'), nullable=False)
 
-    # TODO relationship for n:m
+    user = relationship("User", back_populates="prenotations")
+    course = relationship("Course", back_populates="prenotations")
+
+    
     def _repr_(self):
         return "<CourseSignUp(user='%s', course='%s')>" % (
-            "todo", "todo"
+            self.user.fullname,
+            self.course.fullname
         )
 
 
 # ________________________________________ UTILITIES ________________________________________ 
+
 
 # Clamp the value X in the interval [A,B] given
 def clamp(x, a, b):
@@ -234,7 +244,7 @@ def min(a, b):
 # - Given the id,        returns the User who has got that id if exists
 # - If all flag is true, returns all Users
 # Otherwise return None
-def get_user(session, id=None, email=None, prenotation=None, course_signing_up=None, all=False):
+def get_user(session, id=None, email=None, all=False):
     if id is not None:
         return session.query(User).filter(User.id == id).one_or_none()
     elif email is not None:
