@@ -9,7 +9,8 @@ from datetime import timedelta
 
 # engine = create_engine('sqlite:///database.db', echo=True)
 #engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
-engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym')
+#engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym')
+engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
 
 Base = declarative_base()
 
@@ -218,7 +219,27 @@ def add_user_from_list(session, user_list):
         b &= add_user(session, user=user)
     return b
 
+#Updates the given user with the given attribute
+#Returns True if the user was updated, False otherwise
+def update_user(session, user=None, fullname=None, email=None, pwd=None):
+    if user is not None:
+        if fullname is not None:
+            session.query(User).filter(User.fullname == user.fullname).update({User.fullname:fullname}, synchronize_session = False)
+        elif email is not None:
+            user = get_user(session, email=email)
+            if user is not None:
+                print("la mail è già presente!")
+                return False
+            session.query(User).filter(User.email == user.email).update({User.email:email}, synchronize_session = False)
+        elif pwd is not None:
+            session.query(User).filter(User.pwd == user.pwd).update({User.pwd:pwd}, synchronize_session = False)
+        return True
+    else:
+        return False
 
+#---TODO---
+def delete_user(session, user=None):
+        return False
 # ________________________________________ TRAINER ________________________________________ 
 
 
@@ -264,7 +285,7 @@ def add_trainer(session, fullname=None, email=None, pwd=None, user=None):
     else:
         return False
 
-    
+
 # Adds all Trainers from the list given to the Database
 # Returns True if all elements were added, False if at least one was already contained
 def add_trainer_from_list(session, user_list):
@@ -273,6 +294,21 @@ def add_trainer_from_list(session, user_list):
         b &= add_trainer(session, user=us)
     return b
 
+#Updates a trainer with the given parameter
+def update_trainer(session, trainer=None, fullname=None, email=None, pwd=None):
+    if trainer is not None:
+        user = get_user(session, id = trainer.id)
+        if fullname is not None:
+            return update_user(session, user = user, fullname = fullname)
+        elif email is not None:
+            return update_user(session, user = user, email = email)
+        elif pwd is not None:
+            return update_user(session, user = user, pwd = pwd)
+    return False
+
+#---TODO---
+def delete_trainer(session, trainer=None):
+    return False
 
 # ________________________________________ SHIFT ________________________________________ 
 
@@ -441,6 +477,9 @@ def add_shift_from_list(session, shift_list):
         b &= c
     return b
 
+#---TODO---
+def delete_shift(session, shift=None, all=False):
+    return False
 
 # ________________________________________ PRENOTATION ________________________________________ 
 
@@ -519,6 +558,17 @@ def add_prenotation_from_list(session, prenotation_list):
     return b
 
 
+#Delete the given prenotation with the given parameter
+#Returns True if the prenotation was deleted, False otherwise
+def delete_prenotation(session, prenotation=None, shift=None, user=None):
+    if prenotation is not None:
+        if shift is not None:
+            pr = get_prenotation(session, shift = shift)
+        elif user is not None:
+            pr = get_prenotation(session, user=user)
+        session.delete(pr)
+        return True
+    return False
 # ________________________________________ WEEK SETTING ________________________________________
 
 
@@ -598,7 +648,15 @@ def add_week_setting(session, week_setting=None, day_name=None, starting=None, e
     else:
         return False
 
-
+def delete_week_setting(session, week_setting=None, day_name=None, all=False):
+    if week_setting is not None:
+        if day_name is not None:
+            ws = get_week_setting(session,day_name = day_name)
+        elif all is True:
+            ws = get_week_setting(session, all = True)
+        session.delete(ws)
+        return True
+    return False
 
 # ________________________________________ GLOBAL SETTING ________________________________________
 
@@ -670,6 +728,15 @@ def update_global_setting(session, CovidCapacity=None, MinutesShiftLength=None, 
         )
         update('MaxWeeklyEntry', MaxWeeklyEntry)
 
+def delete_global_setting(session, global_setting=None, name=None, all=False):
+    if global_setting is not None:
+        if name is not None:
+            gs = get_global_setting(session, name = name)
+        elif all is True:
+            gs = get_global_setting(session, all = True)
+        session.delete(gs)
+        return True
+    return False
 
 # ________________________________________ ROOM ________________________________________
 
@@ -713,6 +780,22 @@ def add_room_from_list(session, rooms_list):
         b &= add_room(session, room=room)
     return b
 
+def update_room(session, room=None, name=None, max_capacity=None):
+    if room is not None:
+        if name is not None:
+            r = session.query(Room).filter(Room.name == name).one_or_none()
+            if r is not None:
+                print("il nome esiste già!")
+                return False
+            session.query(Room).filter(Room.name == room.name).update({Room.name:name}, synchronize_session = False)
+        elif max_capacity is not None and max_capacity > 0:
+            session.query(Room).filter(Room.max_capacity == room.max_capacity).update({Room.max_capacity:max_capacity}, synchronize_session = False)
+        return True
+    return False
+
+#---TODO---         
+def delete_room(session, room=None, all=False):
+    return False
 
 # ________________________________________ COURSE ________________________________________
 
@@ -804,6 +887,13 @@ def add_course_from_list(session, courses_list):
         b &= add_course(session, course=course)
     return b
 
+#---TODO---
+def update_course(session, course=None, starting=None, ending=None, max_partecipants=None, instructor_id=None):
+    return False
+
+#---TODO---
+def delete_course(session, course=None, all=None):
+    return False
 
 # ________________________________________ COURSE PROGRAM ________________________________________
 
@@ -849,6 +939,13 @@ def add_course_program_from_list(session, course_programs_list):
         b &= add_course_program(session, course_program=course_program)
     return b
 
+#---TODO---
+def update_course_program(session, course_program=None, week_day=None, turn_number=None, room_id=None, course_id=None):
+    return False
+
+#---TODO---
+def delete_course_program(session, course_program=None, all=False):
+    return False
 
 # ________________________________________ COURSE SIGN UP ________________________________________
 
@@ -925,3 +1022,13 @@ def add_course_sign_up_from_list(session, course_sign_up_list):
     for course_sign_up in course_sign_up_list:
         b &= add_course_sign_up(session, course_sign_up=course_sign_up)
     return b
+
+def delete_course_sign_up(session, course_sign_up=None, course=None, user=None):
+    if course_sign_up is not None:
+        if course is not None:
+            cs = get_course_sign_up(session,course_id=course.id)
+        elif user is not None:
+            cs = get_course_sign_up(session,user_id=user.id)
+        session.delete(cs)
+        return True
+    return False

@@ -92,8 +92,7 @@ for ws in week_settings:
 # GlobalSettings
 global_settings = [
     GlobalSetting(name='MaxWeeklyEntry',       value =   3),   # max-week entry
-    GlobalSetting(name='MaxCapacity',          value =  15),   # max-capacity of weight-room
-    GlobalSetting(name='CovidCapacity',        value =  10),   # max-capacity of weight-room due to covid-rules
+    GlobalSetting(name='MaxCapacity',          value =  15),   # max-capacity of every room
     GlobalSetting(name='MinutesShiftLength',   value =  90),   # stanadard shifts' length in minutes
     GlobalSetting(name='MaximumShiftLength',   value = 180),   # maximum shift's length
     GlobalSetting(name='MinimumShiftLength',   value =  30),   # minimum shift's length
@@ -177,6 +176,7 @@ add_course_sign_up(
     course=get_course(session, name='Zumba'),
 )
 
+update_user(session, get_user(session, email='andrea@gmail.com'), pwd='andrea2')
 
 session.commit()
 session.close()
