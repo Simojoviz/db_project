@@ -55,8 +55,6 @@ def load_user(user_id):
 def home():
     session = Session()
     try:
-        users = get_user(session, all=True)
-
         session.commit()
         return render_template("home.html", users=users)
     except:
@@ -112,20 +110,6 @@ def private():
     try:
         email = current_user.email
         user = get_user(session, email=email)
-        prenotations = get_prenotation(session, user=user)
-        signups = get_course_sign_up(session, user_id = user.id)
-        s = []
-        c = []
-
-        for p in prenotations:
-            sh = get_shift(session, prenotation=p)
-            s.append(to_string(shift=sh))
-
-        for si in signups:
-            course = get_course(session, id = si.course_id)
-            c.append(course)
-
-        resp = make_response(render_template("private.html", us = user, prenotations=s, courses=c))
         
         session.commit()
         return resp
