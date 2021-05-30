@@ -1,11 +1,10 @@
-from operator import le
 from sqlalchemy import create_engine
 
 import datetime
 from datetime import timedelta
 import calendar
 
-from relationship import *
+from automap import *
 
 
 # engine = create_engine('sqlite:///database.db', echo=True)
