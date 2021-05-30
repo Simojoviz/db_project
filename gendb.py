@@ -19,8 +19,6 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     pwd = Column(String, nullable=False)
 
-    __table_args__ = (UniqueConstraint('email'),)
-
     prenotations = relationship("Prenotation", viewonly=True)
     prenotations_shifts = relationship("Shift", secondary="prenotations", back_populates="users_prenotated")
     courses = relationship("Course", secondary="course_signs_up", back_populates="users")
@@ -55,6 +53,15 @@ class Shift(Base):
     course = relationship("Course", back_populates="shifts")
     room = relationship("Room", back_populates="shifts")
 
+    def _repr_(self):
+        return "<Shift(date='%d/%d/%d', start='%d:%d', end='%d:%d', room:'%s', course:'%s')>" % (
+            self.date.day, self.date.month, self.date.year,
+            self.h_start.hour, self.h_start.minute,
+            self.h_end.hour,   self.h_end.minute,
+            self.room.name,
+            self.course.name
+        )
+
 
 class Prenotation(Base):
     __tablename__ = 'prenotations'
@@ -73,6 +80,12 @@ class GlobalSetting(Base):
     name = Column(String, primary_key=True)
     value = Column(Integer, nullable=False)
 
+    def _repr_(self):
+        return "<GlobalSetting(name='%s', value='%d')>" % (
+            self.name,
+            self.value
+        )
+
 
 class WeekSetting(Base):
     __tablename__ = 'week_setting'
@@ -83,23 +96,38 @@ class WeekSetting(Base):
     length = Column(Time, nullable=False)
     changed = Column(Boolean, nullable=False)
 
+    def _repr_(self):
+        return "<WeekSetting(day='%s', starting='%d:%d', ending='%d:%d', length='%d:%d', capacity='%d')>" % (
+            self.day_name,
+            self.starting.hour, self.starting.minute,
+            self.ending.hour,   self.ending.minute,
+            self.length.hour,   self.length.minute,
+            self.capacity
+        )
 
 class Course(Base):
     __tablename__ = 'courses'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
+    name = Column(String, unique=True, nullable=False)
     starting = Column(Date, nullable=False)
     ending = Column(Date, nullable=False)
     max_partecipants = Column(Integer, nullable=False)
     instructor_id = Column(Integer, ForeignKey('trainers.id'), nullable=False)
 
-    __table_args__ = (UniqueConstraint('name'),)
-
     trainer = relationship("Trainer", back_populates="courses")
     shifts = relationship("Shift", back_populates="course")
     users = relationship("User", secondary="course_signs_up", back_populates="courses")
     course_programs = relationship("CourseProgram", back_populates="course")
+
+    def _repr_(self):
+        return "<Course(name='%s', starting='%d/%d/%d', ending='%d/%d/%d', max_partecipants='%d', trainer='%s')>" % (
+            self.name,
+            self.starting.day, self.starting.month, self.starting.year,
+            self.ending.day, self.ending.month, self.ending.year,
+            self.max_partecipants,
+            self.trainer.user.fullname
+        )
 
 
 class CourseProgram(Base):
@@ -114,19 +142,29 @@ class CourseProgram(Base):
     room = relationship("Room", back_populates="course_programs")
     course = relationship("Course", back_populates="course_programs")
 
+    def _repr_(self):
+        return "<CourseProgram(weekday='%s', turn number='%d', room='%s', course='%s')>" % (
+            self.week_day,
+            self.turn_number,
+            self.room.name,
+            self.course.name,
+        )
 
 class Room(Base):
     __tablename__ = 'rooms'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
+    name = Column(String, unique=True, nullable=False)
     max_capacity = Column(Integer, nullable=False)
-
-    __table_args__ = (UniqueConstraint('name'),)
 
     shifts = relationship("Shift", back_populates="room")
     course_programs = relationship("CourseProgram", back_populates="room")
 
+    def _repr_(self):
+        return "<Room(name='%s', capacity='%d')>" % (
+            self.name,
+            self.max_capacity,
+        )
 
 class CourseSignUp(Base):
     __tablename__ = 'course_signs_up'
