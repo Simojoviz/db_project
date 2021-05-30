@@ -1,29 +1,16 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import sessionmaker
-from model import*
+
 import datetime
 
+from model import*
+from automap import*
+
 # engine = create_engine('sqlite:///database.db', echo=True)
-engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
+engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
+#engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=True)
 
-Base = automap_base()
-Base.prepare(engine, reflect=True)
-
-# Import classes
-User          = Base.classes.users
-Trainer       = Base.classes.trainers
-Prenotation   = Base.classes.prenotations
-Shift         = Base.classes.shifts
-WeekSetting   = Base.classes.week_setting
-GlobalSetting = Base.classes.global_setting
-Course        = Base.classes.courses
-CourseProgram = Base.classes.course_programs
-Room          = Base.classes.rooms
-CourseSignUp  = Base.classes.course_signs_up
-
-
-Session = sessionmaker(bind=engine)
+Session = sessionmaker(bind=engine, autoflush=True)
 session = Session()
 
 
@@ -60,19 +47,6 @@ add_trainer(session, fullname='Riccardo Focardi', email='riccardo@gmail.com', pw
 
 
 
-
-# Course
-
-add_course(
-    session,
-    name = 'OwnTraining',
-    starting = datetime.datetime(year=2021, month=5, day=1),
-    ending =   datetime.datetime(year=2021, month=7, day=31),
-    max_partecipants=10,
-    instructor_id=1
-    #get_trainer(session, email="stefano@gmail.com").id
-)
-
 courses = [
     Course(name = 'Boxe',
         starting=datetime.datetime(year=2021, month=6, day=1), ending = datetime.datetime(year=2021, month=6, day=30), max_partecipants = 7, 
@@ -89,13 +63,13 @@ add_course_from_list(session, courses)
 
 # WeekSetting
 week_settings = [
-    WeekSetting(day_name='Monday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), capacity = 10, changed = True),
-    WeekSetting(day_name='Tuesday',   starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00), capacity = 12, changed = True),
-    WeekSetting(day_name='Wednesday', starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), capacity = 10, changed = True),
-    WeekSetting(day_name='Thursday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00), capacity = 12, changed = True),
-    WeekSetting(day_name='Friday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), capacity = 10, changed = True),
-    WeekSetting(day_name='Saturday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=15, minute=00), length=datetime.time(hour=1, minute=30), capacity =  8, changed = True),
-    WeekSetting(day_name='Sunday',    starting=datetime.time(hour=0, minute= 1),  ending=datetime.time(hour=00, minute=0),  length=datetime.time(hour=0, minute=0),  capacity =  0, changed = True),
+    WeekSetting(day_name='Monday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), changed = True),
+    WeekSetting(day_name='Tuesday',   starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00), changed = True),
+    WeekSetting(day_name='Wednesday', starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), changed = True),
+    WeekSetting(day_name='Thursday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00), changed = True),
+    WeekSetting(day_name='Friday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), changed = True),
+    WeekSetting(day_name='Saturday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=15, minute=00), length=datetime.time(hour=1, minute=30), changed = True),
+    WeekSetting(day_name='Sunday',    starting=datetime.time(hour=0, minute= 1),  ending=datetime.time(hour=00, minute=0), length=datetime.time(hour=0, minute=0), changed = True),
 ]
 
 for ws in week_settings:
@@ -104,8 +78,7 @@ for ws in week_settings:
 # GlobalSettings
 global_settings = [
     GlobalSetting(name='MaxWeeklyEntry',       value =   3),   # max-week entry
-    GlobalSetting(name='MaxCapacity',          value =  15),   # max-capacity of weight-room
-    GlobalSetting(name='CovidCapacity',        value =  10),   # max-capacity of weight-room due to covid-rules
+    GlobalSetting(name='MaxCapacity',          value =  15),   # max-capacity of room
     GlobalSetting(name='MinutesShiftLength',   value =  90),   # stanadard shifts' length in minutes
     GlobalSetting(name='MaximumShiftLength',   value = 180),   # maximum shift's length
     GlobalSetting(name='MinimumShiftLength',   value =  30),   # minimum shift's length
@@ -188,7 +161,6 @@ add_course_sign_up(
     user=get_user(session, email='simone@gmail.com'),
     course=get_course(session, name='Zumba'),
 )
-
 
 session.commit()
 session.close()

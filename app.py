@@ -5,7 +5,6 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, cur
 
 from sqlalchemy import create_engine
 
-from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker
 
 from model import *
@@ -13,17 +12,13 @@ from model import *
 
 app = Flask ( __name__ )
 
-engine = create_engine('sqlite:///database.db', echo=True)
-# engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=True)
+#engine = create_engine('sqlite:///database.db', echo=True)
+engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
+# engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=True)
+
 
 app.config ['SECRET_KEY'] = 'ubersecret'
 
-Base = automap_base()
-Base.prepare(engine, reflect=True)
-
-User = Base.classes.users
-Prenotation = Base.classes.prenotations
-Shift = Base.classes.shifts
 
 Session = sessionmaker(bind=engine)
 
@@ -55,8 +50,14 @@ def load_user(user_id):
 def home():
     session = Session()
     try:
+        if current_user.is_authenticated:
+            return redirect(url_for('private'))
+        users = get_user(session, all=True)
+        user_list = []
+        for us in users:
+            user_list.append(repr(us))
         session.commit()
-        return render_template("home.html", users=users)
+        return render_template("home.html", users=user_list)
     except:
         session.rollback()
         raise
@@ -110,6 +111,12 @@ def private():
     try:
         email = current_user.email
         user = get_user(session, email=email)
+
+        shifts = user.prenotations_shifts
+        s = []
+        for sh in shifts:
+            s.append(repr(sh))
+        resp = make_response(render_template("private.html", us = user.fullname, prenotations=s))
         
         session.commit()
         return resp

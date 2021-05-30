@@ -3,13 +3,14 @@ from sqlalchemy import Column, Integer, Boolean, String, Date, Time
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, declarative_base
 
+
 # engine = create_engine('sqlite:///database.db', echo=True)
 engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
 #engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=True)
 
-
 Base = declarative_base()
 
+#_________________________________________________TABLES_________________________________________________
 
 class User(Base):
     __tablename__ = 'users'
@@ -22,6 +23,10 @@ class User(Base):
     prenotations = relationship("Prenotation", viewonly=True)
     prenotations_shifts = relationship("Shift", secondary="prenotations", back_populates="users_prenotated")
     courses = relationship("Course", secondary="course_signs_up", back_populates="users")
+
+    def __repr__(self):
+        return "<User(fullname='%s', email='%s')>" % (self.fullname,
+                                                         self.email)
 
 
 class Trainer(Base):
@@ -170,6 +175,3 @@ class CourseSignUp(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     course_id = Column(Integer, ForeignKey('courses.id'), nullable=False)
-
-
-Base.metadata.create_all(engine)
