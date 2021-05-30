@@ -650,9 +650,11 @@ def add_course_from_list(session, courses_list):
 # - Given the course_id,   returns all his CoursePrograms
 # - If all flag is true,   returns all CoursePrograms
 # Otherwise return None
-def get_course_program(session, id=None, course_id=None, all=False):
+def get_course_program(session, id=None, course_id=None, week_day=None, turn_number=None, all=False):
     if id is not None:
         return session.query(CourseProgram).filter(CourseProgram.id == id).one_or_none()
+    elif course_id is not None and week_day is not None and turn_number is not None:
+        return session.query(CourseProgram).filter(CourseProgram.course_id == course_id, CourseProgram.week_day == week_day, CourseProgram.turn_number == turn_number).one_or_none()
     elif course_id is not None:
         return session.query(CourseProgram).filter(CourseProgram.course_id == course_id).all()
     elif all is True:
@@ -666,7 +668,7 @@ def get_course_program(session, id=None, course_id=None, all=False):
 # Returns True if it was added correctly, False if the element was already contained
 def add_course_program(session, week_day=None, turn_number=None, room_id=None, course_id=None, course_program=None,):
     if course_program is not None:
-        exist = get_course_program(session, id=course_program.id)
+        exist = get_course_program(session, course_id=course_program.course_id, week_day=course_program.week_day, turn_number=course_program.turn_number)
         if exist is not None:
             return False
         else:

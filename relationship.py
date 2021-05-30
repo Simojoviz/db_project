@@ -108,6 +108,8 @@ class CourseProgram(Base):
     room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
     course_id = Column(Integer, ForeignKey('courses.id'), nullable=False)
 
+    __table_args__ = (UniqueConstraint('course_id', 'week_day', 'turn_number'),)
+
     room = relationship("Room", back_populates="course_programs")
     course = relationship("Course", back_populates="course_programs")
 

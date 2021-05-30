@@ -25,10 +25,6 @@ class User(Base):
     prenotations_shifts = relationship("Shift", secondary="prenotations", back_populates="users_prenotated")
     courses = relationship("Course", secondary="course_signs_up", back_populates="users")
 
-    def __repr__(self):
-        return "<User(fullname='%s', email='%s')>" % (self.fullname,
-                                                         self.email)
-
 
 class Trainer(Base):
     __tablename__ = 'trainers'
@@ -110,6 +106,8 @@ class CourseProgram(Base):
     turn_number = Column(Integer, nullable=False)
     room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
     course_id = Column(Integer, ForeignKey('courses.id'), nullable=False)
+
+    __table_args__ = (UniqueConstraint('course_id', 'week_day', 'turn_number'),)
 
     room = relationship("Room", back_populates="course_programs")
     course = relationship("Course", back_populates="course_programs")
