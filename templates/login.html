@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block pagebody %}
+
+<div class="container">
+  <div class="card bg-light" style="width: 24rem; margin: auto; margin-top: 10%;">
+    <div class="card-body">
+      <h5 class="card-title">Login</h5>
+      <form action="/login_form" method="POST">
+        Email:
+        &nbsp &nbsp &nbsp
+        <input name="user" type="text">
+        <br>
+        Password: <input name="pass"  type="password">
+        {{ errormessage}}
+        <br>
+        <input type="submit">
+      </form>
+    </div>
+  </div>
+  
+</div>
+
+{%endblock%}

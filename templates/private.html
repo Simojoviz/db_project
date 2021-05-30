@@ -1,17 +1,32 @@
 {% extends 'base.html' %}
 
 {% block pagebody %}
-
-  Welcome {{us}}
-  <br>
-
-  This is your prenotations:
-  <ul>
-   {% for p in prenotations %}
-      <li> {{ p }} </li>
-    {% endfor %}
-  </ul>
+<div class="container">
+  <h1>Profilo di {{us.fullname}}</h1>
+  <p>Email: {{ us.email}}</p>
+  <p>Password: {{us.pwd}}</p>
   <form action="/logout">
     <input type="submit", value="Logout">
   </form>
+</div>
+
+  <div class="container">
+    <h3>Prenotazioni</h3>
+    <ul>
+      {% for p in prenotations %}
+         <li> {{ p }} </li>
+       {% endfor %}
+     </ul>
+  </div>
+
+  <div class="container">
+    <h3>Iscrizioni</h3>
+    <ul>
+      {% for c in courses %}
+        <li> {{ c.name }} da {{c.starting}} a {{c.ending}} </li>
+      {% endfor %}
+     </ul>
+  </div>
+  
+  
 {% endblock %}

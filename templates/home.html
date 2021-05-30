@@ -4,19 +4,7 @@
 
 <ul>
   {% for u in users %}
-     <li> {{ u }} </li>
+     <li> {{ u.fullname }} : {{ u.email }}  </li>
    {% endfor %}
 </ul>
-
-  Prima di procedere è necessaria l'autenticazione!
-  <form action="/login" method="POST">
-    Email:
-    &nbsp &nbsp &nbsp
-    <input name="user" type="text">
-    <br>
-    Password: <input name="pass"  type="password">
-    {{ errormessage}}
-    <br>
-    <input type="submit">
-  </form>
 {% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block pagebody %}
+
+<!--<div class="container">
+  {% for c in courses %}
+  <div class="card" >
+    <h2>{{ c.name }}</h2>
+    <p>Inizio: {{ c.starting}}</p>
+    <p>Fine: {{ c.ending}}</p>
+    <p>Partecipanti: {{ c.max_partecipants}}</p>
+    <p>Istruttore: {{ c.instructor_id}}</p>
+  </div>
+    {% endfor %}
+</div>-->
+
+<div class="container">
+  <h1>Corsi</h1>
+    <div class="row">
+      {% for c in courses%}
+          <div class="card" style="width: 18rem; margin-left: 5px; margin-right: 5px;">
+            <img src="static/images.jpg" class="card-img-top">
+            <div class="card-body">
+              <h5 class="card-title">{{c.name}}</h5>
+              <p class="card-text">
+                Inizio: {{c.starting}} 
+                <br> 
+                Fine: {{c.ending}} 
+              </p>
+              <a href="#" class="btn btn-primary">Iscriviti</a>
+            </div>
+          </div>
+      {%endfor%}
+    </div>
+</div>
+
+
+{% endblock %}

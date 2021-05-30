@@ -64,8 +64,21 @@ def home():
     finally:
         session.close()
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/corsi')
+def corsi():
+    session = Session()
+    courses = get_course(session, all=True)
+    return render_template("corsi.html", courses = courses)
+
+@app.route('/login')
 def login():
+    session = Session()
+    if current_user.is_authenticated:
+        return redirect_to(url_for('home'))
+    return render_template("login.html")
+
+@app.route('/login_form', methods=['GET', 'POST'])
+def login_form():
     if request.method == 'POST':
         session = Session()
         try:
@@ -77,7 +90,7 @@ def login():
                     user = get_user_by_email(session, userReq)
                     login_user(user)
                     session.commit()
-                    return redirect(url_for('private'))
+                    return redirect(url_for('home'))
                 else:
                     session.commit()
                     return redirect(url_for('home'))
@@ -98,6 +111,7 @@ def private():
     try:
         email = current_user.email
         user = get_user(session, email=email)
+
         shifts = user.prenotations_shifts
         s = []
         for sh in shifts:
