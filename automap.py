@@ -29,7 +29,14 @@ class Trainer(Base):
 
     id = Column(Integer, ForeignKey('users.id'), primary_key=True, nullable=False)
 
+    user = relationship("User")
+
+
     courses = relationship("Course", back_populates="trainer")
+
+    def __repr__(self):
+        return "<Trainer(fullname='%s', email='%s')>" % (self.user.fullname,
+                                                         self.user.email)
 
 
 class Shift(Base):
