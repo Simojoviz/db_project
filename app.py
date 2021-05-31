@@ -20,7 +20,7 @@ engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', e
 app.config ['SECRET_KEY'] = 'ubersecret'
 
 
-Session = sessionmaker(bind=engine)
+Session = sessionmaker(bind=engine, autoflush=True)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -61,15 +61,52 @@ def home():
     finally:
         session.close()
 
-@app.route('/corsi')
-def corsi():
-    session = Session()
-    courses = get_course(session, all=True)
-    return render_template("corsi.html", courses = courses)
+@app.route('/private/prenotations')
+def prenotations():
+    session = Session() 
+    try:
+        email = current_user.email
+        user = get_user(session, email=email)
+        shifts = user.prenotations_shifts
+        resp = make_response(render_template("prenotations.html", prenotations=shifts))
+        session.commit()
+        return resp
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/private/courses_sign_up')
+def courses_sign_up():
+    session = Session() 
+    try:
+        email = current_user.email
+        user = get_user(session, email=email)
+        courses = user.courses
+        resp = make_response(render_template("courses_sign_up.html", courses=courses))
+        session.commit()
+        return resp
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/courses')
+def courses():
+    try:
+        session = Session()
+        courses = get_course(session, all=True)
+        return render_template("courses.html", courses = courses)
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 @app.route('/login')
 def login():
-    session = Session()
     if current_user.is_authenticated:
         return redirect_to(url_for('home'))
     return render_template("login.html")
@@ -108,10 +145,8 @@ def private():
     try:
         email = current_user.email
         user = get_user(session, email=email)
-
         shifts = user.prenotations_shifts
-        resp = make_response(render_template("private.html", us = user, prenotations=shifts))
-        
+        resp = make_response(render_template("private.html", us = user))
         session.commit()
         return resp
     except:

@@ -5,28 +5,16 @@
   <h1>Profilo di {{us.fullname}}</h1>
   <p>Email: {{ us.email}}</p>
   <p>Password: {{us.pwd}}</p>
+  <form action="/private/prenotations">
+    <input type="submit", value="Prenotations">
+  </form>
+  <form action="/private/courses_sign_up">
+    <input type="submit", value="Courses">
+  </form>
   <form action="/logout">
     <input type="submit", value="Logout">
   </form>
 </div>
-
-  <div class="container">
-    <h3>Prenotazioni</h3>
-    <ul>
-      {% for p in prenotations %}
-         <li> {{ p }} </li>
-       {% endfor %}
-     </ul>
-  </div>
-
-  <div class="container">
-    <h3>Iscrizioni</h3>
-    <ul>
-      {% for c in courses %}
-        <li> {{ c.name }} da {{c.starting}} a {{c.ending}} </li>
-      {% endfor %}
-     </ul>
-  </div>
   
   
 {% endblock %}

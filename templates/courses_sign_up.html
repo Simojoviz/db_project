@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block pagebody %}
+
+<div class="container">
+  <h3>Iscrizioni</h3>
+  <ul>
+    {% for c in courses %}
+      <li> {{ c }} </li>
+    {% endfor %}
+   </ul>
+</div>
+
+<form action="/private">
+    <input type="submit", value="Back">
+</form>
+  
+  
+{% endblock %}
