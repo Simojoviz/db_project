@@ -56,14 +56,23 @@ class Shift(Base):
     course = relationship("Course", back_populates="shifts")
     room = relationship("Room", back_populates="shifts")
 
-    def _repr_(self):
-        return "<Shift(date='%d/%d/%d', start='%d:%d', end='%d:%d', room:'%s', course:'%s')>" % (
-            self.date.day, self.date.month, self.date.year,
-            self.h_start.hour, self.h_start.minute,
-            self.h_end.hour,   self.h_end.minute,
-            self.room.name,
-            self.course.name
-        )
+    def __repr__(self):
+        if self.course is not None:
+            return "<Shift(date='%d/%d/%d', start='%d:%d', end='%d:%d', room:'%s', course:'%s')>" % (
+                self.date.day, self.date.month, self.date.year,
+                self.h_start.hour, self.h_start.minute,
+                self.h_end.hour,   self.h_end.minute,
+                self.room.name,
+                self.course.name
+            )
+        else:
+            return "<Shift(date='%d/%d/%d', start='%d:%d', end='%d:%d', room:'%s', course:'OwnTraining')>" % (
+                self.date.day, self.date.month, self.date.year,
+                self.h_start.hour, self.h_start.minute,
+                self.h_end.hour,   self.h_end.minute,
+                self.room.name
+            )
+        
 
 
 class Prenotation(Base):
@@ -82,7 +91,7 @@ class GlobalSetting(Base):
     name = Column(String, primary_key=True)
     value = Column(Integer, nullable=False)
 
-    def _repr_(self):
+    def __repr__(self):
         return "<GlobalSetting(name='%s', value='%d')>" % (
             self.name,
             self.value
@@ -98,7 +107,7 @@ class WeekSetting(Base):
     length = Column(Time, nullable=False)
     changed = Column(Boolean, nullable=False)
 
-    def _repr_(self):
+    def __repr__(self):
         return "<WeekSetting(day='%s', starting='%d:%d', ending='%d:%d', length='%d:%d', capacity='%d')>" % (
             self.day_name,
             self.starting.hour, self.starting.minute,
@@ -122,7 +131,7 @@ class Course(Base):
     users = relationship("User", secondary="course_signs_up", back_populates="courses")
     course_programs = relationship("CourseProgram", back_populates="course")
 
-    def _repr_(self):
+    def __repr__(self):
         return "<Course(name='%s', starting='%d/%d/%d', ending='%d/%d/%d', max_partecipants='%d', trainer='%s')>" % (
             self.name,
             self.starting.day, self.starting.month, self.starting.year,
@@ -141,12 +150,12 @@ class CourseProgram(Base):
     room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
     course_id = Column(Integer, ForeignKey('courses.id'), nullable=False)
 
-    __table_args__ = (UniqueConstraint('course_id', 'week_day', 'turn_number'),)
-
+    __table_args__ = (UniqueConstraint('course_id', 'week_day', 'turn_number', ),)
+    
     room = relationship("Room", back_populates="course_programs")
     course = relationship("Course", back_populates="course_programs")
 
-    def _repr_(self):
+    def __repr__(self):
         return "<CourseProgram(weekday='%s', turn number='%d', room='%s', course='%s')>" % (
             self.week_day,
             self.turn_number,
@@ -164,7 +173,7 @@ class Room(Base):
     shifts = relationship("Shift", back_populates="room")
     course_programs = relationship("CourseProgram", back_populates="room")
 
-    def _repr_(self):
+    def __repr__(self):
         return "<Room(name='%s', capacity='%d')>" % (
             self.name,
             self.max_capacity,

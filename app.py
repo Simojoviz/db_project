@@ -53,11 +53,8 @@ def home():
         if current_user.is_authenticated:
             return redirect(url_for('private'))
         users = get_user(session, all=True)
-        user_list = []
-        for us in users:
-            user_list.append(repr(us))
         session.commit()
-        return render_template("home.html", users=user_list)
+        return render_template("home.html", users=users)
     except:
         session.rollback()
         raise
@@ -113,10 +110,7 @@ def private():
         user = get_user(session, email=email)
 
         shifts = user.prenotations_shifts
-        s = []
-        for sh in shifts:
-            s.append(repr(sh))
-        resp = make_response(render_template("private.html", us = user.fullname, prenotations=s))
+        resp = make_response(render_template("private.html", us = user, prenotations=shifts))
         
         session.commit()
         return resp

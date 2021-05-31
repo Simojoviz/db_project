@@ -55,6 +55,10 @@ courses = [
     Course(name = 'Zumba',
         starting=datetime.datetime(year=2021, month=7, day=1), ending = datetime.datetime(year=2021, month=7, day=30), max_partecipants = 12, 
         instructor_id = get_trainer(session, email='alessandra@gmail.com').id
+    ),
+    Course(name = 'Judo',
+        starting=datetime.datetime(year=2021, month=7, day=1), ending = datetime.datetime(year=2021, month=7, day=30), max_partecipants = 20, 
+        instructor_id = get_trainer(session, email='riccardo@gmail.com').id
     )
 ]
 
@@ -110,6 +114,16 @@ courses_program = [
         week_day = 'Friday', turn_number = 5,
         room_id = get_room(session, name='Fitness Room').id,
         course_id = get_course(session, name='Zumba').id
+    ),
+    CourseProgram(
+        week_day = 'Tuesday', turn_number = 5,
+        room_id = get_room(session, name='Main Room').id,
+        course_id = get_course(session, name='Judo').id
+    ),
+    CourseProgram(
+        week_day = 'Thursday', turn_number = 5,
+        room_id = get_room(session, name='Fitness Room').id,
+        course_id = get_course(session, name='Judo').id
     )
 ]
 
@@ -117,6 +131,7 @@ add_course_program_from_list(session, courses_program)
 
 plan_course(session, "Boxe")
 plan_course(session, "Zumba")
+plan_course(session, "Judo")
 
 
 
@@ -163,4 +178,3 @@ add_course_sign_up(
 )
 
 session.commit()
-session.close()
