@@ -329,23 +329,19 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
     if user is not None and shift is not None:
         exist = get_prenotation(session, user_id=user.id, shift_id=shift.id)
         if exist is not None:
-            return False
+            raise Exception("User already prenoted")
         else:
             if shift.course_id == None:
                 nprenoted = len(shift.users_prenotated)
                 room_capacity = get_room(session, id=shift.room_id).max_capacity
                 if(nprenoted < room_capacity):
-                    user_prenoted = shift.users_prenotated
-                    if user not in user_prenoted:
-                        max_ = get_global_setting(session, name='MaxWeeklyEntry').value
-                        count = get_count_weekly_prenotations(session, user, shift.date)
-                        if (count < max_):
-                            session.add(Prenotation(client_id=user.id, shift_id=shift.id))
-                            return True
-                        else:
-                            raise Exception("Week prenotation peak reached")
+                    max_ = get_global_setting(session, name='MaxWeeklyEntry').value
+                    count = get_count_weekly_prenotations(session, user, shift.date)
+                    if (count < max_):
+                        session.add(Prenotation(client_id=user.id, shift_id=shift.id))
+                        return True
                     else:
-                        raise Exception("User already prenoted") # TODO probabilente è la stessa condizione che fa ritornare false
+                        raise Exception("Week prenotation peak reached")
                 else:
                     raise Exception("Maximum capacity already reached")
             else:
@@ -714,15 +710,10 @@ def get_course_sign_up(session, user_id=None, course_id=None, all=False):
 # 
 def add_course_sign_up(session, user=None, course=None, course_sign_up=None):
 
-    def count_course_sign_up(session, name):
-        course = get_course(session, name=name)
-        courses_signs_up = get_course_sign_up(session, course_id=course.id)
-        return len(courses_signs_up)
-
     if user is not None and course is not None:
         exist = get_course_sign_up(session, user_id=user.id, course_id=course.id)
         if exist is not None:
-            return False
+            raise Exception("The user has already sign-up for the course")
         else:
             n_signed = len(course.users)
             n_max = course.max_partecipants
