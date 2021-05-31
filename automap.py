@@ -1,12 +1,7 @@
-from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, Boolean, String, Date, Time
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, declarative_base
 
-
-# engine = create_engine('sqlite:///database.db', echo=True)
-engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
-#engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=True)
 
 Base = declarative_base()
 
@@ -67,9 +62,8 @@ class Shift(Base):
 class Prenotation(Base):
     __tablename__ = 'prenotations'
 
-    id = Column(Integer, primary_key=True)
-    client_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    shift_id = Column(Integer, ForeignKey('shifts.id'), nullable=False)
+    client_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    shift_id = Column(Integer, ForeignKey('shifts.id'), primary_key=True)
 
     user = relationship("User", viewonly=True)
     shift = relationship("Shift", viewonly=True)
@@ -172,6 +166,5 @@ class Room(Base):
 class CourseSignUp(Base):
     __tablename__ = 'course_signs_up'
 
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    course_id = Column(Integer, ForeignKey('courses.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    course_id = Column(Integer, ForeignKey('courses.id'), primary_key=True)
