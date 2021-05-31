@@ -62,6 +62,7 @@ def home():
         session.close()
 
 @app.route('/private/prenotations')
+@login_required
 def prenotations():
     session = Session() 
     try:
@@ -78,6 +79,7 @@ def prenotations():
         session.close()
 
 @app.route('/private/courses_sign_up')
+@login_required
 def courses_sign_up():
     session = Session() 
     try:
@@ -108,7 +110,7 @@ def courses():
 @app.route('/login')
 def login():
     if current_user.is_authenticated:
-        return redirect_to(url_for('home'))
+        return redirect(url_for('home'))
     return render_template("login.html")
 
 @app.route('/login_form', methods=['GET', 'POST'])
@@ -124,13 +126,13 @@ def login_form():
                     user = get_user_by_email(session, userReq)
                     login_user(user)
                     session.commit()
-                    return redirect(url_for('home'))
+                    return redirect(url_for('login'))
                 else:
                     session.commit()
-                    return redirect(url_for('home'))
+                    return redirect(url_for('login'))
             else:
                 session.commit()
-                return redirect(url_for('home'))
+                return redirect(url_for('login'))
         except:
             session.rollback()
             raise
