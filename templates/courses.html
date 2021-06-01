@@ -2,18 +2,6 @@
 
 {% block pagebody %}
 
-<!--<div class="container">
-  {% for c in courses %}
-  <div class="card" >
-    <h2>{{ c.name }}</h2>
-    <p>Inizio: {{ c.starting}}</p>
-    <p>Fine: {{ c.ending}}</p>
-    <p>Partecipanti: {{ c.max_partecipants}}</p>
-    <p>Istruttore: {{ c.instructor_id}}</p>
-  </div>
-    {% endfor %}
-</div>-->
-
 <div class="container">
   <h1>Corsi</h1>
     <div class="row">
@@ -27,7 +15,7 @@
                 <br> 
                 Fine: {{c.ending}} 
               </p>
-              <a href="#" class="btn btn-primary">Iscriviti</a>
+              <a href="{{ url_for('course', course_name=c.name) }}" class="btn btn-primary">Iscriviti</a>
             </div>
           </div>
       {%endfor%}
