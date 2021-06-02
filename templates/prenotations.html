@@ -6,7 +6,7 @@
   <h3>Prenotazioni</h3>
   <ul>
     {% for p in prenotations %}
-       <li> {{ p }} </li>
+       <li> Own Training in {{p.room.name}} il giorno {{ p.date }} dalle {{p.h_start}} alle {{p.h_end}} </li>
      {% endfor %}
    </ul>
 </div>
