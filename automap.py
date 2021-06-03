@@ -1,13 +1,14 @@
 from sqlalchemy import Column, Integer, Boolean, String, Date, Time
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, declarative_base
+from flask_login import UserMixin
 
 
 Base = declarative_base()
 
 #_________________________________________________TABLES_________________________________________________
 
-class User(Base):
+class User(Base, UserMixin):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
@@ -18,10 +19,27 @@ class User(Base):
     prenotations = relationship("Prenotation", viewonly=True)
     prenotations_shifts = relationship("Shift", secondary="prenotations", back_populates="users_prenotated")
     courses = relationship("Course", secondary="course_signs_up", back_populates="users")
+    roles = relationship("Role", secondary="user_roles", back_populates="users")
+
 
     def __repr__(self):
         return "<User(fullname='%s', email='%s')>" % (self.fullname,
                                                          self.email)
+
+
+class Role(Base):
+    __tablename__ = 'roles'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True)
+    users = relationship("User", secondary="user_roles", back_populates="roles")
+
+# Define UserRoles model
+class UserRoles(Base):
+    __tablename__ = 'user_roles'
+
+    user_id = Column(Integer(), ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
+    role_id = Column(Integer(), ForeignKey('roles.id', ondelete='CASCADE'), primary_key=True)
 
 
 class Trainer(Base):
