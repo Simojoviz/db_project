@@ -65,7 +65,7 @@ def add_user(session, fullname=None, email=None, pwd=None, user=None):
     elif fullname is not None and\
          email    is not None and\
          pwd      is not None:
-        add_user(session, user=User(fullname=fullname, email=email, pwd=pwd))
+        return add_user(session, user=User(fullname=fullname, email=email, pwd=pwd))
     else:
         return False
 
@@ -105,17 +105,18 @@ def get_trainer(session, id=None, email=None, all=False):
 #                 if it's both a User and Trainer yet, returns False
 # - Given fullname, email and password of a User does the same as above
 # Returns True if it was added correctly, False if the element was already contained
+#TODO controllare con con utilizzo di autoflush 
 def add_trainer(session, fullname=None, email=None, pwd=None, user=None):
     if user is not None:
         if get_user(session, email=user.email) is None:
             # a) Neither a User nor a Trainer
             add_user(session,user=user)
+            session.add(Trainer(id=user.id))
+            return True
+        elif get_trainer(session, email=user.email) is None:
+            # b) User yet, but not a Trainer
             new = get_user(session, email=user.email)
             session.add(Trainer(id=new.id))
-            return True
-        elif get_trainer(session, id=user.id) is None:
-            # b) User yet, but not a Trainer
-            session.add(Trainer(id=user.id))
             return True
         else:  
             # c) Both a User and a Trainer
@@ -144,6 +145,7 @@ def add_trainer_from_list(session, user_list):
 # - Given a prenotation returns the corresponding Shift
 # - If all flag is True, returns all Shifts
 # Otherwise return None
+#TODO eliminare casi inutili e magari suddividere in più funzioni
 def get_shift(session, date=None, start=None, prenotation=None, id=None, course_id=None, room_id=None, all=False):
 
     # Four parameters
@@ -201,7 +203,6 @@ def generate_daily_shifts(session, date):
     hour_start = weeksetting.starting
     hour_end = weeksetting.ending
     shift_length = weeksetting.length
-    course_id = None
     rooms = get_room(session, all=True)
     
     l = []
@@ -218,7 +219,7 @@ def generate_daily_shifts(session, date):
                     h_start = datetime.time(hour=start.seconds//3600, minute=(start.seconds//60)%60),
                     h_end =   datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
                     room_id = room.id,
-                    course_id = course_id
+                    course_id = None
                 )
             )
         start = end
@@ -229,11 +230,12 @@ def generate_daily_shifts(session, date):
 # - Given the starting date and the number of days generate the shifts for all days in time-interval
 # - Given the starting date and the ending date    generate the shifts for all days in time-interval
 # If there were previous plans which are changed, the previous is removed
+#TODO controllare se salta il primo giorno e chiedere funzionamento funzione
 def plan_shifts(session, starting, n=1, ending=None):
-    day = starting + timedelta(days=1)
+    day = starting + timedelta(days=0)
     if ending is None:
         ending = day + timedelta(days=n)
-    while(day < ending):
+    while(day <= ending):
         day_name = calendar.day_name[day.weekday()]
         ws = get_week_setting(session, day_name=day_name)
         if ws.changed is True:
@@ -261,7 +263,7 @@ def add_shift(session, date=None, start=None, end=None, room_id=None, course_id=
          end       is not None and\
          room_id   is not None and\
          course_id is not None:
-        add_shift(session, shift=Shift(date=date, h_start=start, h_end=end, room_id=room_id, course_id=course_id))
+        return add_shift(session, shift=Shift(date=date, h_start=start, h_end=end, room_id=room_id, course_id=course_id))
     else:
         return False
 
@@ -271,8 +273,7 @@ def add_shift(session, date=None, start=None, end=None, room_id=None, course_id=
 def add_shift_from_list(session, shift_list):
     b = True
     for shift in shift_list:
-        c = add_shift(session, shift=shift)
-        b &= c
+        b &= add_shift(session, shift=shift)
     return b
 
 
@@ -312,17 +313,17 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
     # Returns the number of own-training-week-prenotations for the  given the user and a date
     def get_count_weekly_prenotations(session, user, date):
         # Move to monday
-        day = date
+        day = date + timedelta(day=0)
         while(calendar.day_name[day.weekday()] != 'Monday'):
-            day = day - timedelta(days = 1)
+            day = day - timedelta(days=1)
         count = 0
         for i in range(7):
-            shifts = get_shift(session, date = day)
+            shifts = get_shift(session, date=day)
             for sh in shifts:
                 users = sh.users_prenotated
                 if user in users:
                     count += 1
-            day = day + timedelta(days = 1)
+            day = day + timedelta(days=1)
         
         return count
 
@@ -534,7 +535,7 @@ def add_room(session, name=None, max_capacity=None, room=None):
             return True
     elif name         is not None and\
          max_capacity is not None:
-        add_room(session, room=Room(name=name, max_capacity=max_capacity))
+        return add_room(session, room=Room(name=name, max_capacity=max_capacity))
     else:
         return False
     
@@ -608,7 +609,7 @@ def plan_course(session, name):
 # - Given a Course adds it to the database
 # - Given name, starting and ending date, max_partecipants and the instructor_id of a Course adds it to the database
 # Returns True if it was added correctly, False if the element was already contained
-def add_course(session, name = None, starting=None, ending=None, max_partecipants=None, instructor_id=None, course=None):
+def add_course(session, name=None, starting=None, ending=None, max_partecipants=None, instructor_id=None, course=None):
     if course is not None:
         exist = get_course(session, name=course.name)
         if exist is not None:
@@ -621,7 +622,7 @@ def add_course(session, name = None, starting=None, ending=None, max_partecipant
          ending           is not None and\
          max_partecipants is not None and\
          instructor_id    is not None:
-        add_course(session, course=Course(name=name, starting=starting, ending=ending, max_partecipants=max_partecipants, instructor_id=instructor_id))
+        return add_course(session, course=Course(name=name, starting=starting, ending=ending, max_partecipants=max_partecipants, instructor_id=instructor_id))
     else:
         return False
     
@@ -707,7 +708,7 @@ def get_course_sign_up(session, user_id=None, course_id=None, all=False):
 #  - the user has already SignedUp to the course
 #  - the capacity peak has already been reached
 # TODO the course in in conflict with other courses the user has SignedIn
-# 
+# TODO controllare se ritornare falso o lanciare eccezione
 def add_course_sign_up(session, user=None, course=None, course_sign_up=None):
 
     if user is not None and course is not None:
@@ -717,21 +718,15 @@ def add_course_sign_up(session, user=None, course=None, course_sign_up=None):
         else:
             n_signed = len(course.users)
             n_max = course.max_partecipants
-            if  n_signed>= n_max:
-                raise Exception("Course peak has already been reached")
+            if  n_signed < n_max:
+                session.add(CourseSignUp(user_id=user.id, course_id=course.id))
             else:
-                course_signs = get_course_sign_up(session, user_id=user.id)
-                ids = []
-                for sign in course_signs:
-                    ids.append(sign.course_id)
-                if course.id in ids:
-                    raise Exception("User has already signed up for the course")
-                else:
-                    session.add(CourseSignUp(user_id=user.id, course_id=course.id))
+                raise Exception("Course peak has already been reached")
+                
     elif course_sign_up is not None:
         user_  =  get_user(session, id=course_sign_up.user_id)
         course_ = get_shift(session, id=course_sign_up.user_id)
-        add_course_sign_up(session, user=user_, course=course_)
+        return add_course_sign_up(session, user=user_, course=course_)
     else:
         return False
 
