@@ -744,16 +744,13 @@ def delete_course_sign_up(session, course=None, user=None):
     if course is not None and user is not None:
         cs = get_course_sign_up(session, user_id = user.id, course_id = course.id)
         session.delete(cs)
-        session.commit()
         return True
     elif course is not None:
         cs = get_course_sign_up(session,course_id=course.id)
         session.delete(cs)
-        session.commit()
         return True
     elif user is not None:
         cs = get_course_sign_up(session,user_id=user.id)
         session.delete(cs)
-        session.commit()
         return True
     return False
