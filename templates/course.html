@@ -31,8 +31,14 @@
     &nbsp;&nbsp;{{i.h_start}} - {{i.h_end}} <br>
     {% endfor %}
   </p>
-  <form action= "{{ url_for('sign_up', course_name = course.name) }}">
-    <input type="submit", value="Iscriviti">
-  </form>
+  {% if course_sign_up.course_id != course.id %}
+    <form action= "{{ url_for('sign_up', course_name = course.name) }}">
+      <input type="submit", value="Iscriviti">
+    </form>
+  {% else %}
+    <form action="{{ url_for('delete_sign_up', course_name = course.name)}}">
+      <input type="submit", value="Disiscriviti">
+    </form>
+  {% endif %}
   </div>
 {% endblock %}

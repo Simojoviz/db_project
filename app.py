@@ -46,12 +46,11 @@ def load_user(user_id):
     if user is not None:
         return User(user.id, user.email, user.pwd)
 
+#__________________________________________HOME________________________________________
 @app.route('/')
 def home():
     session = Session()
     try:
-        #if current_user.is_authenticated:
-            #return redirect(url_for('private'))
         users = get_user(session, all=True)
         session.commit()
         return render_template("home.html", users=users)
@@ -70,6 +69,7 @@ def private():
     try:
         email = current_user.email
         user = get_user(session, email=email)
+        shifts = user.prenotations_shifts
         resp = make_response(render_template("private.html", us = user))
         session.commit()
         return resp
@@ -177,12 +177,14 @@ def courses():
 @app.route('/courses/<course_name>')
 def course(course_name):
     session = Session()
+    u = get_user(session, id = current_user.id)
     c = get_course(session,name = course_name)
+    cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
     cp = get_course_program(session,course_id = c.id)
     sh = []
     for i in cp:
         sh.append(get_shift(session, id=i.turn_number))
-    return render_template("course.html", course = c, course_program = cp, shift = sh)
+    return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs)
 
 @app.route('/sign_up/<course_name>')
 def sign_up(course_name):
@@ -200,7 +202,8 @@ def delete_sign_up(course_name):
     session = Session()
     us = get_user(session,id = current_user.id)
     c = get_course(session, name = course_name)
-    cs = delete_course_sign_up(session,course = c, user = us)
+    delete_course_sign_up(session,course = c, user = us)
+    session.commit()
     return redirect(url_for('courses_sign_up'))
 
 
