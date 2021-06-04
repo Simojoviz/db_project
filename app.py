@@ -177,14 +177,16 @@ def courses():
 @app.route('/courses/<course_name>')
 def course(course_name):
     session = Session()
-    u = get_user(session, id = current_user.id)
     c = get_course(session,name = course_name)
-    cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
     cp = get_course_program(session,course_id = c.id)
     sh = []
     for i in cp:
         sh.append(get_shift(session, id=i.turn_number))
-    return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs)
+    if current_user.is_authenticated:
+        u = get_user(session, id = current_user.id)
+        cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
+        return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs)
+    return render_template("course.html", course = c, course_program = cp, shift = sh)
 
 @app.route('/sign_up/<course_name>')
 def sign_up(course_name):
