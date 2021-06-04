@@ -124,12 +124,13 @@ def shifts(day, month, year, room):
         session = Session()
         date = datetime.date(year=int(year), month=int(month), day=int(day))
         date_string = date.strftime("%Y-%m-%d")
+        r = get_room(session, all=True)
         if room == 'All':
             shifts = get_shift(session, date=date)
         else:
             room_id = get_room(session, name=room).id
             shifts = get_shift(session, date=date, room_id=room_id)
-        resp = make_response(render_template("shifts.html", shifts=shifts, date_string=date_string))
+        resp = make_response(render_template("shifts.html", shifts=shifts, date_string=date_string, rooms=r))
         session.commit()
         return resp
     except:
