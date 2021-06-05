@@ -32,5 +32,36 @@
     <input type="submit", value="Back">
 </form>
   
+<<<<<<< Updated upstream
+=======
+    <table>
+      <tr>
+        <th>Date</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Room</th>
+        <th>Booking</th>
+        <th>Prenote</th>
+      </tr>
+
+      {% for s in shifts %}
+      <tr>
+        <td>{{s.date}}</td>
+        <td>{{s.h_start}}</td>
+        <td>{{s.h_end}}</td>
+        <td>{{s.room.name}}</td>
+        <td>{{s.room.max_capacity - s.prenotations|length}}/{{s.room.max_capacity}}</td>
+        <td>
+          <form action="shifts/prenote">
+            <input type="hidden" id="Key" name="Key" value="<?=$Key ?>">
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+
+    </table>
+
+  </div>
+>>>>>>> Stashed changes
   
 {% endblock %}

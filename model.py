@@ -110,6 +110,15 @@ def add_trainer(session, fullname=None, email=None, pwd=None, user=None):
         if get_user(session, email=user.email) is None:
             # a) Neither a User nor a Trainer
             add_user(session,user=user)
+<<<<<<< Updated upstream
+=======
+            session.add(Trainer(id=user.id))
+            # new = get_user(session, email=user.email) TODO seba: a me non va non vanno le due righe sopra con l'autoflush devo riestrarre lo user appena inserito
+            # session.add(Trainer(id=new.id))
+            return True
+        elif get_trainer(session, email=user.email) is None:
+            # b) User yet, but not a Trainer
+>>>>>>> Stashed changes
             new = get_user(session, email=user.email)
             session.add(Trainer(id=new.id))
             return True

@@ -129,7 +129,12 @@ def shifts(day, month, year, room):
         else:
             room_id = get_room(session, name=room).id
             shifts = get_shift(session, date=date, room_id=room_id)
+<<<<<<< Updated upstream
         resp = make_response(render_template("shifts.html", shifts=shifts, date_string=date_string))
+=======
+        shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
+        resp = make_response(render_template("shifts.html", shifts=shifts, date_string=date_string, rooms=r))
+>>>>>>> Stashed changes
         session.commit()
         return resp
     except:
@@ -159,6 +164,22 @@ def shifts_load_state():
             raise
         finally:
             session.close()
+
+@app.route('shifts/prenote', methods=['GET', 'POST'])
+def prenote():
+    if request.method == 'POST':
+        session = Session()
+        try:
+            u = get_user(session, id = current_user.id)
+            sh = get_shift(session, id=shift_id)
+            add_prenotation(session, user=u, shift=sh)
+            return redirect(url_for('shifts'))
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
 
 # ________________________________________________________COURSES________________________________________________________
 
