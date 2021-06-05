@@ -46,12 +46,11 @@ def load_user(user_id):
     if user is not None:
         return User(user.id, user.email, user.pwd)
 
+#__________________________________________HOME________________________________________
 @app.route('/')
 def home():
     session = Session()
     try:
-        #if current_user.is_authenticated:
-            #return redirect(url_for('private'))
         users = get_user(session, all=True)
         session.commit()
         return render_template("home.html", users=users)
@@ -70,6 +69,7 @@ def private():
     try:
         email = current_user.email
         user = get_user(session, email=email)
+        shifts = user.prenotations_shifts
         resp = make_response(render_template("private.html", us = user))
         session.commit()
         return resp
@@ -87,7 +87,7 @@ def prenotations():
         email = current_user.email
         user = get_user(session, email=email)
         shifts = user.prenotations_shifts
-        resp = make_response(render_template("prenotations.html", prenotations=shifts))
+        resp = make_response(render_template("prenotations.html", shifts=shifts))
         session.commit()
         return resp
     except:
@@ -124,19 +124,16 @@ def shifts(day, month, year, room):
         session = Session()
         date = datetime.date(year=int(year), month=int(month), day=int(day))
         date_string = date.strftime("%Y-%m-%d")
+        r = get_room(session, all=True)
         if room == 'All':
             shifts = get_shift(session, date=date)
         else:
             room_id = get_room(session, name=room).id
             shifts = get_shift(session, date=date, room_id=room_id)
-<<<<<<< Updated upstream
-        resp = make_response(render_template("shifts.html", shifts=shifts, date_string=date_string))
-=======
-        shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
-        resp = make_response(render_template("shifts.html", shifts=shifts, date_string=date_string, rooms=r))
->>>>>>> Stashed changes
-        session.commit()
-        return resp
+            shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
+            resp = make_response(render_template("shifts.html", shifts=shifts, date_string=date_string, rooms=r))
+            session.commit()
+            return resp
     except:
         session.rollback()
         raise
@@ -165,21 +162,38 @@ def shifts_load_state():
         finally:
             session.close()
 
-@app.route('shifts/prenote', methods=['GET', 'POST'])
-def prenote():
-    if request.method == 'POST':
-        session = Session()
-        try:
-            u = get_user(session, id = current_user.id)
-            sh = get_shift(session, id=shift_id)
-            add_prenotation(session, user=u, shift=sh)
-            return redirect(url_for('shifts'))
-        except:
-            session.rollback()
-            raise
-        finally:
-            session.close()
+@app.route('/prenotation/<shift>')
+def prenotation(shift):
+    session = Session()
+    try:
+        if current_user.is_authenticated:
+            us = get_user(session, id = current_user.id)
+            s = get_shift(session, id = shift)
+            add_prenotation(session, user = us, shift = s)
+            session.commit()
+            return redirect(url_for('prenotations'))
+        return redirect(url_for('login'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+    
 
+@app.route('/del_prenotation/<shift>')
+def del_prenotation(shift):
+    try:
+        session = Session()
+        us = get_user(session,id = current_user.id)
+        s = get_shift(session, id = shift)
+        delete_prenotation(session, shift=s, user=us)
+        session.commit()
+        return redirect(url_for('prenotations'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 # ________________________________________________________COURSES________________________________________________________
 
@@ -203,6 +217,10 @@ def course(course_name):
     sh = []
     for i in cp:
         sh.append(get_shift(session, id=i.turn_number))
+    if current_user.is_authenticated:
+        u = get_user(session, id = current_user.id)
+        cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
+        return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs)
     return render_template("course.html", course = c, course_program = cp, shift = sh)
 
 @app.route('/sign_up/<course_name>')
@@ -221,7 +239,8 @@ def delete_sign_up(course_name):
     session = Session()
     us = get_user(session,id = current_user.id)
     c = get_course(session, name = course_name)
-    cs = delete_course_sign_up(session,course = c, user = us)
+    delete_course_sign_up(session,course = c, user = us)
+    session.commit()
     return redirect(url_for('courses_sign_up'))
 
 

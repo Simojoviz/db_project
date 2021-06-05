@@ -2,39 +2,23 @@
 
 {% block pagebody %}
 
-
-<form action="/shifts/load_date" method="POST">
-  Insert date:
-  <input name="date" type="date", value= {{ date_string }} >
-  <br>
-  Insert room:
-  <select id="room" name="room">
-      <option value="All">All</option>
-      <option value="Main Room">Main Room</option>
-      <option value="Weight Room">Weight Room</option>
-      <option value="Fitness Room">Fitness Room</option>
-      <option value="Swimming Pool">Swimming Pool</option>
-      <option value="Boxing Room">Boxing Room</option>
-  </select>
-  <input type="submit">
-</form>
-
 <div class="container">
-
-  <ul>
-    {% for s in shifts %}
-    <li> {{s}} </li>
-    {% endfor %}
-  </ul>
-</div>
-
-<form action="/private">
-    <input type="submit", value="Back">
+  <h2 class="mb-2">Prenota un Turno</h2>
+  <form action="/shifts/load_date" method="POST">
+    Insert date:
+    <input name="date" type="date", value= {{ date_string }} >
+    <br>
+    Insert room:
+    <select id="room" name="room">
+      <option value="All">All</option>
+      {% for i in rooms %}
+      <option value="{{ i.name }}"> {{ i.name }} </option>
+      {% endfor %}
+    </select>
+    <input type="submit", value="Cerca">
 </form>
   
-<<<<<<< Updated upstream
-=======
-    <table>
+<!---<table>
       <tr>
         <th>Date</th>
         <th>Start</th>
@@ -62,6 +46,28 @@
     </table>
 
   </div>
->>>>>>> Stashed changes
+ -->
+    
+  <div class="container">
+    <div class="container-fluid ">
+      {% for r in rooms %}
+        {% for s in shifts %}
+          {% if s.room_id == r.id %}
+            <p class="m-2">
+              {{s}}
+              <form action= "{{ url_for('prenotation', shift = s.id) }}">
+                <input type="submit", value="Iscriviti">
+              </form>
+            </p>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
   
+  <form action="/private">
+      <input type="submit", value="Back">
+  </form>
+</div>
+
 {% endblock %}

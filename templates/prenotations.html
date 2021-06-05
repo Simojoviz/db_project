@@ -5,14 +5,17 @@
 <div class="container">
   <h3>Prenotazioni</h3>
   <ul>
-    {% for p in prenotations %}
-       <li> Own Training in {{p.room.name}} il giorno {{ p.date }} dalle {{p.h_start}} alle {{p.h_end}} </li>
+    {% for s in shifts %}
+      <li> Own Training in {{s.room.name}} il giorno {{ s.date }} dalle {{s.h_start}} alle {{s.h_end}}</li>
+      <form action="{{ url_for('del_prenotation', shift=s.id) }}">
+        <input type="submit", value="Cancella">
+      </form>
      {% endfor %}
    </ul>
 </div>
 
 <form action="/private">
-    <input type="submit", value="Back">
+  <input type="submit", value="Back">
 </form>
   
   
