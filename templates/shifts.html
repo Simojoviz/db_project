@@ -3,6 +3,7 @@
 {% block pagebody %}
 
 <div class="container">
+  <h2 class="mb-2">Prenota un Turno</h2>
   <form action="/shifts/load_date" method="POST">
     Insert date:
     <input name="date" type="date", value= {{ date_string }} >
@@ -18,12 +19,20 @@
   </form>
   
   <div class="container">
-  
-    <ul>
-      {% for s in shifts %}
-      <li> {{s}} </li>
+    <div class="container-fluid ">
+      {% for r in rooms %}
+        {% for s in shifts %}
+          {% if s.room_id == r.id %}
+            <p class="m-2">
+              {{s}}
+              <form action= "{{ url_for('prenotation', shift = s.id) }}">
+                <input type="submit", value="Iscriviti">
+              </form>
+            </p>
+          {% endif %}
+        {% endfor %}
       {% endfor %}
-    </ul>
+    </div>
   </div>
   
   <form action="/private">

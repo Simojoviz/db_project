@@ -87,7 +87,7 @@ def prenotations():
         email = current_user.email
         user = get_user(session, email=email)
         shifts = user.prenotations_shifts
-        resp = make_response(render_template("prenotations.html", prenotations=shifts))
+        resp = make_response(render_template("prenotations.html", shifts=shifts))
         session.commit()
         return resp
     except:
@@ -160,6 +160,26 @@ def shifts_load_state():
             raise
         finally:
             session.close()
+
+@app.route('/prenotation/<shift>')
+def prenotation(shift):
+    session = Session()
+    if current_user.is_authenticated:
+        us = get_user(session, id = current_user.id)
+        s = get_shift(session, id = shift)
+        add_prenotation(session, user = us, shift = s)
+        session.commit()
+        return redirect(url_for('prenotations'))
+    return redirect(url_for('login'))
+
+@app.route('/del_prenotation/<shift>')
+def del_prenotation(shift):
+    session = Session()
+    us = get_user(session,id = current_user.id)
+    s = get_shift(session, id = shift)
+    delete_prenotation(session, shift=s, user=us)
+    session.commit()
+    return redirect(url_for('prenotations'))
 
 # ________________________________________________________COURSES________________________________________________________
 

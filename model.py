@@ -363,6 +363,21 @@ def add_prenotation_from_list(session, prenotation_list):
         b &= add_prenotation(session, prenotation=prenotation)
     return b
 
+def delete_prenotation(session, shift=None, user=None):
+    if shift is not None and user is not None:
+        p = get_prenotation(session, user_id = user.id, shift_id = shift.id)
+        session.delete(p)
+        return True
+    elif shift is not None:
+        p = get_prenotation(session, shift_id=shift.id)
+        session.delete(p)
+        return True
+    elif user is not None:
+        p = get_prenotation(session, user_id = user.id)
+        session.delete(p)
+        return True
+    else:
+        return False
 
 # ________________________________________ WEEK SETTING ________________________________________
 
