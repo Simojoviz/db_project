@@ -130,10 +130,10 @@ def shifts(day, month, year, room):
         else:
             room_id = get_room(session, name=room).id
             shifts = get_shift(session, date=date, room_id=room_id)
-            shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
-            resp = make_response(render_template("shifts.html", shifts=shifts, date_string=date_string, rooms=r))
-            session.commit()
-            return resp
+        shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
+        resp = make_response(render_template("shifts.html", shifts=shifts, date_string=date_string, rooms=r))
+        session.commit()
+        return resp
     except:
         session.rollback()
         raise

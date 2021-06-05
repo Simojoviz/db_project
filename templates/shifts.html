@@ -18,7 +18,7 @@
     <input type="submit", value="Cerca">
 </form>
   
-<!---<table>
+<table>
       <tr>
         <th>Date</th>
         <th>Start</th>
@@ -36,8 +36,8 @@
         <td>{{s.room.name}}</td>
         <td>{{s.room.max_capacity - s.prenotations|length}}/{{s.room.max_capacity}}</td>
         <td>
-          <form action="shifts/prenote">
-            <input type="hidden" id="Key" name="Key" value="<?=$Key ?>">
+          <form action= "{{ url_for('prenotation', shift = s.id) }}">
+            <input type="submit", value="Iscriviti">
           </form>
         </td>
       </tr>
@@ -46,9 +46,9 @@
     </table>
 
   </div>
- -->
+ 
     
-  <div class="container">
+<!-- <div class="container">
     <div class="container-fluid ">
       {% for r in rooms %}
         {% for s in shifts %}
@@ -63,7 +63,7 @@
         {% endfor %}
       {% endfor %}
     </div>
-  </div>
+  </div> -->
   
   <form action="/private">
       <input type="submit", value="Back">
