@@ -313,7 +313,7 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
     # Returns the number of own-training-week-prenotations for the  given the user and a date
     def get_count_weekly_prenotations(session, user, date):
         # Move to monday
-        day = date + timedelta(day=0)
+        day = date + timedelta(days=0)
         while(calendar.day_name[day.weekday()] != 'Monday'):
             day = day - timedelta(days=1)
         count = 0
