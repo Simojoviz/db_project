@@ -61,6 +61,8 @@ def add_user(session, fullname=None, email=None, pwd=None, user=None):
             return False
         else:
             session.add(user)
+            session.flush()
+            add_user_roles(session, user=user, role=get_role(session, name='Client'))
             return True
     elif fullname is not None and\
          email    is not None and\
@@ -78,6 +80,81 @@ def add_user_from_list(session, user_list):
         b &= add_user(session, user=user)
     return b
 
+# ________________________________________ ROLE ________________________________________ 
+
+
+# - Given the name,     returns the Role who has got that name if exixsts
+# - Given the id,       returns the Role who has got that id if exists
+# - If all flag is true, returns all Roles
+# Otherwise return None
+def get_role(session, id=None, name=None, all=False):
+    if id is not None:
+        return session.query(Role).filter(Role.id == id).one_or_none()
+    elif name is not None:
+        return session.query(Role).filter(Role.name == name).one_or_none()
+    elif all is True:
+        return session.query(Role).all()
+    else:
+        return None
+
+
+# - Given a Role adds it to the database
+# - Given the name of a a Role adds it to the databases
+# Returns True if it was added correctly, False if the element was already contained
+def add_role(session, name=None, role=None):
+    if role is not None:
+        exist = get_role(session, name=role.name)
+        if exist is not None:
+            return False
+        else:
+            session.add(role)
+            return True
+    elif name is not None:
+        return add_role(session, role=Role(name=name))
+    else:
+        return False
+
+    
+# Adds all Roles from the list given to the Database
+# Returns True if all elements were added, False if at least one was already contained
+def add_role_from_list(session, role_list):
+    b = True
+    for role in role_list:
+        b &= add_role(session, role=role)
+    return b
+
+# ________________________________________ USER-ROLES ________________________________________
+
+# - Given a user_id and a role_id returns the correponding UserRoles if exists
+# - If all flag is true, returns all UserRoles
+# Returns None otherwise
+def get_user_roles(session, user_id=None, role_id=None, all=False):
+    if user_id is not None and role_id is not None:
+        return session.query(UserRoles).filter(UserRoles.user_id == user_id, UserRoles.role_id == role_id).one_or_none()
+    elif all is True:
+        return session.query(UserRoles).all()
+    else:
+        return None   
+
+# - Given a User and a Role adds the corresponding User-Roles to the Database
+# - Given a Roles adds it to the Database
+# Returns True if it was added correctly, False if the element was already contained
+# Raise an Exception if
+# - The User already had that Role
+def add_user_roles(session, user=None, role=None, user_role=None):
+
+    if user is not None and role is not None:
+        exist = get_user_roles(session, user_id=user.id, role_id=role.id)
+        if exist is not None:
+            raise Exception("User already has this role")
+        else:
+            session.add(UserRoles(user_id=user.id, role_id=role.id))
+    elif prenotation is not None:
+        user_  = get_user(session, id=user_role.user_id)
+        role_ = get_role(session, id=user_role.role_id)
+        add_prenotation(session, user=user_, role=role_)
+    else:
+        return False
 
 # ________________________________________ TRAINER ________________________________________ 
 
@@ -111,13 +188,14 @@ def add_trainer(session, fullname=None, email=None, pwd=None, user=None):
         if get_user(session, email=user.email) is None:
             # a) Neither a User nor a Trainer
             add_user(session,user=user)
+            session.flush()
             session.add(Trainer(id=user.id))
-            # new = get_user(session, email=user.email) TODO seba: a me non va non vanno le due righe sopra con l'autoflush devo riestrarre lo user appena inserito
-            # session.add(Trainer(id=new.id))
+            add_user_roles(session, user=user, role=get_role(session, name='Staff'))
             return True
         elif get_trainer(session, email=user.email) is None:
             # b) User yet, but not a Trainer
             session.add(Trainer(id=user.id))
+            add_user_roles(session, user=user, role=get_role(session, name='Staff'))
             return True
         else:  
             # c) Both a User and a Trainer
