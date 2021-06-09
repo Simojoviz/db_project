@@ -4,20 +4,33 @@
 
 <div class="container">
   <h3>Iscrizioni</h3>
-  <ul>
-    {% for c in courses %}
-      <li>{{ c.name }} dal {{c.starting}} al {{c.ending}} </li>
-      <form action="{{ url_for('delete_sign_up', course_name=c.name) }}">
-        <input type="submit", value="Disiscriviti">
-      </form>
-    {% endfor %}
+  <table class="table table-borderless">
+    <tr>
+      <th>Course</th>
+      <th>Starting</th>
+      <th>Ending</th>
+      <th>Delete</th>
+    </tr>
 
-   </ul>
+    {% for c in courses %}
+      <tr>
+        <td>{{c.name}}</td>
+        <td>{{c.starting}}</td>
+        <td>{{c.ending}}</td>
+        <td>
+          <form action="{{ url_for('delete_sign_up', course_name=c.name) }}">
+            <input type="submit", value="Disiscriviti">
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+  </table>
+  <form action="/private">
+    <input type="submit", value="Back">
+  </form>
 </div>
 
-<form action="/private">
-    <input type="submit", value="Back">
-</form>
+
   
   
 {% endblock %}
