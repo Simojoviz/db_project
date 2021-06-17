@@ -908,3 +908,44 @@ def add_messagge_from_list(session, message_list):
     for message in message_list:
         b &= add_message(session, message=message)
     return b
+
+# Given the user_id who did the report send a message to:
+# - all users who had a shift in common in the two previous week
+# - all users who have a course in common (and also to the trainer)
+def covid_report(session, user_id):
+    user = get_user(session, id = user_id)
+    today = datetime.date.today()
+    prev = today - timedelta(days=14)
+    ids = []
+    # Shift
+    shifts = user.prenotations_shifts
+    shifts = filter(lambda sh: prev <= sh.date <= today, shifts) # Remove the shifts that are not in the previous two weeks
+    for shift in shifts:
+        users = shift.users_prenotated
+        for us in users:
+            ids.append(us.id)
+    # Course
+    courses = user.courses
+    for course in courses:
+        ids.append(course.instructor_id)
+        # users = course.users TODO non funzionano le relationship
+        """for us in users:
+            print(us)
+            ids.append(us.id)"""
+        course_signs_up = get_course_sign_up(session, course_id=course.id)
+        for csu in course_signs_up:
+            ids.append(csu.user_id)
+    # Remove redundance
+    ids = set(ids)
+    ids.remove(user_id)
+    # Messagges
+    messages = []
+    sender = get_user(session, email='admin@gmail.com').id
+    for id in ids:
+        messages.append(
+            Message(
+                sender= sender, addressee=get_user(session, id=id).id,
+                text = "You have been in contact with a person affected from Covid-19"
+            )
+        )
+    add_messagge_from_list(session, messages)

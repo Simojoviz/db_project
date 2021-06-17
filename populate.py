@@ -105,7 +105,7 @@ for gs in global_settings:
     add_global_setting(session, global_setting=gs)
 
 # Shifts
-plan_shifts(session, starting=datetime.date.today(), n=90)
+plan_shifts(session, starting=datetime.date(day=1, month=6, year=2021), n=90)
 
 
 # CourseProgram
@@ -164,7 +164,8 @@ def add_prenotation_aux_nostart(session, email, day, month, year, room):
     if sh is not None:
         add_prenotation(session, user = get_user(session, email = email), shift= sh[0])
 
-add_prenotation_aux_nostart(session, "andrea@gmail.com",     22, 6, 2021, 'Main Room')
+add_prenotation_aux_nostart(session, "andrea@gmail.com",     16, 6, 2021, 'Main Room')
+add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 16, 6, 2021, 'Main Room')
 add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 23, 6, 2021, 'Weight Room')
 add_prenotation_aux_nostart(session, "simone@gmail.com",     24, 6, 2021, 'Fitness Room')
 
@@ -194,5 +195,7 @@ messages = [
 ]
 
 add_messagge_from_list(session, messages)
+
+covid_report(session, get_user(session, email='andrea@gmail.com').id)
 
 session.commit()
