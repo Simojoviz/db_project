@@ -20,7 +20,7 @@ class User(Base, UserMixin):
     prenotations_shifts = relationship("Shift", secondary="prenotations", back_populates="users_prenotated")
     courses = relationship("Course", secondary="course_signs_up", back_populates="users")
     roles = relationship("Role", secondary="user_roles", back_populates="users")
-
+    
 
     def __repr__(self):
         return "<User(fullname='%s', email='%s')>" % (self.fullname,
@@ -203,3 +203,10 @@ class CourseSignUp(Base):
 
     user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
     course_id = Column(Integer, ForeignKey('courses.id'), primary_key=True)
+
+class Message(Base):
+    __tablename__ = 'messages'
+
+    sender =    Column(Integer, ForeignKey('users.id'), primary_key=True)
+    addressee = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    text = Column(String, nullable=False)

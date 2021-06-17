@@ -848,3 +848,63 @@ def delete_course_sign_up(session, course=None, user=None):
         session.delete(cs)
         return True
     return False
+
+
+# ________________________________________ MESSAGES ________________________________________
+
+
+# - Given a UserID both of the sender and the addresser returns all his Messages if the user is the same
+# - Given a UserID of the sender returns all his Messages
+# - Given a UserID of the addresser returns all his Messages
+# - If all flag is true, returns all Messages
+# Returns None otherwise
+def get_message(session, sender=None, addresser=None, all=False):
+    if sender is not None and addresser is not None:
+        if sender == addresser:
+            return session.query(Message).filter(Message.sender == sender).union.\
+                   session.query(Message).filter(Message.addressee == addresser).all()
+        else:
+            return None
+    elif sender is not None:
+        return session.query(Message).filter(Message.sender == sender).all()
+    elif addresser is not None:
+        return session.query(Message).filter(Message.addressee == addresser).all()
+    elif all is True:
+        return session.query(Message).all()
+    else:
+        return None
+
+
+# - Given a Message adds it to the database
+# - Given the sender_id, the addresser_id and the text of a Message adds it to the database
+# Returns True if it was added correctly, False otherwise
+# Raises an error if
+#  - the sender and the addresser are the same User
+def add_message(session, message=None, sender_id=None, addresser_id=None, text=None):
+
+    if message is not None:
+        if message.sender == message.addressee:
+            raise Exception("The user has already sign-up for the course")
+        else:
+            exist = get_message(session, sender=message.sender, addresser=message.addressee)
+            if exist is not None:
+                return False   
+            else:
+                session.add(message)
+                return True
+    elif sender_id    is not None and\
+         addresser_id is not None and\
+         text         is not None:
+        return add_message(session, message=Message(sender=sender_id, addressee=addresser_id, text=text))
+    else:
+        return False
+
+
+# Adds all Messages from the list given to the Database
+# Returns True if all elements were added,
+# False if at least one was already contained
+def add_messagge_from_list(session, message_list):
+    b = True
+    for message in message_list:
+        b &= add_message(session, message=message)
+    return b

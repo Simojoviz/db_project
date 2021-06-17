@@ -37,6 +37,7 @@ add_role_from_list(session, roles)
 
 # Users
 users = [
+    User(fullname = "Admin",                  email='admin@gmail.com',      pwd='admin1'),
     User(fullname = "Stefano Calzavara",      email='stefano@gmail.com',    pwd='stefano1'),
     User(fullname = "Alessandra Raffaetà",    email='alessandra@gmail.com', pwd='alessandra1'),
     User(fullname = "Simone Jovon",           email='simone@gmail.com',     pwd='simone1'),
@@ -185,5 +186,13 @@ add_course_sign_up(
     user=get_user(session, email='simone@gmail.com'),
     course=get_course(session, name='Zumba'),
 )
+
+# Messages
+messages = [
+    Message(sender=get_user(session, email='andrea@gmail.com').id, addressee=get_user(session, email='simone@gmail.com').id, text='Great training!'),
+    Message(sender=get_user(session, email='sebastiano@gmail.com').id, addressee=get_user(session, email='andrea@gmail.com').id, text='Send nudes')
+]
+
+add_messagge_from_list(session, messages)
 
 session.commit()
