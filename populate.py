@@ -190,12 +190,12 @@ add_course_sign_up(
 
 # Messages
 messages = [
-    Message(sender=get_user(session, email='andrea@gmail.com').id, addressee=get_user(session, email='simone@gmail.com').id, text='Great training!'),
-    Message(sender=get_user(session, email='sebastiano@gmail.com').id, addressee=get_user(session, email='andrea@gmail.com').id, text='Send nudes')
+    Message(sender=get_user(session, email='andrea@gmail.com').id, addressee=get_user(session, email='simone@gmail.com').id, text='Great training!', date=datetime.datetime.now()),
+    Message(sender=get_user(session, email='sebastiano@gmail.com').id, addressee=get_user(session, email='andrea@gmail.com').id, text='Send nudes', date=datetime.datetime.now())
 ]
 
 add_messagge_from_list(session, messages)
 
-covid_report(session, get_user(session, email='andrea@gmail.com').id)
+# covid_report_messages(session, get_user(session, email='andrea@gmail.com').id)
 
 session.commit()

@@ -880,7 +880,7 @@ def get_message(session, sender=None, addresser=None, all=False):
 # Returns True if it was added correctly, False otherwise
 # Raises an error if
 #  - the sender and the addresser are the same User
-def add_message(session, message=None, sender_id=None, addresser_id=None, text=None):
+def add_message(session, sender_id=None, addresser_id=None, text=None, message=None):
 
     if message is not None:
         if message.sender == message.addressee:
@@ -895,7 +895,7 @@ def add_message(session, message=None, sender_id=None, addresser_id=None, text=N
     elif sender_id    is not None and\
          addresser_id is not None and\
          text         is not None:
-        return add_message(session, message=Message(sender=sender_id, addressee=addresser_id, text=text))
+        return add_message(session, message=Message(sender=sender_id, addressee=addresser_id, text=text, date=datetime.datetime.now()))
     else:
         return False
 
@@ -912,7 +912,7 @@ def add_messagge_from_list(session, message_list):
 # Given the user_id who did the report send a message to:
 # - all users who had a shift in common in the two previous week
 # - all users who have a course in common (and also to the trainer)
-def covid_report(session, user_id):
+def covid_report_messages(session, user_id):
     user = get_user(session, id = user_id)
     today = datetime.date.today()
     prev = today - timedelta(days=14)
@@ -945,7 +945,8 @@ def covid_report(session, user_id):
         messages.append(
             Message(
                 sender= sender, addressee=get_user(session, id=id).id,
-                text = "You have been in contact with a person affected from Covid-19"
+                text = "You have been in contact with a person affected from Covid-19",
+                date=datetime.datetime.now()
             )
         )
     add_messagge_from_list(session, messages)

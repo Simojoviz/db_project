@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block pagebody %}
+<div class="container">
+  <h2>Invia Messaggio</h2>
+  <form action="/messages/send_message" method="POST">
+    Insert addresser:
+    <select id="addresser" name="addresser">
+      {% for u in users %}
+      <option value="{{ u.id }}"> {{ u.fullname }} </option>
+      {% endfor %}
+    </select>
+    <br>
+    Insert text:
+    <input type="text", id="text", name="text">
+    <input type="submit", value="Invia">
+  </form>
+  <br>
+  <h2>Messaggi Inviati</h2>
+  <table class="table table-borderless">
+    <tr>
+      <th>Destinatario</th>
+      <th>Testo</th>
+    </tr>
+
+    {% for m in messages %}
+    <tr>
+      <td>{{m.addresser.fullname}}</td>
+      <td>{{m.text}}</td>
+    </tr>
+    {% endfor %}
+
+  </table>
+  <form action="/private/messages">
+    <input type="submit", value="Back">
+  </form>
+</div>
+
+
+  
+  
+{% endblock %}

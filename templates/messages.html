@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block pagebody %}
+<div class="container">
+  <h2>Messaggi Privati</h2>
+  
+  <form action="/private/messages/send">
+    <input type="submit", value="Inviati">
+  </form>
+
+  <form action="/private/messages/addressed">
+    <input type="submit", value="Ricevuti">
+  </form>
+
+
+
+  <form action="/private">
+    <input type="submit", value="Back">
+  </form>
+</div>
+  
+{% endblock %}

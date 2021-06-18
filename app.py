@@ -283,3 +283,82 @@ def login_form():
 def logout():
     logout_user()
     return redirect(url_for('home'))
+
+# ________________________________________________________MESSAGES________________________________________________________
+@app.route('/private/covid_report')
+@login_required
+def covid_report():
+    session = Session() 
+    try:
+        covid_report_messages(session, current_user.id)
+        session.commit()
+        return redirect(url_for('private'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/private/messages')
+@login_required
+def messages():
+    session = Session() 
+    try:
+        resp = make_response(render_template("messages.html"))
+        session.commit()
+        return resp
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/private/messages/send')
+@login_required
+def sent():
+    session = Session() 
+    try:
+        users = get_user(session, all=True)
+        users.remove(current_user)
+        messages = get_message(session, sender=current_user.id)
+        resp = make_response(render_template("send.html", messages=messages, users=users))
+        session.commit()
+        return resp
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/private/messages/addressed')
+@login_required
+def addressed():
+    session = Session() 
+    try:
+        messages = get_message(session, addresser=current_user.id)
+        resp = make_response(render_template("addressed.html", messages=messages))
+        session.commit()
+        return resp
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/messages/send_message', methods=['GET', 'POST'])
+@login_required
+def send_message():
+    if request.method == 'POST':
+        session = Session()
+        try:
+            adr_id = request.form['addresser']
+            text = request.form['text']
+            add_message(session,current_user.id, adr_id, text)
+            session.commit()
+            return redirect(url_for('sent'))
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
