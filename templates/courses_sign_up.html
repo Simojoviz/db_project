@@ -2,35 +2,101 @@
 
 {% block pagebody %}
 
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+.collapsible {
+  background-color: rgb(13, 202, 240);
+  color: white;
+  cursor: pointer;
+  padding: 18px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 15px;
+}
+
+.active, .collapsible:hover {
+  background-color: rgb(13, 202, 240);
+}
+
+.content {
+  padding: 0 18px;
+  display: none;
+  overflow: hidden;
+  background-color: #f1f1f1;
+}
+</style>
+
 <div class="container">
   <h3>Iscrizioni</h3>
-  <table class="table table-borderless">
-    <tr>
-      <th>Course</th>
-      <th>Starting</th>
-      <th>Ending</th>
-      <th>Delete</th>
-    </tr>
+  
+  {% for c in courses %}
+  <button type="button" class="collapsible">{{c.name}}</button>
+  <div class="content">
 
-    {% for c in courses %}
+    <table class="table table-borderless">
       <tr>
-        <td>{{c.name}}</td>
+        <th>Starting</th>
+        <th>Ending</th>
+        <th>Delete</th>
+      </tr>
+      <tr>
         <td>{{c.starting}}</td>
         <td>{{c.ending}}</td>
-        <td>
+        <td>            
           <form action="{{ url_for('delete_sign_up', course_name=c.name) }}">
-            <input type="submit", value="Disiscriviti">
+          <input type="submit", value="Disiscriviti">
           </form>
         </td>
       </tr>
-    {% endfor %}
-  </table>
+    </table>
+
+    <h3> Shifts </h3>
+    <table class="table table-borderless">
+      <tr>
+        <th>Date</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Room</th>
+      </tr>
+
+      {% for s in c.shifts %}
+      <tr>
+        <td>{{s.date}}</td>
+        <td>{{s.h_start}}</td>
+        <td>{{s.h_end}}</td>
+        <td>{{s.room.name}}</td>
+      </tr>
+      {% endfor %}
+    </table>
+
+  </div>
+  {% endfor %}
+
   <form action="/private">
     <input type="submit", value="Back">
   </form>
 </div>
 
+</div>
 
+<script>
+  var coll = document.getElementsByClassName("collapsible");
+  var i;
+  
+  for (i = 0; i < coll.length; i++) {
+    coll[i].addEventListener("click", function() {
+      this.classList.toggle("active");
+      var content = this.nextElementSibling;
+      if (content.style.display === "block") {
+        content.style.display = "none";
+      } else {
+        content.style.display = "block";
+      }
+    });
+  }
+</script>
   
   
 {% endblock %}

@@ -676,10 +676,13 @@ def plan_course(session, name):
         
 
     course = get_course(session, name=name)
-    courses_program = get_course_program(session, course_id=course.id)
-    own_training_id = None
+    if course is None:
+        raise Exception("Course " + name + " does not exixsts")
+    course_programs = get_course_program(session, course_id=course.id)
+    if course_programs is None:
+        raise Exception("Course " + name + " is planned with no course program")
     end = course.ending + timedelta(days=0)
-    for prog in courses_program:
+    for prog in course_programs:
         dayname = prog.week_day
         turn = prog.turn_number
         room_id = prog.room_id
@@ -690,7 +693,7 @@ def plan_course(session, name):
             shift = get_shift_turn(session, date=datetime.date(year=day.year, month=day.month, day=day.day), room_id=room_id, turn=turn)
             if shift is None:
                 raise Exception("There is not that turn in that day")
-            if(shift.course_id != own_training_id):
+            if(shift.course_id != None):
                 raise Exception("Course cannot be planned: it overlaps with an other course!")
             else:
                 # Delete all Prenotation in that Shift
@@ -928,8 +931,9 @@ def covid_report_messages(session, user_id):
     courses = user.courses
     for course in courses:
         ids.append(course.instructor_id)
-        # users = course.users TODO non funzionano le relationship
-        """for us in users:
+        # TODO non funzionano la relationship course.users
+        """users = course.users 
+        for us in users:
             print(us)
             ids.append(us.id)"""
         course_signs_up = get_course_sign_up(session, course_id=course.id)

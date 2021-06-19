@@ -59,7 +59,7 @@ add_trainer(session, fullname='Riccardo Focardi', email='riccardo@gmail.com', pw
 
 courses = [
     Course(name = 'Boxe',
-        starting=datetime.datetime(year=2021, month=8, day=1), ending = datetime.datetime(year=2021, month=6, day=30), max_partecipants = 7, 
+        starting=datetime.datetime(year=2021, month=6, day=1), ending = datetime.datetime(year=2021, month=6, day=30), max_partecipants = 7, 
         instructor_id = get_trainer(session, email='stefano@gmail.com').id
     ),
     Course(name = 'Zumba',
@@ -113,7 +113,7 @@ courses_program = [
     CourseProgram(
         week_day = 'Monday', turn_number = 3,
         room_id = get_room(session, name='Boxing Room').id,
-        course_id =get_course(session, name='Boxe').id
+        course_id = get_course(session, name='Boxe').id
     ),
     CourseProgram(
         week_day = 'Tuesday', turn_number = 4,
@@ -194,8 +194,8 @@ messages = [
     Message(sender=get_user(session, email='sebastiano@gmail.com').id, addressee=get_user(session, email='andrea@gmail.com').id, text='Send nudes', date=datetime.datetime.now())
 ]
 
-add_messagge_from_list(session, messages)
+# add_messagge_from_list(session, messages)
 
-# covid_report_messages(session, get_user(session, email='andrea@gmail.com').id)
+covid_report_messages(session, get_user(session, email='andrea@gmail.com').id)
 
 session.commit()
