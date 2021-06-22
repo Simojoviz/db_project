@@ -1,10 +1,48 @@
 {% extends 'base.html' %}
 
 {% block pagebody %}
+<div style="background-image: url('static/banner_home.jpg'); width: 100%; height: 485px; background-size: cover; background-repeat: no-repeat; background-position: center center;">
+  <div class="container">
+    <div style="line-height: 120%; font-weight: 700; position: absolute; top: 25%; color: #FFFFFF; font-size: 60px;">
+      Gym
+    </div>
+  </div>
+</div>
+<div class="container" style="padding-top: 10px; padding-bottom: 10px;">
+  <div>
+    <h1>Servizi offerti</h1>
+    <div class="card " style="width: 18rem; float: left; margin-right: 10px;">
+      <img src="static/courses.jpg" class="card-img-top">
+      <div class="card-body">
+        <h4>Courses</h4>
+        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+      </div>
+    </div>
 
-<ul>
-  {% for u in users %}
-     <li> {{ u }} </li>
-   {% endfor %}
-</ul>
+    <div class="card" style="width: 18rem; margin-left: 10px;">
+      <img src="static/prenotations.jpg" class="card-img-top">
+      <div class="card-body">
+        <h4>Own Training</h4>
+        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="mx-auto mt-3 mb-3">
+    <h1>Chi siamo</h1>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse egestas, eros at sodales tincidunt, nunc nisl egestas turpis, ac suscipit lacus purus a tellus. Nulla at accumsan elit. Praesent auctor aliquet vulputate. Morbi condimentum metus egestas, faucibus neque ut, pellentesque magna. Vestibulum hendrerit facilisis maximus. Phasellus eu diam molestie, cursus magna quis, vestibulum purus. Sed egestas ultrices odio id mollis. Donec tincidunt lacus lorem, ac molestie nisi ullamcorper sit amet. Etiam tempor tellus ut sapien venenatis aliquet. Sed sollicitudin nisl eget nunc pulvinar, ut ullamcorper libero lobortis. Duis lacinia vestibulum nulla et imperdiet. Curabitur pulvinar convallis arcu, accumsan sagittis ex ornare eu. Donec vulputate sed ante at tempor. Pellentesque sollicitudin mi nec orci cursus, vel volutpat urna finibus. Vestibulum congue tortor sit amet sodales sagittis.</p>
+  </div>
+  
+  <div class="mx-auto mt-3 mb-3">
+    <h1>Normative anti-covid</h1>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse egestas, eros at sodales tincidunt, nunc nisl egestas turpis, ac suscipit lacus purus a tellus. Nulla at accumsan elit. Praesent auctor aliquet vulputate. Morbi condimentum metus egestas, faucibus neque ut, pellentesque magna. Vestibulum hendrerit facilisis maximus. Phasellus eu diam molestie, cursus magna quis, vestibulum purus. Sed egestas ultrices odio id mollis. Donec tincidunt lacus lorem, ac molestie nisi ullamcorper sit amet. Etiam tempor tellus ut sapien venenatis aliquet. Sed sollicitudin nisl eget nunc pulvinar, ut ullamcorper libero lobortis. Duis lacinia vestibulum nulla et imperdiet. Curabitur pulvinar convallis arcu, accumsan sagittis ex ornare eu. Donec vulputate sed ante at tempor. Pellentesque sollicitudin mi nec orci cursus, vel volutpat urna finibus. Vestibulum congue tortor sit amet sodales sagittis.</p>
+  </div>
+  <ul>
+    {% for u in users %}
+       <li> {{ u }} </li>
+     {% endfor %}
+  </ul>
+</div>
+
 {% endblock %}
