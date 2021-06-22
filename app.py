@@ -244,7 +244,36 @@ def delete_sign_up(course_name):
     return redirect(url_for('courses_sign_up'))
 
 
-# ________________________________________________________LOGIN________________________________________________________
+# ________________________________________________________LOGIN - SIGNIN________________________________________________________
+@app.route('/signin')
+def signin():
+    return render_template("signin.html")
+
+@app.route('/signin_form', methods=['GET', 'POST'])
+def signin_form():
+    if request.method == 'POST':
+        session = Session()
+        try:
+            fullname = request.form['name']
+            email = request.form['email']
+            pwd1 = request.form['pwd1']
+            pwd2 = request.form['pwd2']
+            print()
+            us = get_user(session, email=email)
+            if us is None and pwd1 == pwd2:
+                add_user(session, fullname=fullname, email=email, pwd=pwd1)
+                session.commit()
+            else:
+                print('Signin non valido!')
+        except:
+            session.rollback()
+            raise
+        finally:
+            return redirect(url_for('login'))
+            session.close()
+                
+
+
 
 @app.route('/login')
 def login():
