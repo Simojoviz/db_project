@@ -201,7 +201,9 @@ def courses():
     try:
         session = Session()
         courses = get_course(session, all=True)
-        return render_template("courses.html", courses = courses)
+        if current_user.is_authenticated and get_trainer(session, id = current_user.id) is not None:
+            return render_template("courses.html", courses = courses, isTrainer=True)
+        return render_template("courses.html", courses = courses, isTrainer=False)
     except:
         session.rollback()
         raise
@@ -221,6 +223,35 @@ def course(course_name):
         cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
         return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs)
     return render_template("course.html", course = c, course_program = cp, shift = sh)
+
+@app.route('/new_course')
+def new_course():
+    session = Session()
+    if current_user.is_authenticated:
+        if get_trainer(session, id = current_user.id) is None:
+            return redirect(url_for('courses'))
+        else:
+            return render_template('add_course.html')
+
+@app.route('/new_course_form', methods=['GET', 'POST'])
+def new_course_form():
+    if request.method == 'POST':
+        session = Session()
+        try:
+            name = request.form['name']
+            starting = request.form['starting']
+            ending = request.form['ending']
+            max_partecipants = request.form['max_partecipants']
+            instructor_id = current_user.id
+            add_course(session, name=name, starting=starting, ending=ending, max_partecipants=max_partecipants, instructor_id=instructor_id)
+            session.commit()
+            return redirect(url_for('courses'))
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
 
 @app.route('/sign_up/<course_name>')
 def sign_up(course_name):

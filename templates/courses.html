@@ -3,23 +3,31 @@
 {% block pagebody %}
 
 <div class="container">
-  <h1>Corsi</h1>
-    <div class="row">
-      {% for c in courses%}
-          <div class="card" style="width: 18rem; margin-left: 5px; margin-right: 5px;">
-            <img src="static/images.jpg" class="card-img-top">
-            <div class="card-body">
-              <h5 class="card-title">{{c.name}}</h5>
-              <p class="card-text">
-                Inizio: {{c.starting}} 
-                <br> 
-                Fine: {{c.ending}} 
-              </p>
-              <a href="{{ url_for('course', course_name=c.name) }}" class="btn btn-primary">Vedi Corso</a>
-            </div>
-          </div>
-      {%endfor%}
-    </div>
+  <div>
+    <h1>Corsi</h1>
+    {% if current_user.is_authenticated and isTrainer == True %}
+      <form action="/new_course">
+        <input type="submit", value="Aggiungi" class="btn btn-success btn-sm mt-2 ml-2">
+      </form>
+    {% endif %}
+  </div>
+  <br>
+  <div class="row">
+    {% for c in courses%}
+      <div class="card" style="width: 18rem; margin-left: 5px; margin-right: 5px; margin-bottom: 5px;">
+        <img src="static/images.jpg" class="card-img-top">
+        <div class="card-body">
+          <h5 class="card-title">{{c.name}}</h5>
+          <p class="card-text">
+            Inizio: {{c.starting}} 
+            <br> 
+            Fine: {{c.ending}} 
+          </p>
+          <a href="{{ url_for('course', course_name=c.name) }}" class="btn btn-info text-light">Vedi Corso</a>
+        </div>
+      </div>
+    {%endfor%}
+  </div>
 </div>
 
 
