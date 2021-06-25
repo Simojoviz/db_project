@@ -291,12 +291,21 @@ def signin_form():
             pwd1 = request.form['pwd1']
             pwd2 = request.form['pwd2']
             us = get_user(session, email=email)
-            if us is None and pwd1 == pwd2:
+            if fullname and email and pwd1 and pwd1 == pwd2 and us is None:
                 add_user(session, fullname=fullname, email=email, pwd=pwd1)
                 session.commit()
                 return redirect(url_for('login'))
-            else:
-                return redirect(url_for('signin'))
+            if not fullname:
+                flash("Please enter a fullname", category='error')
+            elif not email:
+                flash("Please enter an email", category='error')
+            elif us is not None:
+                flash("User already exist", category='error')
+            elif not pwd1:
+                flash("Please enter a password", category='error')
+            else:    
+                flash("Passwords do not match", category='error')
+            return redirect(url_for('signin'))
         except:
             session.rollback()
             raise
