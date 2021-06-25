@@ -3,22 +3,32 @@
 {% block pagebody %}
 
 <div class="container mb-5">
-  <h2 class="mb-2">Prenota un Turno</h2>
-  <form action="/shifts/load_date" method="POST">
-    Insert date:
-    <input name="date" type="date", value= {{ date_string }} >
-    <br>
-    Insert room:
-    <select id="room" name="room">
-      <option value="All">All</option>
-      {% for i in rooms %}
-      <option value="{{ i.name }}"> {{ i.name }} </option>
-      {% endfor %}
-    </select>
-    <input type="submit", value="Cerca">
-  </form>
+  <div>
+    <h1 class="mb-2 text-center">Prenota un Turno</h1>
+    <form action="/shifts/load_date" method="POST">
+      <div class="row w-75 mx-auto mt-4">
+        <div class="col text-center">
+          <strong>Date</strong> 
+          <input name="date" type="date", value= {{ date_string }} >
+        </div>
+        <div class="col text-center">
+          <strong>Room</strong>
+          <select id="room" name="room">
+            <option value="All">All</option>
+            {% for i in rooms %}
+            <option value="{{ i.name }}"> {{ i.name }} </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col text-center">
+          <input type="submit", value="Cerca">
+        </div>
+      </div>
+    </form>
+  </div>
+  
 
-  <div class=" w-50">
+  <div class=" w-75 mx-auto mt-4">
     <table class="table table-borderless">
       <tr>
         <th>Date</th>

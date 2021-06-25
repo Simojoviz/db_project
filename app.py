@@ -118,9 +118,6 @@ def courses_sign_up():
 #@app.route('/shifts?year=&month=&day=&room=')
 def shifts(day, month, year, room):
     try:
-        print(day)
-        print(month)
-        print(year)
         session = Session()
         date = datetime.date(year=int(year), month=int(month), day=int(day))
         date_string = date.strftime("%Y-%m-%d")
@@ -131,6 +128,8 @@ def shifts(day, month, year, room):
             room_id = get_room(session, name=room).id
             shifts = get_shift(session, date=date, room_id=room_id)
         shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
+        if date == date.today():
+            shifts = filter(lambda sh: sh.h_start >= datetime.datetime.now().time(), shifts)
         resp = make_response(render_template("shifts.html", shifts=shifts, date_string=date_string, rooms=r))
         session.commit()
         return resp
