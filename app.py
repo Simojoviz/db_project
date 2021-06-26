@@ -292,19 +292,20 @@ def signin_form():
             pwd2 = request.form['pwd2']
             us = get_user(session, email=email)
             if fullname and email and pwd1 and pwd1 == pwd2 and us is None:
+                flash("Signed in successfully.", category='success')
                 add_user(session, fullname=fullname, email=email, pwd=pwd1)
                 session.commit()
                 return redirect(url_for('login'))
             if not fullname:
-                flash("Please enter a fullname", category='error')
+                flash("Please enter a fullname.", category='error')
             elif not email:
-                flash("Please enter an email", category='error')
+                flash("Please enter an email.", category='error')
             elif us is not None:
-                flash("User already exist", category='error')
+                flash("User already exist.", category='error')
             elif not pwd1:
-                flash("Please enter a password", category='error')
+                flash("Please enter a password.", category='error')
             else:    
-                flash("Passwords do not match", category='error')
+                flash("Passwords do not match.", category='error')
             return redirect(url_for('signin'))
         except:
             session.rollback()
@@ -336,9 +337,11 @@ def login_form():
                     session.commit()
                     return redirect(url_for('login'))
                 else:
+                    flash("Incorrect username or password.", category='error')
                     session.commit()
                     return redirect(url_for('login'))
             else:
+                flash("Incorrect username or password.", category='error')
                 session.commit()
                 return redirect(url_for('login'))
         except:
