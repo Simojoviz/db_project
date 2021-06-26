@@ -8,4 +8,5 @@ engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', e
 
 Base = automap_base()
 Base.prepare(engine, reflect=True)
+
 Base.metadata.drop_all(engine)  

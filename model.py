@@ -149,11 +149,7 @@ def add_user_roles(session, user=None, role=None, user_role=None):
             raise Exception("User already has this role")
         else:
             session.add(UserRoles(user_id=user.id, role_id=role.id))
-    elif prenotation is not None:
-        user_  = get_user(session, id=user_role.user_id)
-        role_ = get_role(session, id=user_role.role_id)
-        add_prenotation(session, user=user_, role=role_)
-    else:
+            return True
         return False
 
 # ________________________________________ TRAINER ________________________________________ 
@@ -383,10 +379,10 @@ def get_prenotation(session, user_id=None, shift_id=None, date=None, all=False):
 # - Given a Prenotation adds it to the Database
 # Returns True if it was added correctly, False if the element was already contained
 # Raise an Exception if
-# - shift is occupied by a course
-# - maximum capacity has already been reached
-# - the user is already in that turn
-# - the user has reached week-limit hours
+# - shift is occupied by a course (trigger)
+# - maximum capacity has already been reached (trigger)
+# - the user is already in that turn (trigger)
+# - the user has reached week-limit hours (app)
 def add_prenotation(session, user=None, shift=None, prenotation=None):
 
     # Returns the number of own-training-week-prenotations for the  given the user and a date
@@ -411,21 +407,16 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
         if exist is not None:
             raise Exception("User already prenoted")
         else:
-            if shift.course_id == None:
-                nprenoted = len(shift.users_prenotated)
-                room_capacity = get_room(session, id=shift.room_id).max_capacity
-                if(nprenoted < room_capacity):
-                    max_ = get_global_setting(session, name='MaxWeeklyEntry').value
-                    count = get_count_weekly_prenotations(session, user, shift.date)
-                    if (count < max_):
-                        session.add(Prenotation(client_id=user.id, shift_id=shift.id))
-                        return True
-                    else:
-                        raise Exception("Week prenotation peak reached")
-                else:
-                    raise Exception("Maximum capacity already reached")
+            max_ = get_global_setting(session, name='MaxWeeklyEntry').value
+            count = get_count_weekly_prenotations(session, user, shift.date)
+            if (count < max_):
+                try:
+                    session.add(Prenotation(client_id=user.id, shift_id=shift.id))
+                    return True
+                except exception:
+                    raise exception
             else:
-                raise Exception("Shift occupied by a course")
+                raise Exception("Week prenotation peak reached")
     elif prenotation is not None:
         user_  = get_user(session, id=prenotation.client_id)
         shift_ = get_shift(session, id=prenotation.shift_id)

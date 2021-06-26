@@ -144,6 +144,7 @@ conn.execute(
 #_________________________________________________TRIGGER_________________________________________________
 
 #___________PRENOTATION___________
+
 conn.execute(
     "DROP FUNCTION IF EXISTS public.no_double_prenotation() CASCADE;\
     CREATE FUNCTION public.no_double_prenotation()\
@@ -153,17 +154,34 @@ conn.execute(
     VOLATILE NOT LEAKPROOF\
     AS $BODY$\
     BEGIN\
-        IF NEW.client_id IN (\
-            SELECT user_id\
-            FROM prenotations\
-            WHERE shift_id = NEW.shift_id\
-        )\
-        THEN\
-            RAISE NOTICE 'User cannot prenote twice for the same Shift';\
-            RETURN NULL;\
-        END IF;\
-        RETURN NEW;\
-    END\
+	IF NEW.client_id IN (\
+		SELECT client_id\
+		FROM prenotations\
+		WHERE shift_id = NEW.shift_id\
+	) THEN\
+		RAISE EXCEPTION 'User cannot prenote twice for the same Shift';\
+        RETURN NULL;\
+	ELSIF (\
+		SELECT count(*)\
+		FROM prenotations\
+		WHERE shift_id = NEW.shift_id\
+	) = (\
+		SELECT r.max_capacity\
+		FROM rooms r JOIN shifts s ON r.id = s.room_id\
+		WHERE s.id = NEW.shift_id\
+	) THEN\
+		RAISE EXCEPTION 'The shift is full';\
+		RETURN NULL;\
+	ELSIF (\
+		SELECT course_id\
+		FROM shifts\
+		WHERE id = NEW.shift_id\
+	) IS NOT NULL THEN\
+		RAISE EXCEPTION 'Cannot prenote: shift occupied by a course';\
+        RETURN NULL;\
+	END IF;\
+    RETURN NEW;\
+END\
     $BODY$;\
     \
     ALTER FUNCTION public.no_double_prenotation()\
@@ -181,3 +199,4 @@ conn.execute(
     COMMENT ON TRIGGER NoDoublePrenotation ON public.prenotations\
         IS 'no user can prenote twice for the same shift';"
 )
+
