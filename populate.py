@@ -15,7 +15,7 @@ session = Session()
 
 # Rooms
 rooms = [
-    Room(name = "Main Room", max_capacity = 25),
+    Room(name = "Main Room", max_capacity = 5),
     Room(name = "Weight Room", max_capacity = 30),
     Room(name = "Fitness Room", max_capacity = 25),
     Room(name = "Swimming Pool", max_capacity = 40),
@@ -83,7 +83,6 @@ week_settings = [
     WeekSetting(day_name='Thursday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00), changed = True),
     WeekSetting(day_name='Friday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), changed = True),
     WeekSetting(day_name='Saturday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=15, minute=00), length=datetime.time(hour=1, minute=30), changed = True),
-    WeekSetting(day_name='Sunday',    starting=datetime.time(hour=0, minute= 1),  ending=datetime.time(hour=00, minute=0), length=datetime.time(hour=0, minute=0), changed = True),
 ]
 
 for ws in week_settings:

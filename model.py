@@ -317,7 +317,7 @@ def plan_shifts(session, starting, n=1, ending=None):
     while(day <= ending):
         day_name = calendar.day_name[day.weekday()]
         ws = get_week_setting(session, day_name=day_name)
-        if ws.changed is True:
+        if ws is not None and ws.changed is True:
             session.query(Shift).where(Shift.date==day).delete()
             l = generate_daily_shifts(session, datetime.date(year=day.year, month=day.month, day=day.day))
             add_shift_from_list(session, l)
