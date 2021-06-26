@@ -757,7 +757,7 @@ def add_course_program(session, week_day=None, turn_number=None, room_id=None, c
          turn_number is not None and\
          room_id     is not None and\
          course_id   is not None:
-        add_course_program(session, course=CourseProgram(week_day=week_day, turn_number=turn_number, room_id=room_id, course_id=course_id))
+        add_course_program(session, course_program=CourseProgram(week_day=week_day, turn_number=turn_number, room_id=room_id, course_id=course_id))
     else:
         return False
     

@@ -11,9 +11,9 @@ from model import *
 app = Flask ( __name__ )
 
 #engine = create_engine('sqlite:///database.db', echo=True)
-engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
+#engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
 # engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=True)
-# engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
+engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
 
 app.config ['SECRET_KEY'] = 'ubersecret'
 
@@ -221,8 +221,10 @@ def course(course_name):
     if current_user.is_authenticated:
         u = get_user(session, id = current_user.id)
         cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
-        return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs)
-    return render_template("course.html", course = c, course_program = cp, shift = sh)
+        if get_trainer(session, id = u.id) is not None:
+            return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isTrainer=True)
+        return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isTrainer=False)
+    return render_template("course.html", course = c, course_program = cp, shift = sh, isTrainer=False)
 
 @app.route('/new_course')
 def new_course():
@@ -231,7 +233,8 @@ def new_course():
         if get_trainer(session, id = current_user.id) is None:
             return redirect(url_for('courses'))
         else:
-            return render_template('add_course.html')
+            r = get_room(session, all=True)
+            return render_template('add_course.html', rooms = r)
 
 @app.route('/new_course_form', methods=['GET', 'POST'])
 def new_course_form():
@@ -245,7 +248,7 @@ def new_course_form():
             instructor_id = current_user.id
             add_course(session, name=name, starting=starting, ending=ending, max_partecipants=max_partecipants, instructor_id=instructor_id)
             session.commit()
-            return redirect(url_for('courses'))
+            return redirect(url_for('new_program', course_name = name))
         except:
             session.rollback()
             raise
@@ -273,7 +276,30 @@ def delete_sign_up(course_name):
     session.commit()
     return redirect(url_for('courses_sign_up'))
 
+@app.route('/new_program/<course_name>')
+def new_program(course_name):
+    session = Session()
+    r = get_room(session, all=True)
+    return render_template('add_program.html', rooms = r, course = course_name)
 
+@app.route('/new_program_form/<course_name>', methods=['POST', 'GET'])
+def new_program_form(course_name):
+    if request.method == 'POST':
+        session = Session()
+
+        room = request.form['room']
+        r = get_room(session, name = room)
+        day = request.form['day']
+        c = get_course(session, name = course_name)
+        course_id = c.id
+        add_course_program(session, week_day=day, turn_number=6, room_id=r.id, course_id=course_id )
+        session.commit()
+        return redirect(url_for('courses'))
+
+@app.route
+
+
+    
 # ________________________________________________________LOGIN - SIGNIN________________________________________________________
 @app.route('/signin')
 def signin():
