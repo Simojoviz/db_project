@@ -5,7 +5,7 @@
 <div class="container">
   <div>
     <h1>Corsi</h1>
-    {% if current_user.is_authenticated and isTrainer == True %}
+    {% if current_user.is_authenticated and isStaff == True %}
       <form action="/new_course">
         <input type="submit", value="Aggiungi" class="btn btn-success btn-sm mt-2 ml-2">
       </form>

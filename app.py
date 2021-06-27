@@ -23,28 +23,36 @@ Session = sessionmaker(bind=engine, autoflush=True)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-
-
-class User(UserMixin):
+class SessionUser(UserMixin):
     # costruttore di classe
-    def __init__(self, id, email, psw, active=True):
+    def __init__(self, id, email, pwd, roles, active=True):
         self.id = id
         self.email = email
-        self.psw = psw
+        self.pwd = pwd
+        self.roles = roles
         self.active = active
 
-def get_user_by_email(session, email):
+def get_SessionUser_by_email(session, email):
     user = get_user(session, email = email)
     if user is not None:
-        return User(user.id, user.email, user.pwd)
+        roles = [role.name for role in user.roles]
+        return SessionUser(id=user.id, email=user.email, pwd=user.pwd, roles=roles)
+
 
 @login_manager.user_loader
 def load_user(user_id):
     session = Session()
-    user = get_user(session, id = user_id)
-    session.close()
-    if user is not None:
-        return User(user.id, user.email, user.pwd)
+    try:
+        user = get_user(session, id = user_id)
+        if user is not None:
+            roles = [role.name for role in user.roles]
+            session.commit()
+            return SessionUser(id=user.id, email=user.email, pwd=user.pwd, roles=roles)
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 #__________________________________________HOME________________________________________
 @app.route('/')
@@ -201,9 +209,9 @@ def courses():
     try:
         session = Session()
         courses = get_course(session, all=True)
-        if current_user.is_authenticated and get_trainer(session, id = current_user.id) is not None:
-            return render_template("courses.html", courses = courses, isTrainer=True)
-        return render_template("courses.html", courses = courses, isTrainer=False)
+        if current_user.is_authenticated and "Staff" in current_user.roles:
+            return render_template("courses.html", courses = courses, isStaff=True)
+        return render_template("courses.html", courses = courses, isStaff=False)
     except:
         session.rollback()
         raise
@@ -221,20 +229,20 @@ def course(course_name):
     if current_user.is_authenticated:
         u = get_user(session, id = current_user.id)
         cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
-        if get_trainer(session, id = u.id) is not None:
-            return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isTrainer=True)
-        return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isTrainer=False)
-    return render_template("course.html", course = c, course_program = cp, shift = sh, isTrainer=False)
+        if "Staff" in current_user.roles:
+            return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=True)
+        return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=False)
+    return render_template("course.html", course = c, course_program = cp, shift = sh, isStaff=False)
 
 @app.route('/new_course')
 def new_course():
     session = Session()
     if current_user.is_authenticated:
-        if get_trainer(session, id = current_user.id) is None:
-            return redirect(url_for('courses'))
-        else:
+        if "Staff" in current_user.roles:
             r = get_room(session, all=True)
-            return render_template('add_course.html', rooms = r)
+            return render_template('add_course.html', rooms=r)
+        return redirect(url_for('courses'))
+
 
 @app.route('/new_course_form', methods=['GET', 'POST'])
 def new_course_form():
@@ -266,6 +274,7 @@ def sign_up(course_name):
         session.commit()
         return redirect(url_for('courses_sign_up'))
     return redirect(url_for('login'))
+
 
 @app.route('/delete_sign_up/<course_name>')
 def delete_sign_up(course_name):
@@ -358,7 +367,7 @@ def login_form():
             userIn = get_user(session, email = userReq)
             if(userIn is not None):
                 if (passReq == userIn.pwd):
-                    user = get_user_by_email(session, userReq)
+                    user = get_SessionUser_by_email(session, email)
                     login_user(user)
                     session.commit()
                     return redirect(url_for('login'))

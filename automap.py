@@ -8,7 +8,7 @@ Base = declarative_base()
 
 #_________________________________________________TABLES_________________________________________________
 
-class User(Base, UserMixin):
+class User(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)

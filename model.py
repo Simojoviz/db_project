@@ -128,11 +128,11 @@ def add_role_from_list(session, role_list):
 # - Given a user_id and a role_id returns the correponding UserRoles if exists
 # - If all flag is true, returns all UserRoles
 # Returns None otherwise
-def get_user_roles(session, user_id=None, role_id=None, all=False):
+def get_user_roles(session, user_id=None, role_id=None):
     if user_id is not None and role_id is not None:
-        return session.query(UserRoles).filter(UserRoles.user_id == user_id, UserRoles.role_id == role_id).one_or_none()
-    elif all is True:
-        return session.query(UserRoles).all()
+        return session.query(Role).join(UserRoles).filter(UserRoles.user_id == user_id, UserRoles.role_id == role_id).one_or_none()
+    elif user_id is not None:
+        return session.query(Role).join(UserRoles).filter(UserRoles.user_id == user_id).all()
     else:
         return None   
 
