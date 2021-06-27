@@ -128,11 +128,11 @@ def add_role_from_list(session, role_list):
 # - Given a user_id and a role_id returns the correponding UserRoles if exists
 # - If all flag is true, returns all UserRoles
 # Returns None otherwise
-def get_user_roles(session, user_id=None, role_id=None, all=False):
+def get_user_roles(session, user_id=None, role_id=None):
     if user_id is not None and role_id is not None:
-        return session.query(UserRoles).filter(UserRoles.user_id == user_id, UserRoles.role_id == role_id).one_or_none()
-    elif all is True:
-        return session.query(UserRoles).all()
+        return session.query(Role).join(UserRoles).filter(UserRoles.user_id == user_id, UserRoles.role_id == role_id).one_or_none()
+    elif user_id is not None:
+        return session.query(Role).join(UserRoles).filter(UserRoles.user_id == user_id).all()
     else:
         return None   
 
@@ -757,7 +757,7 @@ def add_course_program(session, week_day=None, turn_number=None, room_id=None, c
          turn_number is not None and\
          room_id     is not None and\
          course_id   is not None:
-        add_course_program(session, course=CourseProgram(week_day=week_day, turn_number=turn_number, room_id=room_id, course_id=course_id))
+        add_course_program(session, course_program=CourseProgram(week_day=week_day, turn_number=turn_number, room_id=room_id, course_id=course_id))
     else:
         return False
     

@@ -11,13 +11,9 @@ from model import *
 app = Flask ( __name__ )
 
 #engine = create_engine('sqlite:///database.db', echo=True)
-engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
+#engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
 # engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=True)
-<<<<<<< Updated upstream
-# engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
-=======
-#engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
->>>>>>> Stashed changes
+engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
 
 app.config ['SECRET_KEY'] = 'ubersecret'
 
@@ -27,28 +23,36 @@ Session = sessionmaker(bind=engine, autoflush=True)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-
-
-class User(UserMixin):
+class SessionUser(UserMixin):
     # costruttore di classe
-    def __init__(self, id, email, psw, active=True):
+    def __init__(self, id, email, pwd, roles, active=True):
         self.id = id
         self.email = email
-        self.psw = psw
+        self.pwd = pwd
+        self.roles = roles
         self.active = active
 
-def get_user_by_email(session, email):
+def get_SessionUser_by_email(session, email):
     user = get_user(session, email = email)
     if user is not None:
-        return User(user.id, user.email, user.pwd)
+        roles = [role.name for role in user.roles]
+        return SessionUser(id=user.id, email=user.email, pwd=user.pwd, roles=roles)
+
 
 @login_manager.user_loader
 def load_user(user_id):
     session = Session()
-    user = get_user(session, id = user_id)
-    session.close()
-    if user is not None:
-        return User(user.id, user.email, user.pwd)
+    try:
+        user = get_user(session, id = user_id)
+        if user is not None:
+            roles = [role.name for role in user.roles]
+            session.commit()
+            return SessionUser(id=user.id, email=user.email, pwd=user.pwd, roles=roles)
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 #__________________________________________HOME________________________________________
 @app.route('/')
@@ -205,9 +209,9 @@ def courses():
     try:
         session = Session()
         courses = get_course(session, all=True)
-        if current_user.is_authenticated and get_trainer(session, id = current_user.id) is not None:
-            return render_template("courses.html", courses = courses, isTrainer=True)
-        return render_template("courses.html", courses = courses, isTrainer=False)
+        if current_user.is_authenticated and "Staff" in current_user.roles:
+            return render_template("courses.html", courses = courses, isStaff=True)
+        return render_template("courses.html", courses = courses, isStaff=False)
     except:
         session.rollback()
         raise
@@ -225,17 +229,20 @@ def course(course_name):
     if current_user.is_authenticated:
         u = get_user(session, id = current_user.id)
         cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
-        return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs)
-    return render_template("course.html", course = c, course_program = cp, shift = sh)
+        if "Staff" in current_user.roles:
+            return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=True)
+        return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=False)
+    return render_template("course.html", course = c, course_program = cp, shift = sh, isStaff=False)
 
 @app.route('/new_course')
 def new_course():
     session = Session()
     if current_user.is_authenticated:
-        if get_trainer(session, id = current_user.id) is None:
-            return redirect(url_for('courses'))
-        else:
-            return render_template('add_course.html')
+        if "Staff" in current_user.roles:
+            r = get_room(session, all=True)
+            return render_template('add_course.html', rooms=r)
+        return redirect(url_for('courses'))
+
 
 @app.route('/new_course_form', methods=['GET', 'POST'])
 def new_course_form():
@@ -249,7 +256,7 @@ def new_course_form():
             instructor_id = current_user.id
             add_course(session, name=name, starting=starting, ending=ending, max_partecipants=max_partecipants, instructor_id=instructor_id)
             session.commit()
-            return redirect(url_for('courses'))
+            return redirect(url_for('new_program', course_name = name))
         except:
             session.rollback()
             raise
@@ -268,6 +275,7 @@ def sign_up(course_name):
         return redirect(url_for('courses_sign_up'))
     return redirect(url_for('login'))
 
+
 @app.route('/delete_sign_up/<course_name>')
 def delete_sign_up(course_name):
     session = Session()
@@ -277,20 +285,30 @@ def delete_sign_up(course_name):
     session.commit()
     return redirect(url_for('courses_sign_up'))
 
-<<<<<<< Updated upstream
-=======
 @app.route('/new_program/<course_name>')
 def new_program(course_name):
     session = Session()
     r = get_room(session, all=True)
-    return render_template('add_program.html', rooms = r, course = course_name, week_setting=get_week_setting(session, all=True))
+    return render_template('add_program.html', rooms = r, course = course_name)
 
 @app.route('/new_program_form/<course_name>', methods=['POST', 'GET'])
 def new_program_form(course_name):
     if request.method == 'POST':
         session = Session()
->>>>>>> Stashed changes
 
+        room = request.form['room']
+        r = get_room(session, name = room)
+        day = request.form['day']
+        c = get_course(session, name = course_name)
+        course_id = c.id
+        add_course_program(session, week_day=day, turn_number=6, room_id=r.id, course_id=course_id )
+        session.commit()
+        return redirect(url_for('courses'))
+
+@app.route
+
+
+    
 # ________________________________________________________LOGIN - SIGNIN________________________________________________________
 @app.route('/signin')
 def signin():
@@ -349,7 +367,7 @@ def login_form():
             userIn = get_user(session, email = userReq)
             if(userIn is not None):
                 if (passReq == userIn.pwd):
-                    user = get_user_by_email(session, userReq)
+                    user = get_SessionUser_by_email(session, userReq)
                     login_user(user)
                     session.commit()
                     return redirect(url_for('login'))
