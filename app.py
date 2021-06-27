@@ -367,7 +367,7 @@ def login_form():
             userIn = get_user(session, email = userReq)
             if(userIn is not None):
                 if (passReq == userIn.pwd):
-                    user = get_SessionUser_by_email(session, email)
+                    user = get_SessionUser_by_email(session, userReq)
                     login_user(user)
                     session.commit()
                     return redirect(url_for('login'))
