@@ -12,8 +12,8 @@
     &nbsp;&nbsp;{{course.ending}}
   </p>
   <p>
-    <strong>Partecipanti massimi</strong> <br> 
-    &nbsp;&nbsp;{{course.max_partecipants}}
+    <strong>Posti rimasti</strong> <br> 
+    &nbsp;&nbsp; {{course.max_partecipants - course.users|length}}/{{course.max_partecipants}}
   </p>
   <p>
     <strong>Trainer</strong> <br> 

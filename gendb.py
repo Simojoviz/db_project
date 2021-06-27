@@ -146,57 +146,94 @@ conn.execute(
 #___________PRENOTATION___________
 
 conn.execute(
-    "DROP FUNCTION IF EXISTS public.no_double_prenotation() CASCADE;\
-    CREATE FUNCTION public.no_double_prenotation()\
+    "DROP FUNCTION IF EXISTS public.no_invalid_prenotation() CASCADE;\
+    CREATE FUNCTION public.no_invalid_prenotation()\
     RETURNS trigger\
     LANGUAGE 'plpgsql'\
     COST 100\
     VOLATILE NOT LEAKPROOF\
     AS $BODY$\
     BEGIN\
-	IF NEW.client_id IN (\
-		SELECT client_id\
-		FROM prenotations\
-		WHERE shift_id = NEW.shift_id\
-	) THEN\
-		RAISE EXCEPTION 'User cannot prenote twice for the same Shift';\
-        RETURN NULL;\
-	ELSIF (\
-		SELECT count(*)\
-		FROM prenotations\
-		WHERE shift_id = NEW.shift_id\
-	) = (\
-		SELECT r.max_capacity\
-		FROM rooms r JOIN shifts s ON r.id = s.room_id\
-		WHERE s.id = NEW.shift_id\
-	) THEN\
-		RAISE EXCEPTION 'The shift is full';\
-		RETURN NULL;\
-	ELSIF (\
-		SELECT course_id\
-		FROM shifts\
-		WHERE id = NEW.shift_id\
-	) IS NOT NULL THEN\
-		RAISE EXCEPTION 'Cannot prenote: shift occupied by a course';\
-        RETURN NULL;\
-	END IF;\
-    RETURN NEW;\
-END\
+        IF NEW.client_id IN (\
+            SELECT client_id\
+            FROM prenotations\
+            WHERE shift_id = NEW.shift_id\
+        ) THEN\
+            RAISE EXCEPTION 'User cannot prenote twice for the same Shift';\
+            RETURN NULL;\
+        ELSIF (\
+            SELECT count(*)\
+            FROM prenotations\
+            WHERE shift_id = NEW.shift_id\
+        ) = (\
+            SELECT r.max_capacity\
+            FROM rooms r JOIN shifts s ON r.id = s.room_id\
+            WHERE s.id = NEW.shift_id\
+        ) THEN\
+            RAISE EXCEPTION 'The shift is full';\
+            RETURN NULL;\
+        ELSIF (\
+            SELECT course_id\
+            FROM shifts\
+            WHERE id = NEW.shift_id\
+        ) IS NOT NULL THEN\
+            RAISE EXCEPTION 'Cannot prenote: shift occupied by a course';\
+            RETURN NULL;\
+        END IF;\
+        RETURN NEW;\
+    END\
     $BODY$;\
     \
-    ALTER FUNCTION public.no_double_prenotation()\
+    ALTER FUNCTION public.no_invalid_prenotation()\
         OWNER TO postgres;\
     \
-    COMMENT ON FUNCTION public.no_double_prenotation()\
+    COMMENT ON FUNCTION public.no_invalid_prenotation()\
         IS 'no user can prenote twice for the same shift';\
         \
-    CREATE TRIGGER NoDoublePrenotation\
+    CREATE TRIGGER NoInvalidPrenotation\
     BEFORE INSERT OR UPDATE\
     ON public.prenotations\
     FOR EACH ROW\
-    EXECUTE PROCEDURE public.no_double_prenotation();\
+    EXECUTE PROCEDURE public.no_invalid_prenotation();\
     \
-    COMMENT ON TRIGGER NoDoublePrenotation ON public.prenotations\
+    COMMENT ON TRIGGER NoInvalidPrenotation ON public.prenotations\
         IS 'no user can prenote twice for the same shift';"
+)
+
+conn.execute(
+    "DROP FUNCTION IF EXISTS public.no_trainer_sign_up() CASCADE;\
+    CREATE FUNCTION public.no_trainer_sign_up()\
+    RETURNS trigger\
+    LANGUAGE 'plpgsql'\
+    COST 100\
+    VOLATILE NOT LEAKPROOF\
+    AS $BODY$\
+    BEGIN\
+        IF NEW.user_id = (\
+            SELECT instructor_id\
+            FROM courses\
+            WHERE id=NEW.course_id\
+        ) THEN\
+            RAISE EXCEPTION 'Trainer cannot sign-up for his course';\
+            RETURN NULL;\
+        END IF;\
+        RETURN NEW;\
+    END\
+    $BODY$;\
+    \
+    ALTER FUNCTION public.no_trainer_sign_up()\
+        OWNER TO postgres;\
+    \
+    COMMENT ON FUNCTION public.no_trainer_sign_up()\
+        IS 'a trainer can''t sign up for his course';\
+    \
+    CREATE TRIGGER NoTrainerSignUp\
+    BEFORE INSERT OR UPDATE\
+    ON public.course_signs_up\
+    FOR EACH ROW\
+    EXECUTE PROCEDURE public.no_trainer_sign_up();\
+    \
+    COMMENT ON TRIGGER NoTrainerSignUp ON public.course_signs_up\
+    IS 'a trainer can''t sign up for his course';"
 )
 
