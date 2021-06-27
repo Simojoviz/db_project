@@ -6,7 +6,7 @@
       <div class="card-body">
         <div class="container text-center" style="margin-top: 2rem;">
           <h3 class="card-title">Nuovo Programma</h3>
-          <form action="{{url_for('new_program_form', course_name = course)}}" method="POST">
+          <form action="{{url_for('new_program_form', course_name = course, cont = 0)}}" method="POST">
             Stanza
             <br>
             <select name="room" id="room">
@@ -23,12 +23,21 @@
               {% endfor %}
             </select>
             <br>
+            Turn Number
+            <br>
+            <select name="turn_number" id="turn_number">
+              {% for i in range(1, 12) %}
+              <option value="{{ i }}"> {{ i }} </option>
+              {% endfor %}
             </select>
             <br>
-            <input type="submit" class="btn btn-info text-light" value="Invia">
+            <input type="submit"  class="btn btn-info text-light" value="Programma Corso">
+            <input type="submit"  class="btn btn-info text-light" formaction="{{url_for('new_program_form', course_name = course, cont = 1)}}" value="Continua con la programmazione">
           </form>
         </div>
       </div>
     </div>
   </div>
 {% endblock %}
+
+

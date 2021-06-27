@@ -11,9 +11,9 @@ from model import *
 app = Flask ( __name__ )
 
 #engine = create_engine('sqlite:///database.db', echo=True)
-#engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
+engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
 # engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=True)
-engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
+# engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
 
 app.config ['SECRET_KEY'] = 'ubersecret'
 
@@ -243,7 +243,6 @@ def new_course():
             return render_template('add_course.html', rooms=r)
         return redirect(url_for('courses'))
 
-
 @app.route('/new_course_form', methods=['GET', 'POST'])
 def new_course_form():
     if request.method == 'POST':
@@ -263,6 +262,31 @@ def new_course_form():
         finally:
             session.close()
 
+@app.route('/new_program/<course_name>')
+def new_program(course_name):
+    session = Session()
+    r = get_room(session, all=True)
+    return render_template('add_program.html', rooms = r, course = course_name, week_setting = get_week_setting(session, all=True))
+
+@app.route('/new_program_form/<course_name>/<cont>', methods=['POST', 'GET'])
+def new_program_form(course_name, cont):
+    if request.method == 'POST':
+        session = Session()
+
+        room = request.form['room']
+        r = get_room(session, name = room)
+        day = request.form['day']
+        c = get_course(session, name = course_name)
+        course_id = c.id
+        tn = request.form['turn_number']
+        add_course_program(session, week_day=day, turn_number=tn, room_id=r.id, course_id=course_id )
+        session.commit()
+        if cont == "0":
+            plan_course(session, name=course_name)
+            session.commit()
+            return redirect(url_for('courses'))
+        else:
+            return redirect(url_for('new_program', course_name = course_name))
 
 @app.route('/sign_up/<course_name>')
 def sign_up(course_name):
@@ -285,30 +309,7 @@ def delete_sign_up(course_name):
     session.commit()
     return redirect(url_for('courses_sign_up'))
 
-@app.route('/new_program/<course_name>')
-def new_program(course_name):
-    session = Session()
-    r = get_room(session, all=True)
-    return render_template('add_program.html', rooms = r, course = course_name)
 
-@app.route('/new_program_form/<course_name>', methods=['POST', 'GET'])
-def new_program_form(course_name):
-    if request.method == 'POST':
-        session = Session()
-
-        room = request.form['room']
-        r = get_room(session, name = room)
-        day = request.form['day']
-        c = get_course(session, name = course_name)
-        course_id = c.id
-        add_course_program(session, week_day=day, turn_number=6, room_id=r.id, course_id=course_id )
-        session.commit()
-        return redirect(url_for('courses'))
-
-@app.route
-
-
-    
 # ________________________________________________________LOGIN - SIGNIN________________________________________________________
 @app.route('/signin')
 def signin():
