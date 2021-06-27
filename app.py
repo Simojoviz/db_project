@@ -13,7 +13,11 @@ app = Flask ( __name__ )
 #engine = create_engine('sqlite:///database.db', echo=True)
 engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
 # engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=True)
+<<<<<<< Updated upstream
 # engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
+=======
+#engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
+>>>>>>> Stashed changes
 
 app.config ['SECRET_KEY'] = 'ubersecret'
 
@@ -273,6 +277,19 @@ def delete_sign_up(course_name):
     session.commit()
     return redirect(url_for('courses_sign_up'))
 
+<<<<<<< Updated upstream
+=======
+@app.route('/new_program/<course_name>')
+def new_program(course_name):
+    session = Session()
+    r = get_room(session, all=True)
+    return render_template('add_program.html', rooms = r, course = course_name, week_setting=get_week_setting(session, all=True))
+
+@app.route('/new_program_form/<course_name>', methods=['POST', 'GET'])
+def new_program_form(course_name):
+    if request.method == 'POST':
+        session = Session()
+>>>>>>> Stashed changes
 
 # ________________________________________________________LOGIN - SIGNIN________________________________________________________
 @app.route('/signin')
