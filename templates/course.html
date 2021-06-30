@@ -22,7 +22,7 @@
   <p>
     <strong>Giorni</strong> <br>
     {% for i in course_program %}
-    &nbsp;&nbsp;{{i.week_day}} <br>
+    &nbsp;&nbsp;{{i.week_day}} - {{i.room.name}} <br>
     {% endfor %}
   </p>
   <p>
