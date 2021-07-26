@@ -4,7 +4,7 @@
 
 <div class="container mb-5">
   <div>
-    <h1 class="mb-2 text-center">Prenota un Turno</h1>
+    <h1 class="mb-2 text-center">Book a Shift</h1>
     <form action="/shifts/load_date" method="POST">
       <div class="row w-75 mx-auto mt-4">
         <div class="col text-center">
@@ -21,7 +21,7 @@
           </select>
         </div>
         <div class="col text-center">
-          <input type="submit", value="Cerca" class="btn btn-info text-light" >
+          <input type="submit", value="Search" class="btn btn-info text-light" >
         </div>
       </div>
     </form>
@@ -36,7 +36,6 @@
         <th>End</th>
         <th>Room</th>
         <th>Booking</th>
-        <th>Prenote</th>
       </tr>
 
       {% for s in shifts %}
@@ -48,7 +47,7 @@
         <td>{{s.room.max_capacity - s.prenotations|length}}/{{s.room.max_capacity}}</td>
         <td>
           <form action= "{{ url_for('prenotation', shift = s.id) }}">
-            <input type="submit", value="Iscriviti" class="btn btn-info btn-sm text-light">
+            <input type="submit", value="Book" class="btn btn-info btn-sm text-light">
           </form>
         </td>
       </tr>

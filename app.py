@@ -57,16 +57,10 @@ def load_user(user_id):
 #__________________________________________HOME________________________________________
 @app.route('/')
 def home():
-    session = Session()
     try:
-        users = get_user(session, all=True)
-        session.commit()
-        return render_template("home.html", users=users)
+        return render_template("home.html")
     except:
-        session.rollback()
         raise
-    finally:
-        session.close()
 
 # ________________________________________________________PRIVATE________________________________________________________
 

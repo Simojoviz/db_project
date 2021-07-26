@@ -23,14 +23,14 @@
             <a class="nav-link text-light" aria-current="page" href="{{ url_for('home') }}">Home</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link text-light" href="{{ url_for('courses')}}">Corsi</a>
+            <a class="nav-link text-light" href="{{ url_for('courses')}}">Courses</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link text-light" href="{{ url_for('shifts_first') }}">Prenotazioni</a>
+            <a class="nav-link text-light" href="{{ url_for('shifts_first') }}">Prenotations</a>
           </li>
           {% if current_user.is_authenticated%}
             <li class="nav-item">
-              <a class="nav-link text-light" href="{{ url_for('private') }}">Profilo</a>
+              <a class="nav-link text-light" href="{{ url_for('private') }}">Profile</a>
             </li>
           {%else%}
             <li class="nav-item">

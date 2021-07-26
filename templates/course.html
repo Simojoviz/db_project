@@ -4,15 +4,15 @@
 <div class="container"> 
   <h1>{{course.name}}</h1>
   <p>
-    <strong>Inizio</strong> <br> 
+    <strong>Start</strong> <br> 
     &nbsp;&nbsp;{{course.starting}}
   </p>
   <p>
-    <strong>Fine</strong> <br> 
+    <strong>End</strong> <br> 
     &nbsp;&nbsp;{{course.ending}}
   </p>
   <p>
-    <strong>Posti rimasti</strong> <br> 
+    <strong>Slots avaible</strong> <br> 
     &nbsp;&nbsp; {{course.max_partecipants - course.users|length}}/{{course.max_partecipants}}
   </p>
   <p>
@@ -20,13 +20,13 @@
     &nbsp;&nbsp;{{course.trainer.user.fullname}}
   </p>
   <p>
-    <strong>Giorni</strong> <br>
+    <strong>Days</strong> <br>
     {% for i in course_program %}
     &nbsp;&nbsp;{{i.week_day}} - {{i.room.name}} <br>
     {% endfor %}
   </p>
   <p>
-    <strong>Turni</strong> <br>
+    <strong>Shifts</strong> <br>
     {% for i in shift%}
     &nbsp;&nbsp;{{i.h_start}} - {{i.h_end}} <br>
     {% endfor %}
@@ -34,16 +34,16 @@
   {% if current_user.is_authenticated %}
     {% if course_sign_up.course_id != course.id %}
       <form action= "{{ url_for('sign_up', course_name = course.name) }}">
-        <input type="submit", value="Iscriviti">
+        <input type="submit", value="Subscribe">
       </form>
     {% else %}
       <form action="{{ url_for('delete_sign_up', course_name = course.name)}}">
-        <input type="submit", value="Disiscriviti">
+        <input type="submit", value="Unsubscribe">
       </form>
     {% endif %}
   {% else %}
     <form action= "{{ url_for('sign_up', course_name = course.name) }}">
-      <input type="submit", value="Iscriviti">
+      <input type="submit", value="Subscribe">
     </form>
   {% endif %}
 
