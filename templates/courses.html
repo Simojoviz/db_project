@@ -7,14 +7,14 @@
     <h1 class="text-center mt-1">Courses</h1>
     {% if current_user.is_authenticated and isStaff == True %}
       <form action="/new_course">
-        <input type="submit", value="Add" class="btn btn-success btn-sm mt-2 ml-2">
+        <input type="submit", value="Add Course" class="btn btn-success mt-2 ml-2">
       </form>
     {% endif %}
   </div>
   <br>
   <div class="row">
     {% for c in courses%}
-      <div class="col mb-3">
+      <div class="col-12 col-md-3 mb-3">
         <div class="card bg-light shadow" style="width: 18rem; border: hidden; ">
           <img src="static/images.jpg" class="card-img-top">
           <div class="card-body">
