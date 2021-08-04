@@ -1,24 +1,12 @@
 {% extends 'base.html' %}
 
 {% block pagebody %}
-<script>
-  function myConfirm() {
-    if (confirm('Are you sure?')) {
-      // Save it!
-      console.log('Thing was saved to the database.');
-    } else {
-      // Do nothing!
-      console.log('Thing was not saved to the database.');
-    }
-  }
-  document.getElementById("demo").innerHTML = myFunction(4, 3);
-</script>
 
 <div class="container"> 
   <h1>{{course.name}}</h1>
   {% if current_user.is_authenticated and current_user.id == course.instructor_id %}
-    <form action="{{url_for('del_course', course_name = course.name)}}">
-      <input type="submit" value="Delete Course" onclick="myConfirm()" class="btn btn-danger">
+    <form action="{{url_for('del_course', course_name = course.name)}}" method="POST">
+      <input type="submit" value="Delete Course" class="btn btn-danger">
     </form>
   {% endif %}
   <p>

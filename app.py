@@ -257,7 +257,7 @@ def new_course_form():
         finally:
             session.close()
 
-@app.route('/delete_course/<course_name>')
+@app.route('/delete_course/<course_name>', methods=['POST'])
 def del_course(course_name):
     try:
         session = Session()
