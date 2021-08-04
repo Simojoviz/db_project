@@ -421,7 +421,7 @@ def sent():
     session = Session() 
     try:
         users = get_user(session, all=True)
-        users.remove(current_user)
+        users.remove(get_user(session, id=current_user.id))
         messages = get_message(session, sender=current_user.id)
         resp = make_response(render_template("send.html", messages=messages, users=users))
         session.commit()
