@@ -257,6 +257,21 @@ def new_course_form():
         finally:
             session.close()
 
+@app.route('/delete_course/<course_name>')
+def del_course(course_name):
+    try:
+        session = Session()
+        c = get_course(session, name = course_name)
+        if current_user.is_authenticated :
+            delete_course(session, course = c)
+            session.commit()
+            return redirect(url_for('courses'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
 @app.route('/new_program/<course_name>')
 def new_program(course_name):
     session = Session()

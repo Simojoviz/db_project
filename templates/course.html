@@ -1,8 +1,26 @@
 {% extends 'base.html' %}
 
 {% block pagebody %}
+<script>
+  function myConfirm() {
+    if (confirm('Are you sure?')) {
+      // Save it!
+      console.log('Thing was saved to the database.');
+    } else {
+      // Do nothing!
+      console.log('Thing was not saved to the database.');
+    }
+  }
+  document.getElementById("demo").innerHTML = myFunction(4, 3);
+</script>
+
 <div class="container"> 
   <h1>{{course.name}}</h1>
+  {% if current_user.is_authenticated and current_user.id == course.instructor_id %}
+    <form action="{{url_for('del_course', course_name = course.name)}}">
+      <input type="submit" value="Delete Course" onclick="myConfirm()" class="btn btn-danger">
+    </form>
+  {% endif %}
   <p>
     <strong>Start</strong> <br> 
     &nbsp;&nbsp;{{course.starting}}
@@ -31,20 +49,22 @@
     &nbsp;&nbsp;{{i.h_start}} - {{i.h_end}} <br>
     {% endfor %}
   </p>
-  {% if current_user.is_authenticated %}
-    {% if course_sign_up.course_id != course.id %}
+  {% if isStaff == False %}
+    {% if current_user.is_authenticated %}
+      {% if course_sign_up.course_id != course.id %}
+        <form action= "{{ url_for('sign_up', course_name = course.name) }}">
+          <input type="submit" value="Subscribe" class="btn btn-success">
+        </form>
+      {% else %}
+        <form action="{{ url_for('delete_sign_up', course_name = course.name)}}">
+          <input type="submit", value="Unsubscribe">
+        </form>
+      {% endif %}
+    {% else %}
       <form action= "{{ url_for('sign_up', course_name = course.name) }}">
         <input type="submit", value="Subscribe">
       </form>
-    {% else %}
-      <form action="{{ url_for('delete_sign_up', course_name = course.name)}}">
-        <input type="submit", value="Unsubscribe">
-      </form>
     {% endif %}
-  {% else %}
-    <form action= "{{ url_for('sign_up', course_name = course.name) }}">
-      <input type="submit", value="Subscribe">
-    </form>
   {% endif %}
 
   <div class="mt-4">
