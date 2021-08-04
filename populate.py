@@ -9,6 +9,7 @@ from automap import*
 # engine = create_engine('sqlite:///database.db', echo=True)
 engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
 #engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=True)
+#engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
 
 Session = sessionmaker(bind=engine, autoflush=True)
 session = Session()
@@ -37,12 +38,12 @@ add_role_from_list(session, roles)
 
 # Users
 users = [
-    User(fullname = "Admin",                  email='admin@gmail.com',      pwd='admin1'),
-    User(fullname = "Stefano Calzavara",      email='stefano@gmail.com',    pwd='stefano1'),
-    User(fullname = "Alessandra Raffaetà",    email='alessandra@gmail.com', pwd='alessandra1'),
-    User(fullname = "Simone Jovon",           email='simone@gmail.com',     pwd='simone1'),
-    User(fullname = "Andrea Rosa",            email='andrea@gmail.com',     pwd='andrea1'),
-    User(fullname = "Sebastiano Quintavalle", email='sebastiano@gmail.com', pwd='sebastiano1')
+    User(fullname = "Admin",                  email='admin@gmail.com',      pwd='admin1',       telephone='1234567890',     address='Via Ciao 2'),
+    User(fullname = "Stefano Calzavara",      email='stefano@gmail.com',    pwd='stefano1',     telephone='0123456789',     address='Via Falsa 23'),
+    User(fullname = "Alessandra Raffaetà",    email='alessandra@gmail.com', pwd='alessandra1',  telephone='2873018453',     address='Via Vai 7'),
+    User(fullname = "Simone Jovon",           email='simone@gmail.com',     pwd='simone1',      telephone='3019837283',     address='Via Cesare 12'),
+    User(fullname = "Andrea Rosa",            email='andrea@gmail.com',     pwd='andrea1',      telephone='3254173433',     address='Castello 2534/A'),
+    User(fullname = "Sebastiano Quintavalle", email='sebastiano@gmail.com', pwd='sebastiano1',  telephone='5272735383',     address='Castello 13')
 ]
 
 add_user_from_list(session, users)
@@ -53,7 +54,7 @@ trainers = [
 ]
 
 add_trainer_from_list(session, trainers)
-add_trainer(session, fullname='Riccardo Focardi', email='riccardo@gmail.com', pwd='riccardo1')
+add_trainer(session, fullname='Riccardo Focardi', email='riccardo@gmail.com', pwd='riccardo1',  telephone='8302837481',     address='Via Ciao 2')
 
 
 

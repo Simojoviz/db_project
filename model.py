@@ -179,7 +179,7 @@ def get_trainer(session, id=None, email=None, all=False):
 # - Given fullname, email and password of a User does the same as above
 # Returns True if it was added correctly, False if the element was already contained
 #TODO controllare con con utilizzo di autoflush 
-def add_trainer(session, fullname=None, email=None, pwd=None, user=None):
+def add_trainer(session, fullname=None, email=None, pwd=None, telephone=None, address=None, user=None):
     if user is not None:
         if get_user(session, email=user.email) is None:
             # a) Neither a User nor a Trainer
@@ -199,7 +199,7 @@ def add_trainer(session, fullname=None, email=None, pwd=None, user=None):
     elif fullname is not None and\
          email    is not None and\
          pwd      is not None: 
-        return add_trainer(session, user=User(fullname=fullname, email=email, pwd=pwd))
+        return add_trainer(session, user=User(fullname=fullname, email=email, pwd=pwd, telephone=telephone, address=address))
     else:
         return False
 
