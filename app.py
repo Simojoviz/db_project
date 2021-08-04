@@ -89,6 +89,7 @@ def prenotations():
         email = current_user.email
         user = get_user(session, email=email)
         shifts = user.prenotations_shifts
+        shifts = filter(lambda sh: sh.h_start >= datetime.datetime.now().time(), user.prenotations_shifts)
         resp = make_response(render_template("prenotations.html", shifts=shifts))
         session.commit()
         return resp
