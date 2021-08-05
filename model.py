@@ -18,21 +18,6 @@ def clamp(x, a, b):
     else:
         return x 
 
-
-# Max function
-def max(a, b):
-    if a>b:
-        return a
-    return b
-
-
-# Min function
-def min(a, b):
-    if a<b:
-        return a
-    return b
-
-
 # ________________________________________ USER ________________________________________ 
 
 
@@ -138,19 +123,14 @@ def get_user_roles(session, user_id=None, role_id=None):
 
 # - Given a User and a Role adds the corresponding User-Roles to the Database
 # - Given a Roles adds it to the Database
-# Returns True if it was added correctly, False if the element was already contained
+# Returns True if it was added correctly
 # Raise an Exception if
-# - The User already had that Role
-def add_user_roles(session, user=None, role=None, user_role=None):
+# - The User already had that Role (trigger)
+def add_user_roles(session, user=None, role=None):
 
     if user is not None and role is not None:
-        exist = get_user_roles(session, user_id=user.id, role_id=role.id)
-        if exist is not None:
-            raise Exception("User already has this role")
-        else:
-            session.add(UserRoles(user_id=user.id, role_id=role.id))
-            return True
-        return False
+        session.add(UserRoles(user_id=user.id, role_id=role.id))
+        return True
 
 # ________________________________________ TRAINER ________________________________________ 
 
@@ -377,7 +357,7 @@ def get_prenotation(session, user_id=None, shift_id=None, date=None, all=False):
 
 # - Given a User and a Shift adds the corresponding Prenotation to the Database
 # - Given a Prenotation adds it to the Database
-# Returns True if it was added correctly, False if the element was already contained
+# Returns True if it was added correctly, False otherwise
 # Raise an Exception if
 # - shift is occupied by a course (trigger)
 # - maximum capacity has already been reached (trigger)
@@ -898,19 +878,16 @@ def get_message(session, sender=None, addresser=None, all=False):
 # - Given the sender_id, the addresser_id and the text of a Message adds it to the database
 # Returns True if it was added correctly, False otherwise
 # Raises an error if
-#  - the sender and the addresser are the same User
+#  - the sender and the addresser are the same User (check)
 def add_message(session, sender_id=None, addresser_id=None, text=None, message=None):
 
     if message is not None:
-        if message.sender == message.addressee:
-            raise Exception("The user has already sign-up for the course")
+        exist = get_message(session, sender=message.sender, addresser=message.addressee)
+        if exist is not None:
+            return False   
         else:
-            exist = get_message(session, sender=message.sender, addresser=message.addressee)
-            if exist is not None:
-                return False   
-            else:
-                session.add(message)
-                return True
+            session.add(message)
+            return True
     elif sender_id    is not None and\
          addresser_id is not None and\
          text         is not None:
