@@ -715,6 +715,22 @@ def add_course_from_list(session, courses_list):
         b &= add_course(session, course=course)
     return b
 
+# Delete the specified course or delete all the courses
+# Returns True if all elements were deleted, False otherwise
+def delete_course(session, course=None, all=False):
+    if course is not None:
+        c = get_course(session, id = course.id)
+        delete_course_program(session, course = c)
+        delete_course_sign_up(session, course = c)
+        session.delete(c)
+        return True
+    elif all == True:
+        c = get_course(session, all = True)
+        delete_course_program(session, all = True)
+        delete_course_sign_up(session, all = True)
+        session.delete(c)
+        return True
+    return False
 
 # ________________________________________ COURSE PROGRAM ________________________________________
 
@@ -762,6 +778,20 @@ def add_course_program_from_list(session, course_programs_list):
         b &= add_course_program(session, course_program=course_program)
     return b
 
+# Delete course programs of the given course or delete all the course programs
+# Returns True if all elements were deleted, False otherwise
+def delete_course_program(session, course=None, all=False):
+    if course is not None:
+        cp = get_course_program(session, course_id=course.id)
+        for i in cp:
+            session.delete(i)
+        return True
+    elif all == True:
+        cp = get_course_program(session, all=True)
+        for i in cp:
+            session.delete(i)
+        return True
+    return False
 
 # ________________________________________ COURSE SIGN UP ________________________________________
 
@@ -822,18 +852,28 @@ def add_course_sign_up_from_list(session, course_sign_up_list):
         b &= add_course_sign_up(session, course_sign_up=course_sign_up)
     return b
 
-def delete_course_sign_up(session, course=None, user=None):
+# Delete course sign up of the given user or course, or all the course programs
+# Returns True if all elements were deleted, False otherwise
+def delete_course_sign_up(session, course=None, user=None, all=False):
     if course is not None and user is not None:
         cs = get_course_sign_up(session, user_id = user.id, course_id = course.id)
-        session.delete(cs)
+        for i in cs:
+            session.delete(i)
         return True
     elif course is not None:
-        cs = get_course_sign_up(session,course_id=course.id)
-        session.delete(cs)
+        cs = get_course_sign_up(session, course_id=course.id)
+        for i in cs:
+            session.delete(i)
         return True
     elif user is not None:
-        cs = get_course_sign_up(session,user_id=user.id)
-        session.delete(cs)
+        cs = get_course_sign_up(session, user_id=user.id)
+        for i in cs:
+            session.delete(i)
+        return True
+    elif all == True:
+        cs = get_course_sign_up(session, all=True)
+        for i in cs:
+            session.delete(i)
         return True
     return False
 

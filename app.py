@@ -57,16 +57,10 @@ def load_user(user_id):
 #__________________________________________HOME________________________________________
 @app.route('/')
 def home():
-    session = Session()
     try:
-        users = get_user(session, all=True)
-        session.commit()
-        return render_template("home.html", users=users)
+        return render_template("home.html")
     except:
-        session.rollback()
         raise
-    finally:
-        session.close()
 
 # ________________________________________________________PRIVATE________________________________________________________
 
@@ -95,6 +89,7 @@ def prenotations():
         email = current_user.email
         user = get_user(session, email=email)
         shifts = user.prenotations_shifts
+        shifts = filter(lambda sh: sh.h_start >= datetime.datetime.now().time(), user.prenotations_shifts)
         resp = make_response(render_template("prenotations.html", shifts=shifts))
         session.commit()
         return resp
@@ -138,7 +133,7 @@ def shifts(day, month, year, room):
         shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
         if date == date.today():
             shifts = filter(lambda sh: sh.h_start >= datetime.datetime.now().time(), shifts)
-        resp = make_response(render_template("shifts.html", shifts=shifts, date_string=date_string, rooms=r))
+        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda x: (x.room_id, x.h_start)), date_string=date_string, rooms=r))
         session.commit()
         return resp
     except:
@@ -261,6 +256,21 @@ def new_course_form():
             raise
         finally:
             session.close()
+
+@app.route('/delete_course/<course_name>', methods=['POST'])
+def del_course(course_name):
+    try:
+        session = Session()
+        c = get_course(session, name = course_name)
+        if current_user.is_authenticated :
+            delete_course(session, course = c)
+            session.commit()
+            return redirect(url_for('courses'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 @app.route('/new_program/<course_name>')
 def new_program(course_name):
@@ -427,7 +437,7 @@ def sent():
     session = Session() 
     try:
         users = get_user(session, all=True)
-        users.remove(current_user)
+        users.remove(get_user(session, id=current_user.id))
         messages = get_message(session, sender=current_user.id)
         resp = make_response(render_template("send.html", messages=messages, users=users))
         session.commit()

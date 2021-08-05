@@ -1,18 +1,24 @@
 {% extends 'base.html' %}
 
 {% block pagebody %}
+
 <div class="container"> 
   <h1>{{course.name}}</h1>
+  {% if current_user.is_authenticated and current_user.id == course.instructor_id %}
+    <form action="{{url_for('del_course', course_name = course.name)}}" method="POST">
+      <input type="submit" value="Delete Course" class="btn btn-danger">
+    </form>
+  {% endif %}
   <p>
-    <strong>Inizio</strong> <br> 
+    <strong>Start</strong> <br> 
     &nbsp;&nbsp;{{course.starting}}
   </p>
   <p>
-    <strong>Fine</strong> <br> 
+    <strong>End</strong> <br> 
     &nbsp;&nbsp;{{course.ending}}
   </p>
   <p>
-    <strong>Posti rimasti</strong> <br> 
+    <strong>Slots avaible</strong> <br> 
     &nbsp;&nbsp; {{course.max_partecipants - course.users|length}}/{{course.max_partecipants}}
   </p>
   <p>
@@ -20,31 +26,33 @@
     &nbsp;&nbsp;{{course.trainer.user.fullname}}
   </p>
   <p>
-    <strong>Giorni</strong> <br>
+    <strong>Days</strong> <br>
     {% for i in course_program %}
-    &nbsp;&nbsp;{{i.week_day}} <br>
+    &nbsp;&nbsp;{{i.week_day}} - {{i.room.name}} <br>
     {% endfor %}
   </p>
   <p>
-    <strong>Turni</strong> <br>
+    <strong>Shifts</strong> <br>
     {% for i in shift%}
     &nbsp;&nbsp;{{i.h_start}} - {{i.h_end}} <br>
     {% endfor %}
   </p>
-  {% if current_user.is_authenticated %}
-    {% if course_sign_up.course_id != course.id %}
-      <form action= "{{ url_for('sign_up', course_name = course.name) }}">
-        <input type="submit", value="Iscriviti">
-      </form>
+  {% if isStaff == False %}
+    {% if current_user.is_authenticated %}
+      {% if course_sign_up.course_id != course.id %}
+        <form action= "{{ url_for('sign_up', course_name = course.name) }}">
+          <input type="submit" value="Subscribe" class="btn btn-success">
+        </form>
+      {% else %}
+        <form action="{{ url_for('delete_sign_up', course_name = course.name)}}">
+          <input type="submit", value="Unsubscribe">
+        </form>
+      {% endif %}
     {% else %}
-      <form action="{{ url_for('delete_sign_up', course_name = course.name)}}">
-        <input type="submit", value="Disiscriviti">
+      <form action= "{{ url_for('sign_up', course_name = course.name) }}">
+        <input type="submit", value="Subscribe">
       </form>
     {% endif %}
-  {% else %}
-    <form action= "{{ url_for('sign_up', course_name = course.name) }}">
-      <input type="submit", value="Iscriviti">
-    </form>
   {% endif %}
 
   <div class="mt-4">

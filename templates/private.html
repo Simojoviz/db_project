@@ -2,24 +2,47 @@
 
 {% block pagebody %}
 <div class="container">
-  <h1>Profilo di {{us.fullname}}</h1>
-  <p>Email: {{ us.email}}</p>
-  <p>Password: {{us.pwd}}</p>
-  <form action="/private/prenotations">
-    <input type="submit", value="Prenotations">
-  </form>
-  <form action="/private/courses_sign_up">
-    <input type="submit", value="Courses">
-  </form>
-  <form action="/private/messages">
-    <input type="submit", value="Messages">
-  </form>
-  <form action="/private/covid_report">
-    <input type="submit", value="Covid Report">
-  </form>
-  <form action="/logout">
-    <input type="submit", value="Logout">
-  </form>
+  <h1 class="text-center">Profile of {{us.fullname}}</h1>
+  <div class="card bg-light shadow p-3 mb-5 mt-4 mx-auto w-75" style="border: hidden;">
+    <h3>Dati Utente</h3>
+    <table class="table table-borderless ml-3">
+      <tr>
+        <td><strong>Fullname</strong></td>
+        <td>{{us.fullname}}</td>
+      </tr>
+      <tr>
+        <td><strong>Email</strong></td>
+        <td>{{us.email}}</td>
+      </tr>
+    </table>
+    <br>
+    <form action="/logout">
+      <input type="submit", value="Logout" class="btn btn-info text-light">
+    </form>
+  </div>
+
+  <div class="row w-75 mx-auto">
+    <div class="col text-center">
+      <form action="/private/prenotations">
+        <input type="submit", value="Prenotations" class="btn btn-info text-white" style="width: 120px;">
+      </form>
+    </div>
+    <div class="col text-center">
+      <form action="/private/courses_sign_up">
+        <input type="submit", value="Courses" class="btn btn-info text-white" style="width: 120px;">
+      </form>
+    </div>
+    <div class="col text-center">
+      <form action="/private/messages">
+        <input type="submit", value="Messages" class="btn btn-info text-white" style="width: 120px;">
+      </form>
+    </div>
+    <div class="col text-center">
+      <form action="/private/covid_report">
+        <input type="submit", value="Covid Report" class="btn btn-info text-white" style="width: 120px;">
+      </form>
+    </div>
+  </div>
 </div>
   
   
