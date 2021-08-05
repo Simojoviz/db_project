@@ -403,20 +403,13 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
         return count
 
     if user is not None and shift is not None:
-        exist = get_prenotation(session, user_id=user.id, shift_id=shift.id)
-        if exist is not None:
-            raise Exception("User already prenoted")
+        max_ = get_global_setting(session, name='MaxWeeklyEntry').value
+        count = get_count_weekly_prenotations(session, user, shift.date)
+        if (count < max_):
+            session.add(Prenotation(client_id=user.id, shift_id=shift.id))
+            return True
         else:
-            max_ = get_global_setting(session, name='MaxWeeklyEntry').value
-            count = get_count_weekly_prenotations(session, user, shift.date)
-            if (count < max_):
-                try:
-                    session.add(Prenotation(client_id=user.id, shift_id=shift.id))
-                    return True
-                except exception:
-                    raise exception
-            else:
-                raise Exception("Week prenotation peak reached")
+            raise Exception("Week prenotation peak reached")
     elif prenotation is not None:
         user_  = get_user(session, id=prenotation.client_id)
         shift_ = get_shift(session, id=prenotation.shift_id)
@@ -793,8 +786,9 @@ def get_course_sign_up(session, user_id=None, course_id=None, all=False):
 # Adds a CourseSignUp to the Database given the User and the Course or the CourseSignUp
 # Returns True if it was added correctly, False otherwise
 # Raises an error if
-#  - the user has already SignedUp to the course
-#  - the capacity peak has already been reached
+#  - the trainer sign-up for his own course (trigger)
+#  - the user has already SignedUp to the course (trigger)
+#  - the capacity peak has already been reached (trigger)
 # TODO the course in in conflict with other courses the user has SignedIn
 # TODO controllare se ritornare falso o lanciare eccezione
 def add_course_sign_up(session, user=None, course=None, course_sign_up=None):
