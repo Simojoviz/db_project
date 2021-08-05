@@ -644,7 +644,9 @@ def get_course(session, id=None, name=None, all=False):
 
 # Given the name of the Course plan his Shifts
 # It raises an exception if:
-# - there's no the turn in that day
+# - there's no course with that name
+# - the course has no course program
+# - there's no turn in that day
 # - the course overlaps with any other 
 def plan_course(session, name):
 
@@ -657,8 +659,7 @@ def plan_course(session, name):
 
     def update_shift_course(session, shift_id, new_course_id):
         session.query(Shift).filter(Shift.id == shift_id).update({Shift.course_id:new_course_id}, synchronize_session = False)
-        
-
+    
     course = get_course(session, name=name)
     if course is None:
         raise Exception("Course " + name + " does not exixsts")
@@ -824,17 +825,7 @@ def get_course_sign_up(session, user_id=None, course_id=None, all=False):
 def add_course_sign_up(session, user=None, course=None, course_sign_up=None):
 
     if user is not None and course is not None:
-        exist = get_course_sign_up(session, user_id=user.id, course_id=course.id)
-        if exist is not None:
-            raise Exception("The user has already sign-up for the course")
-        else:
-            n_signed = len(course.users)
-            n_max = course.max_partecipants
-            if  n_signed < n_max:
-                session.add(CourseSignUp(user_id=user.id, course_id=course.id))
-            else:
-                raise Exception("Course peak has already been reached")
-                
+        session.add(CourseSignUp(user_id=user.id, course_id=course.id))
     elif course_sign_up is not None:
         user_  =  get_user(session, id=course_sign_up.user_id)
         course_ = get_shift(session, id=course_sign_up.user_id)
