@@ -13,7 +13,7 @@ app = Flask ( __name__ )
 #engine = create_engine('sqlite:///database.db', echo=True)
 engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
 # engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=True)
-# engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
+#engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
 
 app.config ['SECRET_KEY'] = 'ubersecret'
 
@@ -359,9 +359,6 @@ def signin_form():
         finally:
             session.close()
                 
-
-
-
 @app.route('/login')
 def login():
     if current_user.is_authenticated:
@@ -401,6 +398,57 @@ def login_form():
 def logout():
     logout_user()
     return redirect(url_for('home'))
+
+@app.route('/private/update_user')
+@login_required
+def upd_user():
+    session = Session()
+    user = get_user(session, id = current_user.id)
+    return render_template("update_user.html", user = user)
+
+@app.route('/update_user_form', methods=['POST'])
+@login_required
+def update_user_form():
+    session = Session()
+    if request.method == 'POST':
+        try:
+            user = get_user(session, email= current_user.email)
+            fullname = request.form['fullname']
+            if fullname == "":
+                flash("Empty Field!", category='error')
+                return redirect(url_for('upd_user'))
+            telephone = request.form['telephone']
+            if telephone == "":
+                flash("Empty Field!", category='error')
+                return redirect(url_for('upd_user'))
+            address = request.form['address']
+            if address == "":
+                flash("Empty Field!", category='error')
+                return redirect(url_for('upd_user'))
+            pwd1 = request.form['pwd1']
+            if pwd1 == "":
+                flash("Empty Field!", category='error')
+                return redirect(url_for('upd_user'))
+            pwd2 = request.form['pwd2']
+            if pwd1 == "":
+                flash("Empty Field!", category='error')
+                return redirect(url_for('upd_user'))
+
+            if pwd1 != pwd2:
+                flash("Password Mismatch!", category='error')
+                return redirect(url_for('upd_user'))
+                
+            if update_user(session, user = user, fullname = fullname, telephone = telephone, address = address, pwd1 = pwd1, pwd2 = pwd2):
+                session.commit()
+                return redirect(url_for('private')) 
+            else:
+                return redirect(url_for('upd_user'))
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+    
 
 # ________________________________________________________MESSAGES________________________________________________________
 @app.route('/private/covid_report')

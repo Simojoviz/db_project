@@ -65,6 +65,20 @@ def add_user_from_list(session, user_list):
         b &= add_user(session, user=user)
     return b
 
+def update_user(session, user=None, fullname=None, telephone=None, address=None, pwd1=None, pwd2=None):
+    if user is not None:
+        if fullname != user.fullname:
+            user.fullname = fullname
+        if telephone != user.telephone:
+            user.telephone = telephone
+        if address != user.address:
+            user.address = address
+        if pwd1 != user.pwd:
+            user.pwd = pwd1
+        session.commit()
+        return True
+    return False
+
 # ________________________________________ ROLE ________________________________________ 
 
 

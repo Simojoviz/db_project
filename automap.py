@@ -14,6 +14,8 @@ class User(Base):
     fullname = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
     pwd = Column(String, nullable=False)
+    telephone = Column(String, unique=True, nullable=False)
+    address = Column(String, nullable=False)
 
     prenotations = relationship("Prenotation", viewonly=True)
     prenotations_shifts = relationship("Shift", secondary="prenotations", back_populates="users_prenotated")
