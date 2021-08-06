@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, Boolean, String, Date, Time, DateTime
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, declarative_base
-from flask_login import UserMixin
 
 
 Base = declarative_base()

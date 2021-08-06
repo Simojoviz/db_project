@@ -141,6 +141,8 @@ conn.execute(
         IS 'text cannot be empty';"
 )
 
+
+
 #_________________________________________________TRIGGER_________________________________________________
 
 #___________PRENOTATION___________
@@ -159,7 +161,7 @@ conn.execute(
             FROM prenotations\
             WHERE shift_id = NEW.shift_id\
         ) THEN\
-            RAISE EXCEPTION 'User cannot prenote twice for the same Shift';\
+            RAISE EXCEPTION 'Cannot prenote: User cannot prenote twice for the same Shift';\
             RETURN NULL;\
         ELSIF (\
             SELECT count(*)\
@@ -170,14 +172,14 @@ conn.execute(
             FROM rooms r JOIN shifts s ON r.id = s.room_id\
             WHERE s.id = NEW.shift_id\
         ) THEN\
-            RAISE EXCEPTION 'The shift is full';\
+            RAISE EXCEPTION 'Cannot prenote: The shift is full';\
             RETURN NULL;\
         ELSIF (\
             SELECT course_id\
             FROM shifts\
             WHERE id = NEW.shift_id\
         ) IS NOT NULL THEN\
-            RAISE EXCEPTION 'Cannot prenote: shift occupied by a course';\
+            RAISE EXCEPTION 'Cannot prenote: Shift occupied by a course';\
             RETURN NULL;\
         END IF;\
         RETURN NEW;\
@@ -188,7 +190,7 @@ conn.execute(
         OWNER TO postgres;\
     \
     COMMENT ON FUNCTION public.no_invalid_prenotation()\
-        IS 'no user can prenote twice for the same shift';\
+        IS 'Raise an exception if - User cannot prenote twice for the same Shift, The shift is full, The shift is occupied by a course ';\
         \
     CREATE TRIGGER NoInvalidPrenotation\
     BEFORE INSERT OR UPDATE\
@@ -197,12 +199,14 @@ conn.execute(
     EXECUTE PROCEDURE public.no_invalid_prenotation();\
     \
     COMMENT ON TRIGGER NoInvalidPrenotation ON public.prenotations\
-        IS 'no user can prenote twice for the same shift';"
+        IS 'Raise an exception if - User cannot prenote twice for the same Shift, The shift is full, The shift is occupied by a course ';"
 )
 
+#___________COURSE SIGN UP___________
+
 conn.execute(
-    "DROP FUNCTION IF EXISTS public.no_trainer_sign_up() CASCADE;\
-    CREATE FUNCTION public.no_trainer_sign_up()\
+    "DROP FUNCTION IF EXISTS public.no_invalid_sign_up() CASCADE;\
+    CREATE FUNCTION public.no_invalid_sign_up()\
     RETURNS trigger\
     LANGUAGE 'plpgsql'\
     COST 100\
@@ -214,26 +218,76 @@ conn.execute(
             FROM courses\
             WHERE id=NEW.course_id\
         ) THEN\
-            RAISE EXCEPTION 'Trainer cannot sign-up for his course';\
+            RAISE EXCEPTION 'Cannot Sign-Up: Trainer cannot sign-up for his course';\
+            RETURN NULL;\
+        ELSIF NEW.user_id IN (\
+            SELECT user_id\
+            FROM course_signs_up\
+            WHERE course_id=NEW.course_id\
+        ) THEN\
+            RAISE EXCEPTION 'Cannot Sign-Up: User cannot sign-up twice for the same course';\
+            RETURN NULL;\
+        ELSIF (\
+            ( SELECT max_partecipants FROM courses WHERE id = NEW.course_id ) = \
+            ( SELECT COUNT(*) FROM course_signs_up WHERE course_id = NEW.course_id) \
+        ) THEN\
+            RAISE EXCEPTION 'Cannot Sign-Up: Course is full';\
             RETURN NULL;\
         END IF;\
         RETURN NEW;\
     END\
     $BODY$;\
     \
-    ALTER FUNCTION public.no_trainer_sign_up()\
+    ALTER FUNCTION public.no_invalid_sign_up()\
         OWNER TO postgres;\
     \
-    COMMENT ON FUNCTION public.no_trainer_sign_up()\
-        IS 'a trainer can''t sign up for his course';\
+    COMMENT ON FUNCTION public.no_invalid_sign_up()\
+        IS 'Raise an exception if - Trainer sign-up for his own course, User  sign-up twice for the same course, The course is full ';\
     \
-    CREATE TRIGGER NoTrainerSignUp\
+    CREATE TRIGGER NoInvalidSignUp\
     BEFORE INSERT OR UPDATE\
     ON public.course_signs_up\
     FOR EACH ROW\
-    EXECUTE PROCEDURE public.no_trainer_sign_up();\
+    EXECUTE PROCEDURE public.no_invalid_sign_up();\
     \
-    COMMENT ON TRIGGER NoTrainerSignUp ON public.course_signs_up\
-    IS 'a trainer can''t sign up for his course';"
+    COMMENT ON TRIGGER NoInvalidSignUp ON public.course_signs_up\
+    IS 'Raise an exception if - Trainer sign-up for his own course, User  sign-up twice for the same course, The course is full ';"
 )
 
+#___________USER ROLES___________
+conn.execute(
+    "DROP FUNCTION IF EXISTS public.no_same_role_twice() CASCADE;\
+    CREATE FUNCTION public.no_same_role_twice()\
+    RETURNS trigger\
+    LANGUAGE 'plpgsql'\
+    COST 100\
+    VOLATILE NOT LEAKPROOF\
+    AS $BODY$\
+    BEGIN\
+        IF NEW.user_id IN (\
+            SELECT user_id\
+            FROM user_roles\
+            WHERE role_id=NEW.role_id\
+        ) THEN\
+            RAISE EXCEPTION 'User already has that role';\
+            RETURN NULL;\
+        END IF;\
+        RETURN NEW;\
+    END\
+    $BODY$;\
+    \
+    ALTER FUNCTION public.no_same_role_twice()\
+        OWNER TO postgres;\
+    \
+    COMMENT ON FUNCTION public.no_same_role_twice()\
+        IS 'Raise an exception if the same role is assigned to the same user twice ';\
+    \
+    CREATE TRIGGER NoSameRoleTwice\
+    BEFORE INSERT OR UPDATE\
+    ON public.user_roles\
+    FOR EACH ROW\
+    EXECUTE PROCEDURE public.no_same_role_twice();\
+    \
+    COMMENT ON TRIGGER NoSameRoleTwice ON public.user_roles\
+    IS 'Raise an exception if the same role is assigned to the same user twice ';"
+)

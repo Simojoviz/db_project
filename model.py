@@ -18,21 +18,6 @@ def clamp(x, a, b):
     else:
         return x 
 
-
-# Max function
-def max(a, b):
-    if a>b:
-        return a
-    return b
-
-
-# Min function
-def min(a, b):
-    if a<b:
-        return a
-    return b
-
-
 # ________________________________________ USER ________________________________________ 
 
 
@@ -138,19 +123,14 @@ def get_user_roles(session, user_id=None, role_id=None):
 
 # - Given a User and a Role adds the corresponding User-Roles to the Database
 # - Given a Roles adds it to the Database
-# Returns True if it was added correctly, False if the element was already contained
+# Returns True if it was added correctly
 # Raise an Exception if
-# - The User already had that Role
-def add_user_roles(session, user=None, role=None, user_role=None):
+# - The User already had that Role (trigger)
+def add_user_roles(session, user=None, role=None):
 
     if user is not None and role is not None:
-        exist = get_user_roles(session, user_id=user.id, role_id=role.id)
-        if exist is not None:
-            raise Exception("User already has this role")
-        else:
-            session.add(UserRoles(user_id=user.id, role_id=role.id))
-            return True
-        return False
+        session.add(UserRoles(user_id=user.id, role_id=role.id))
+        return True
 
 # ________________________________________ TRAINER ________________________________________ 
 
@@ -377,7 +357,7 @@ def get_prenotation(session, user_id=None, shift_id=None, date=None, all=False):
 
 # - Given a User and a Shift adds the corresponding Prenotation to the Database
 # - Given a Prenotation adds it to the Database
-# Returns True if it was added correctly, False if the element was already contained
+# Returns True if it was added correctly, False otherwise
 # Raise an Exception if
 # - shift is occupied by a course (trigger)
 # - maximum capacity has already been reached (trigger)
@@ -403,20 +383,13 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
         return count
 
     if user is not None and shift is not None:
-        exist = get_prenotation(session, user_id=user.id, shift_id=shift.id)
-        if exist is not None:
-            raise Exception("User already prenoted")
+        max_ = get_global_setting(session, name='MaxWeeklyEntry').value
+        count = get_count_weekly_prenotations(session, user, shift.date)
+        if (count < max_):
+            session.add(Prenotation(client_id=user.id, shift_id=shift.id))
+            return True
         else:
-            max_ = get_global_setting(session, name='MaxWeeklyEntry').value
-            count = get_count_weekly_prenotations(session, user, shift.date)
-            if (count < max_):
-                try:
-                    session.add(Prenotation(client_id=user.id, shift_id=shift.id))
-                    return True
-                except exception:
-                    raise exception
-            else:
-                raise Exception("Week prenotation peak reached")
+            raise Exception("Week prenotation peak reached")
     elif prenotation is not None:
         user_  = get_user(session, id=prenotation.client_id)
         shift_ = get_shift(session, id=prenotation.shift_id)
@@ -651,7 +624,9 @@ def get_course(session, id=None, name=None, all=False):
 
 # Given the name of the Course plan his Shifts
 # It raises an exception if:
-# - there's no the turn in that day
+# - there's no course with that name
+# - the course has no course program
+# - there's no turn in that day
 # - the course overlaps with any other 
 def plan_course(session, name):
 
@@ -664,8 +639,7 @@ def plan_course(session, name):
 
     def update_shift_course(session, shift_id, new_course_id):
         session.query(Shift).filter(Shift.id == shift_id).update({Shift.course_id:new_course_id}, synchronize_session = False)
-        
-
+    
     course = get_course(session, name=name)
     if course is None:
         raise Exception("Course " + name + " does not exixsts")
@@ -823,24 +797,15 @@ def get_course_sign_up(session, user_id=None, course_id=None, all=False):
 # Adds a CourseSignUp to the Database given the User and the Course or the CourseSignUp
 # Returns True if it was added correctly, False otherwise
 # Raises an error if
-#  - the user has already SignedUp to the course
-#  - the capacity peak has already been reached
+#  - the trainer sign-up for his own course (trigger)
+#  - the user has already SignedUp to the course (trigger)
+#  - the capacity peak has already been reached (trigger)
 # TODO the course in in conflict with other courses the user has SignedIn
 # TODO controllare se ritornare falso o lanciare eccezione
 def add_course_sign_up(session, user=None, course=None, course_sign_up=None):
 
     if user is not None and course is not None:
-        exist = get_course_sign_up(session, user_id=user.id, course_id=course.id)
-        if exist is not None:
-            raise Exception("The user has already sign-up for the course")
-        else:
-            n_signed = len(course.users)
-            n_max = course.max_partecipants
-            if  n_signed < n_max:
-                session.add(CourseSignUp(user_id=user.id, course_id=course.id))
-            else:
-                raise Exception("Course peak has already been reached")
-                
+        session.add(CourseSignUp(user_id=user.id, course_id=course.id))
     elif course_sign_up is not None:
         user_  =  get_user(session, id=course_sign_up.user_id)
         course_ = get_shift(session, id=course_sign_up.user_id)
@@ -913,19 +878,16 @@ def get_message(session, sender=None, addresser=None, all=False):
 # - Given the sender_id, the addresser_id and the text of a Message adds it to the database
 # Returns True if it was added correctly, False otherwise
 # Raises an error if
-#  - the sender and the addresser are the same User
+#  - the sender and the addresser are the same User (check)
 def add_message(session, sender_id=None, addresser_id=None, text=None, message=None):
 
     if message is not None:
-        if message.sender == message.addressee:
-            raise Exception("The user has already sign-up for the course")
+        exist = get_message(session, sender=message.sender, addresser=message.addressee)
+        if exist is not None:
+            return False   
         else:
-            exist = get_message(session, sender=message.sender, addresser=message.addressee)
-            if exist is not None:
-                return False   
-            else:
-                session.add(message)
-                return True
+            session.add(message)
+            return True
     elif sender_id    is not None and\
          addresser_id is not None and\
          text         is not None:
