@@ -14,11 +14,27 @@
         <td><strong>Email</strong></td>
         <td>{{us.email}}</td>
       </tr>
+      <tr>
+        <td><strong>Telephone</strong></td>
+        <td>{{us.telephone}}</td>
+      </tr>
+      <tr>
+        <td><strong>Address</strong></td>
+        <td>{{us.address}}</td>
+      </tr>
     </table>
-    <br>
-    <form action="/logout">
-      <input type="submit", value="Logout" class="btn btn-info text-light">
-    </form>
+    <div class="row">
+      <div class="col-2">
+        <form action="/private/update_user">
+          <input type="submit" value="Update User" class="btn btn-warning text-white">
+        </form>
+      </div>
+      <div class="col-2">
+        <form action="/logout">
+          <input type="submit", value="Logout" class="btn btn-info text-light">
+        </form>
+      </div>
+    </div>
   </div>
 
   <div class="row w-75 mx-auto">

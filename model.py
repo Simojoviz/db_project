@@ -65,6 +65,20 @@ def add_user_from_list(session, user_list):
         b &= add_user(session, user=user)
     return b
 
+def update_user(session, user=None, fullname=None, telephone=None, address=None, pwd1=None, pwd2=None):
+    if user is not None:
+        if fullname != user.fullname:
+            user.fullname = fullname
+        if telephone != user.telephone:
+            user.telephone = telephone
+        if address != user.address:
+            user.address = address
+        if pwd1 != user.pwd:
+            user.pwd = pwd1
+        session.commit()
+        return True
+    return False
+
 # ________________________________________ ROLE ________________________________________ 
 
 
@@ -159,7 +173,7 @@ def get_trainer(session, id=None, email=None, all=False):
 # - Given fullname, email and password of a User does the same as above
 # Returns True if it was added correctly, False if the element was already contained
 #TODO controllare con con utilizzo di autoflush 
-def add_trainer(session, fullname=None, email=None, pwd=None, user=None):
+def add_trainer(session, fullname=None, email=None, pwd=None, telephone=None, address=None, user=None):
     if user is not None:
         if get_user(session, email=user.email) is None:
             # a) Neither a User nor a Trainer
@@ -179,7 +193,7 @@ def add_trainer(session, fullname=None, email=None, pwd=None, user=None):
     elif fullname is not None and\
          email    is not None and\
          pwd      is not None: 
-        return add_trainer(session, user=User(fullname=fullname, email=email, pwd=pwd))
+        return add_trainer(session, user=User(fullname=fullname, email=email, pwd=pwd, telephone=telephone, address=address))
     else:
         return False
 
