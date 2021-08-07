@@ -275,7 +275,12 @@ def new_course_form():
 @app.route('/courses/new_course/new_program/<course_name>')
 def new_program(course_name):
     session = Session()
-    return render_template('new_program.html', course = get_course(session, name=course_name))
+    rooms = get_room(session, all=True)
+    r = {}
+    for room in rooms:
+        r[room.id] = room.name
+    return render_template('new_program.html', course = get_course(session, name=course_name), room_dict = r)
+    
 
 @app.route('/courses/new_course/add_program/<course_name>')
 def add_program(course_name):

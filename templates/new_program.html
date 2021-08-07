@@ -8,9 +8,12 @@
           
           <h3 class="card-title"> {{course.name}} New Program </h3>
 
-          Programma:<br>
+          {% if course.course_programs|length != 0 %}
+            Programma:<br>
+          {% endif %}
+
           {% for program in course.course_programs %}
-            Giorno: {{program.week_day}} Turno: {{program.turn_number}} Codice Stanza: {{program.room_id}} <br>
+            Giorno: {{program.week_day}} Turno: {{program.turn_number}} Stanza: {{room_dict[program.room_id]}} <br>
           {% endfor %}
           <br>
             
