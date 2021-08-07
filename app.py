@@ -229,7 +229,22 @@ def course(course_name):
         return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=False)
     return render_template("course.html", course = c, course_program = cp, shift = sh, isStaff=False)
 
-@app.route('/new_course')
+@app.route('/courses/delete_course/<course_name>', methods=['POST'])
+def del_course(course_name):
+    try:
+        session = Session()
+        c = get_course(session, name = course_name)
+        if current_user.is_authenticated :
+            delete_course(session, course = c)
+            session.commit()
+            return redirect(url_for('courses'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/courses/new_course')
 def new_course():
     session = Session()
     if current_user.is_authenticated:
@@ -238,7 +253,7 @@ def new_course():
             return render_template('add_course.html', rooms=r)
         return redirect(url_for('courses'))
 
-@app.route('/new_course_form', methods=['GET', 'POST'])
+@app.route('/courses/new_course_form', methods=['GET', 'POST'])
 def new_course_form():
     if request.method == 'POST':
         session = Session()
@@ -257,29 +272,23 @@ def new_course_form():
         finally:
             session.close()
 
-@app.route('/delete_course/<course_name>', methods=['POST'])
-def del_course(course_name):
-    try:
-        session = Session()
-        c = get_course(session, name = course_name)
-        if current_user.is_authenticated :
-            delete_course(session, course = c)
-            session.commit()
-            return redirect(url_for('courses'))
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-
-@app.route('/new_program/<course_name>')
+@app.route('/courses/new_course/new_program/<course_name>')
 def new_program(course_name):
     session = Session()
-    r = get_room(session, all=True)
-    return render_template('add_program.html', rooms = r, course = course_name, week_setting = get_week_setting(session, all=True))
+    return render_template('new_program.html', course = get_course(session, name=course_name))
 
-@app.route('/new_program_form/<course_name>/<cont>', methods=['POST', 'GET'])
-def new_program_form(course_name, cont):
+@app.route('/courses/new_course/add_program/<course_name>')
+def add_program(course_name):
+    session = Session()
+    r = get_room(session, all=True)
+    return render_template('add_program.html', rooms = r, course = get_course(session, name=course_name), week_setting = get_week_setting(session, all=True))
+
+@app.route('/courses/new_course/add_program_form/<course_name>', methods=['POST', 'GET'])
+def add_program_form(course_name):
+
+    def to_second(t):
+        return (t.hour * 60 + t.minute) * 60 + t.second
+
     if request.method == 'POST':
         session = Session()
 
@@ -289,14 +298,21 @@ def new_program_form(course_name, cont):
         c = get_course(session, name = course_name)
         course_id = c.id
         tn = request.form['turn_number']
+        ws = get_week_setting(session, day_name=day)
+        tn = clamp(int(tn), 1, (to_second(ws.ending) - to_second(ws.starting) ) / to_second(ws.length))
         add_course_program(session, week_day=day, turn_number=tn, room_id=r.id, course_id=course_id )
         session.commit()
-        if cont == "0":
-            plan_course(session, name=course_name)
-            session.commit()
-            return redirect(url_for('courses'))
-        else:
-            return redirect(url_for('new_program', course_name = course_name))
+        return redirect(url_for('new_program', course_name = course_name))
+
+@app.route('/courses/new_course/plan_course/<course_name>')
+def plan_course_(course_name):
+    try:
+        session = Session()
+        plan_course(session, course_name)
+        return redirect(url_for('course', course_name=course_name))
+    except:
+        raise
+        
 
 @app.route('/sign_up/<course_name>')
 def sign_up(course_name):

@@ -6,7 +6,7 @@
   <div>
     <h1 class="text-center mt-1">Courses</h1>
     {% if current_user.is_authenticated and isStaff == True %}
-      <form action="/new_course">
+      <form action="/courses/new_course">
         <input type="submit", value="Add Course" class="btn btn-success mt-2 ml-2">
       </form>
     {% endif %}
