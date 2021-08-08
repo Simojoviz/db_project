@@ -23,7 +23,7 @@
                 <td>{{room_dict[program.room_id]}}</td>
                 <td>
                   <form action= "{{ url_for('del_program', program_id=program.id, course_name=course.name) }}">
-                    <input type="submit", value="Undo" class="btn btn-info btn-sm text-light">
+                    <input type="submit", value="Undo" class="btn btn-danger btn-sm">
                   </form>
                 </td>
               </tr>
