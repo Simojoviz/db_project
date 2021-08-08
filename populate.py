@@ -60,15 +60,15 @@ add_trainer(session, fullname='Riccardo Focardi', email='riccardo@gmail.com', pw
 
 courses = [
     Course(name = 'Boxe',
-        starting=datetime.datetime(year=2021, month=6, day=1), ending = datetime.datetime(year=2021, month=6, day=30), max_partecipants = 7, 
+        starting=datetime.datetime(year=2021, month=8, day=1), ending = datetime.datetime(year=2021, month=8, day=30), max_partecipants = 7, 
         instructor_id = get_trainer(session, email='stefano@gmail.com').id
     ),
     Course(name = 'Zumba',
-        starting=datetime.datetime(year=2021, month=7, day=1), ending = datetime.datetime(year=2021, month=7, day=30), max_partecipants = 12, 
+        starting=datetime.datetime(year=2021, month=8, day=1), ending = datetime.datetime(year=2021, month=8, day=30), max_partecipants = 12, 
         instructor_id = get_trainer(session, email='alessandra@gmail.com').id
     ),
     Course(name = 'Judo',
-        starting=datetime.datetime(year=2021, month=7, day=1), ending = datetime.datetime(year=2021, month=7, day=30), max_partecipants = 20, 
+        starting=datetime.datetime(year=2021, month=9, day=1), ending = datetime.datetime(year=2021, month=9, day=30), max_partecipants = 20, 
         instructor_id = get_trainer(session, email='riccardo@gmail.com').id
     )
 ]
@@ -78,12 +78,12 @@ add_course_from_list(session, courses)
 
 # WeekSetting
 week_settings = [
-    WeekSetting(day_name='Monday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), changed = True),
-    WeekSetting(day_name='Tuesday',   starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00), changed = True),
-    WeekSetting(day_name='Wednesday', starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), changed = True),
-    WeekSetting(day_name='Thursday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00), changed = True),
-    WeekSetting(day_name='Friday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), changed = True),
-    WeekSetting(day_name='Saturday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=15, minute=00), length=datetime.time(hour=1, minute=30), changed = True),
+    WeekSetting(day_name='Monday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), changed = True), # 9
+    WeekSetting(day_name='Tuesday',   starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00), changed = True), # 6
+    WeekSetting(day_name='Wednesday', starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), changed = True), # 9
+    WeekSetting(day_name='Thursday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00), changed = True), # 6
+    WeekSetting(day_name='Friday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), changed = True), # 9
+    WeekSetting(day_name='Saturday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=15, minute=00), length=datetime.time(hour=1, minute=30), changed = True), # 4
 ]
 
 for ws in week_settings:
@@ -105,8 +105,7 @@ for gs in global_settings:
     add_global_setting(session, global_setting=gs)
 
 # Shifts
-plan_shifts(session, starting=datetime.date(day=1, month=6, year=2021), n=90)
-
+plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=365)
 
 # CourseProgram
 courses_program = [
@@ -164,11 +163,10 @@ def add_prenotation_aux_nostart(session, email, day, month, year, room):
     if sh is not None:
         add_prenotation(session, user = get_user(session, email = email), shift= sh[0])
 
-add_prenotation_aux_nostart(session, "andrea@gmail.com",     16, 6, 2021, 'Main Room')
-add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 16, 6, 2021, 'Main Room')
-add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 23, 6, 2021, 'Weight Room')
-add_prenotation_aux_nostart(session, "simone@gmail.com",     24, 6, 2021, 'Fitness Room')
-
+add_prenotation_aux_nostart(session, "andrea@gmail.com",     16, 8, 2021, 'Main Room')
+add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 16, 8, 2021, 'Main Room')
+add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 23, 9, 2021, 'Weight Room')
+add_prenotation_aux_nostart(session, "simone@gmail.com",     24, 9, 2021, 'Fitness Room')
 
 add_course_sign_up(
     session,
@@ -194,7 +192,7 @@ messages = [
     Message(sender=get_user(session, email='sebastiano@gmail.com').id, addressee=get_user(session, email='andrea@gmail.com').id, text='Send nudes', date=datetime.datetime.now())
 ]
 
-# add_messagge_from_list(session, messages)
+add_messagge_from_list(session, messages)
 
 covid_report_messages(session, get_user(session, email='andrea@gmail.com').id)
 

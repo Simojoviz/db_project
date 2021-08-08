@@ -647,7 +647,7 @@ def plan_course(session, name):
     def get_shift_turn(session, date, room_id, turn):
         shifts = get_shift(session, date=date, room_id=room_id)
         if len(shifts) >= turn:
-            return shifts[turn]
+            return shifts[turn-1]
         else:
             return None
 
