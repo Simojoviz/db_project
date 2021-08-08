@@ -676,7 +676,14 @@ def plan_course(session, name):
                 raise Exception("Course cannot be planned: it overlaps with an other course!")
             else:
                 # Delete all Prenotation in that Shift
-                session.query(Prenotation).where(Prenotation.shift_id==shift.id).delete()
+                prenotations = session.query(Prenotation).where(Prenotation.shift_id==shift.id)
+                for prenotation in prenotations:
+                    add_message(session, sender_id=get_user(session, email='admin@gmail.com').id, addresser_id=prenotation.client_id,
+                    text='Your prenotation on ' + prenotation.shift.date.strftime('%d/%m/%Y') + " in " + prenotation.shift.room.name + " has been deleted due to the planning of " + course.name + " by the trainer " + course.trainer.user.fullname
+                    )
+                prenotations = session.query(Prenotation).where(Prenotation.shift_id==shift.id).delete()
+        
+                
                 update_shift_course(session, shift.id, course.id)
             day = day + timedelta(days=7)
             
@@ -715,6 +722,10 @@ def add_course_from_list(session, courses_list):
 def delete_course(session, course=None, all=False):
     if course is not None:
         c = get_course(session, id = course.id)
+        users = c.users
+        admin_id = get_user(session, email='admin@gmail.com').id
+        for user in users:
+            add_message(session, sender_id=admin_id, addresser_id=user.id, text= "The course " + c.name + " you signed-up has been deleted from " +  c.trainer.user.fullname)
         delete_course_program(session, course = c)
         delete_course_sign_up(session, course = c)
         session.delete(c)
