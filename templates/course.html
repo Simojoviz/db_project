@@ -31,8 +31,8 @@
       <tr>
         <td><strong>Shifts</strong></td>
         <td>
-          {% for i in course_program %}
-            {{i.week_day}} - {{i.room.name}} 
+          {% for i in shift %}
+            {{i.h_start}} - {{i.h_end}} 
             <br>
           {% endfor %}
         </td>
