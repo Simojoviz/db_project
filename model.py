@@ -842,9 +842,7 @@ def add_course_sign_up_from_list(session, course_sign_up_list):
 def delete_course_sign_up(session, course=None, user=None, all=False):
     if course is not None and user is not None:
         cs = get_course_sign_up(session, user_id = user.id, course_id = course.id)
-        for i in cs:
-            session.delete(i)
-        return True
+        session.delete(cs)
     elif course is not None:
         cs = get_course_sign_up(session, course_id=course.id)
         for i in cs:

@@ -8,13 +8,27 @@
           
           <h3 class="card-title"> {{course.name}} New Program </h3>
 
-          {% if course.course_programs|length != 0 %}
-            Programma:<br>
-          {% endif %}
-
-          {% for program in course.course_programs %}
-            Giorno: {{program.week_day}} Turno: {{program.turn_number}} Stanza: {{room_dict[program.room_id]}} <br>
-          {% endfor %}
+          <table class="table table-hover">
+            <tr>
+              <th>Day</th>
+              <th>Turn</th>
+              <th>Room</th>
+              <th>Delete</th>
+            </tr>
+            
+            {% for program in course.course_programs %}
+              <tr>
+                <td>{{program.week_day}}</td>
+                <td>{{program.turn_number}}</td>
+                <td>{{room_dict[program.room_id]}}</td>
+                <td>
+                  <form action= "{{ url_for('del_program', program_id=program.id, course_name=course.name) }}">
+                    <input type="submit", value="Undo" class="btn btn-info btn-sm text-light">
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </table>
           <br>
             
           {% if course.course_programs|length != 0 %}

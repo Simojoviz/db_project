@@ -309,11 +309,27 @@ def add_program_form(course_name):
         session.commit()
         return redirect(url_for('new_program', course_name = course_name))
 
+@app.route('/courses/new_course/del_program/<program_id>/<course_name>')
+def del_program(program_id, course_name):
+    try:
+        session = Session()
+        print("AAA")
+        print(course_name)
+        print("AAA")
+        print(program_id)
+        print("AAA")
+        session.query(CourseProgram).where(CourseProgram.id==program_id).delete()
+        session.commit()
+        return redirect(url_for('new_program', course_name = course_name))
+    except:
+        raise
+
 @app.route('/courses/new_course/plan_course/<course_name>')
 def plan_course_(course_name):
     try:
         session = Session()
         plan_course(session, course_name)
+        session.commit()
         return redirect(url_for('course', course_name=course_name))
     except:
         raise
