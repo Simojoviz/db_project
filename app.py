@@ -517,39 +517,8 @@ def covid_report():
 def messages():
     session = Session() 
     try:
-        resp = make_response(render_template("messages.html"))
-        session.commit()
-        return resp
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-
-@app.route('/private/messages/send')
-@login_required
-def sent():
-    session = Session() 
-    try:
-        users = get_user(session, all=True)
-        users.remove(get_user(session, id=current_user.id))
-        messages = get_message(session, sender=current_user.id)
-        resp = make_response(render_template("send.html", messages=messages, users=users))
-        session.commit()
-        return resp
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-
-@app.route('/private/messages/addressed')
-@login_required
-def addressed():
-    session = Session() 
-    try:
         messages = get_message(session, addresser=current_user.id)
-        resp = make_response(render_template("addressed.html", messages=messages))
+        resp = make_response(render_template("messages.html", messages=messages))
         session.commit()
         return resp
     except:
@@ -557,21 +526,3 @@ def addressed():
         raise
     finally:
         session.close()
-
-@app.route('/messages/send_message', methods=['GET', 'POST'])
-@login_required
-def send_message():
-    if request.method == 'POST':
-        session = Session()
-        try:
-            adr_id = request.form['addresser']
-            text = request.form['text']
-            add_message(session,current_user.id, adr_id, text)
-            session.commit()
-            return redirect(url_for('sent'))
-        except:
-            session.rollback()
-            raise
-        finally:
-            session.close()
-
