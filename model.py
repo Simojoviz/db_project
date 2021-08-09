@@ -728,8 +728,6 @@ def delete_course(session, course=None, all=False):
             add_message(session, sender_id=admin_id, addresser_id=user.id, text= "The course " + c.name + " you signed-up has been deleted from " +  c.trainer.user.fullname)
         delete_course_program(session, course = c)
         delete_course_sign_up(session, course = c)
-        for i in c.shifts:
-            i.course_id = None
         session.delete(c)
         return True
     elif all == True:

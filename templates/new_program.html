@@ -41,6 +41,10 @@
               <input type="submit", value="Add New Program" class="btn btn-success mt-2 ml-2">
           </form>
 
+          <form action="{{url_for('undo_course', course_name=course.name)}}">
+            <input type="submit", value="Back" class="btn btn-success mt-2 ml-2">
+        </form>
+
         </div>
       </div>
     </div>

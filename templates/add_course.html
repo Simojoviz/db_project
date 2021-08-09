@@ -9,19 +9,19 @@
         <form action="/courses/new_course_form" method="POST">
           Name
           <br>
-          <input name="name" type="text" style="width: 250px;">
+          <input name="name" type="text" style="width: 250px;" value={{course_name}}>
           <br>
           Starting
           <br>
-          <input name="starting" type="date" style="width: 250px;">
+          <input name="starting" type="date" style="width: 250px;" value={{starting}}>
           <br>
           Ending
           <br>
-          <input name="ending" type="date" style="width: 250px;">
+          <input name="ending" type="date" style="width: 250px;" value={{ending}}>
           <br>
           Max Participants
           <br>
-          <input name="max_partecipants" type="number" min="1" style="width: 250px;">
+          <input name="max_partecipants" type="number" min="1" style="width: 250px;" value={{max_partecipants}}>
           <br>
           <br>
           <input type="submit" class="btn btn-info text-light" value="Avanti">

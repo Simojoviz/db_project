@@ -279,6 +279,17 @@ def new_program(course_name):
     for room in rooms:
         r[room.id] = room.name
     return render_template('new_program.html', course = get_course(session, name=course_name), room_dict = r)
+
+@app.route('/courses/undo_course/<course_name>')
+def undo_course(course_name):
+    session = Session()
+    c = get_course(session, name=course_name)
+    starting = c.starting
+    ending = c.ending
+    max_partecipants = c.max_partecipants
+    delete_course(session, course=c)
+    session.commit()
+    return render_template('add_course.html', rooms=get_room(session, all=True), course_name=course_name, starting=starting, ending=ending, max_partecipants=max_partecipants)
     
 
 @app.route('/courses/new_course/add_program/<course_name>')
