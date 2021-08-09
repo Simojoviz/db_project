@@ -44,9 +44,15 @@
       </form>
     </div>
     <div class="col text-center">
-      <form action="/private/courses_sign_up">
-        <input type="submit", value="Courses" class="btn btn-info text-white" style="width: 120px;">
-      </form>
+      {% if "Staff" in current_user.roles %}
+        <form action="/private/trainer_courses">
+          <input type="submit", value="Courses" class="btn btn-info text-white" style="width: 120px;">
+        </form>
+      {% else %}
+        <form action="/private/courses_sign_up">
+          <input type="submit", value="Courses" class="btn btn-info text-white" style="width: 120px;">
+        </form>
+      {% endif %}
     </div>
     <div class="col text-center">
       <form action="/private/messages">

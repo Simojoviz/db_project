@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block pagebody %}
+<div class="container">
+  <h1 class="text-center">{{course.name}}</h1>
+  <div class="card bg-light shadow p-3 mb-5 mt-4 mx-auto w-75" style="border: hidden;">
+    <h3>Course Informations</h3>
+    <table class="table table-borderless ml-3">
+      <tr>
+        <td><strong>Starting</strong></td>
+        <td>{{course.starting}}</td>
+      </tr>
+      <tr>
+        <td><strong>Ending</strong></td>
+        <td>{{course.ending}}</td>
+      </tr>
+      <tr>
+        <td><strong>Days</strong></td>
+        <td>
+          {% for i in course_program %}
+            {{i.week_day}} - {{i.room.name}} 
+            <br>
+          {% endfor %}
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Shifts</strong></td>
+        <td>
+          {% for i in shifts %}
+            {{i.h_start}} - {{i.h_end}} 
+            <br>
+          {% endfor %}
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Slots Available</strong></td>
+        <td>{{course.max_partecipants - course.users|length}}/{{course.max_partecipants}}</td>
+      </tr>
+      <tr>
+        <td><strong>Users Signed Up</strong></td>
+        <td>
+          {% for u in course.users %}
+            {{u.fullname}} - {{u.email}}
+            <br>
+          {% endfor %}
+        </td>
+      </tr>
+    </table>
+    <div class="row">
+      <div class="col-2">
+        <form action="{{url_for('del_course', course_name = course.name)}}" method="POST">
+          <input type="submit" value="Delete Course" class="btn btn-danger">
+        </form>
+      </div>
+      <div class="col-2">
+        <form action="#">
+          <input type="submit" value="Update Course" class="btn btn-warning text-white">
+        </form>
+      </div>
+      <div class="col-2">
+        <form action="#">
+          <input type="submit" value="Covid Report" class="btn btn-info text-white">
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <form action="/private/trainer_courses">
+      <input type="submit", value="Back" class="btn btn-info text-light">
+    </form>
+  </div>
+
+</div>
+{% endblock %}

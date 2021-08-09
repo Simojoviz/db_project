@@ -115,6 +115,25 @@ def courses_sign_up():
     finally:
         session.close()
 
+@app.route('/private/trainer_courses')
+@login_required
+def trainer_courses():
+    session = Session()
+    trainer = get_trainer(session, id = current_user.id)
+    courses = trainer.courses
+    return render_template("trainer_courses.html", courses = courses, trainer = trainer)
+
+@app.route('/private/trainer_courses/<course_name>')
+@login_required
+def trainer_course(course_name):
+    session = Session()
+    course = get_course(session, name = course_name)
+    course_program = get_course_program(session, course_id = course.id)
+    sh = []
+    for i in course_program:
+        sh.append(get_shift(session, id=i.turn_number))
+    return render_template("trainer_course.html", course = course, course_program = course_program, shifts = sh, isStaff=True)
+
 # ________________________________________________________PRENOTATION________________________________________________________
 @app.route('/shifts/<year>/<month>/<day>/<room>')
 #@app.route('/shifts?year=&month=&day=&room=')
