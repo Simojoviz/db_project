@@ -2,7 +2,7 @@
 
 {% block pagebody %}
 <div class="container">
-  <h2>Messaggi Ricevuti</h2>
+  <h1 class="text-center">Messaggi Ricevuti</h1>
   <table class="table table-borderless">
     <tr>
       <th>From</th>
@@ -13,14 +13,14 @@
     {% for m in messages %}
     <tr>
       <td>{{m.sender_.fullname}}</td>
-      <td>{{m.date.strftime('%m/%d/%Y %H:%M')}}</tr>
+      <td>{{m.date.strftime('%m/%d/%Y %H:%M')}}</td>
       <td>{{m.text}}</td>
     </tr>
     {% endfor %}
 
   </table>
   <form action= "{{ url_for('private')}}">
-    <input type="submit", value="Back">
+    <input type="submit" value="Back" class="btn btn-info text-white">
   </form>
 </div>
 
