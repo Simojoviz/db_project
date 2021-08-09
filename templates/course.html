@@ -58,21 +58,6 @@
           <input type="submit", value="Subscribe" class="btn btn-success">
         </form>
       {% endif %}
-    {% else %}
-      {% if current_user.is_authenticated and current_user.id == course.instructor_id %}
-        <div class="row">
-          <div class="col-2">
-            <form action="{{url_for('del_course', course_name = course.name)}}" method="POST">
-              <input type="submit" value="Delete Course" class="btn btn-danger">
-            </form>
-          </div>
-          <div class="col-2">
-            <form action="#">
-              <input type="submit" value="Update Course" class="btn btn-warning text-white">
-            </form>
-          </div>
-        </div>
-      {% endif %}
     {% endif %}
   </div>
 
