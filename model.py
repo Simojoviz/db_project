@@ -973,8 +973,10 @@ def covid_report_messages(session, user_id):
         )
     # Trainer
     if(get_role(session, name="Staff")) in user.roles:
-        for course in user.trainer.courses:
-            for csu in course.course_signs_up:
+        trainer = get_trainer(session, email=user.email)
+        for course in trainer.courses:
+            course_signs_up = get_course_sign_up(session, course_id=course.id)
+            for csu in course_signs_up:
                 add_message(
                     session,
                     sender_id=admin_id,
