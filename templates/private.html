@@ -60,12 +60,19 @@
       </form>
     </div>
     <div class="col text-center">
-      <form action="/private/covid_report">
-        <input type="submit", value="Covid Report" class="btn btn-info text-white" style="width: 120px;">
-      </form>
+        <input type="submit", onclick="covid_report()" value="Covid Report" class="btn btn-info text-white" style="width: 120px;">
     </div>
   </div>
 </div>
+
+<script>
+  function covid_report() {
+    var r = confirm("If you Confirm all client of the Gym you came into contact will be notified. Your identity is anonymous");
+    if (r == true) {
+      window.location.href = "/private/covid_report";
+    }
+  }
+  </script>
   
   
 {% endblock %}
