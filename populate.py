@@ -157,14 +157,14 @@ def add_prenotation_aux(session, email, day, month, year, hours, minutes):
         )
     )
 
-# Prenotatoin for the first Shift for that day
+# Prenotatoin for the first Shift on that day
 def add_prenotation_aux_nostart(session, email, day, month, year, room):
     sh = get_shift(session, date = datetime.date(day = day, month = month, year = year), room_id=get_room(session, name=room).id)
     if sh is not None:
         add_prenotation(session, user = get_user(session, email = email), shift= sh[0])
 
-add_prenotation_aux_nostart(session, "andrea@gmail.com",     16, 8, 2021, 'Main Room')
-add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 16, 8, 2021, 'Main Room')
+add_prenotation_aux_nostart(session, "andrea@gmail.com",     10, 8, 2021, 'Main Room')
+add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 10, 8, 2021, 'Main Room')
 add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 23, 9, 2021, 'Weight Room')
 add_prenotation_aux_nostart(session, "simone@gmail.com",     24, 9, 2021, 'Fitness Room')
 
@@ -185,14 +185,6 @@ add_course_sign_up(
     user=get_user(session, email='simone@gmail.com'),
     course=get_course(session, name='Zumba'),
 )
-
-# Messages
-messages = [
-    Message(sender=get_user(session, email='andrea@gmail.com').id, addressee=get_user(session, email='simone@gmail.com').id, text='Great training!', date=datetime.datetime.now()),
-    Message(sender=get_user(session, email='sebastiano@gmail.com').id, addressee=get_user(session, email='andrea@gmail.com').id, text='Send nudes', date=datetime.datetime.now())
-]
-
-add_messagge_from_list(session, messages)
 
 covid_report_messages(session, get_user(session, email='andrea@gmail.com').id)
 

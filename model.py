@@ -832,7 +832,7 @@ def add_course_sign_up(session, user=None, course=None, course_sign_up=None):
     if user is not None and course is not None:
         session.add(CourseSignUp(user_id=user.id, course_id=course.id))
         add_message(session, sender_id=user.id, addresser_id=course.trainer.user.id, text="Hello! I've just Signed-Up for your " + course.name + "course ! ")
-        add_message(session, addresser_id=user.id, sender_id=course.trainer.user.id, text="Hello! Welcome to my " + course.name + "course! ")
+        add_message(session, addresser_id=user.id, sender_id=course.trainer.user.id, text="Hello! Welcome to my " + course.name + " ìcourse! ")
     elif course_sign_up is not None:
         user_  =  get_user(session, id=course_sign_up.user_id)
         course_ = get_shift(session, id=course_sign_up.user_id)
@@ -937,38 +937,47 @@ def covid_report_messages(session, user_id):
     user = get_user(session, id = user_id)
     today = datetime.date.today()
     prev = today - timedelta(days=14)
-    ids = []
+    admin_id = get_user(session, email='admin@gmail.com').id
     # Shift
     shifts = user.prenotations_shifts
     shifts = filter(lambda sh: prev <= sh.date <= today, shifts) # Remove the shifts that are not in the previous two weeks
     for shift in shifts:
         users = shift.users_prenotated
         for us in users:
-            ids.append(us.id)
+            if us.id != user.id:
+                add_message(
+                    session,
+                    sender_id=admin_id,
+                    addresser_id=us.id,
+                    text= "On " + shift.date.strftime('%d/%m/%Y') + " from " +\
+                        shift.h_start.strftime('%H:%M') + " to " + shift.h_end.strftime('%H:%M') + " in " + shift.room.name +\
+                        " you came into contacts with a person affected from COVID19"
+                )
     # Course
     courses = user.courses
     for course in courses:
-        ids.append(course.instructor_id)
-        # TODO non funzionano la relationship course.users
-        """users = course.users 
-        for us in users:
-            print(us)
-            ids.append(us.id)"""
         course_signs_up = get_course_sign_up(session, course_id=course.id)
         for csu in course_signs_up:
-            ids.append(csu.user_id)
-    # Remove redundance
-    ids = set(ids)
-    ids.remove(user_id)
-    # Messagges
-    messages = []
-    sender = get_user(session, email='admin@gmail.com').id
-    for id in ids:
-        messages.append(
-            Message(
-                sender= sender, addressee=get_user(session, id=id).id,
-                text = "You have been in contact with a person affected from Covid-19",
-                date=datetime.datetime.now()
-            )
+            if csu.user_id != user.id:
+                add_message(
+                    session,
+                    sender_id=admin_id,
+                    addresser_id=csu.user_id,
+                    text= "One person in course " + course.name + " you signed-up for is affected from COVID19"
+                )
+        add_message(
+                    session,
+                    sender_id=admin_id,
+                    addresser_id= course.instructor_id,
+                    text= "One person in your course " + course.name + " is affected from COVID19"
         )
-    add_messagge_from_list(session, messages)
+    # Trainer
+    if(get_role(session, name="Staff")) in user.roles:
+        for course in user.trainer.courses:
+            for csu in course.course_signs_up:
+                add_message(
+                    session,
+                    sender_id=admin_id,
+                    addresser_id=csu.user_id,
+                    text= "One person in course " + course.name + " you signed-up for is affected from COVID19"
+                )
