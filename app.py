@@ -400,18 +400,26 @@ def signin_form():
         try:
             fullname = request.form['name']
             email = request.form['email']
+            address = request.form['address']
+            telephone = request.form['telephone']
             pwd1 = request.form['pwd1']
             pwd2 = request.form['pwd2']
             us = get_user(session, email=email)
-            if fullname and email and pwd1 and pwd1 == pwd2 and us is None:
+            if fullname and email and address and telephone and pwd1 and pwd1 == pwd2 and us is None:
                 flash("Signed in successfully.", category='success')
-                add_user(session, fullname=fullname, email=email, pwd=pwd1)
+                add_user(session, fullname=fullname, email=email, address=address, telephone=telephone, pwd=pwd1)
                 session.commit()
                 return redirect(url_for('login'))
             if not fullname:
                 flash("Please enter a fullname.", category='error')
             elif not email:
                 flash("Please enter an email.", category='error')
+            elif not telephone:
+                flash("Please enter telephone", category='error')
+            elif not address:
+                flash("Please enter address", category='error')
+            elif us is not None:
+                flash("User already exist.", category='error')
             elif us is not None:
                 flash("User already exist.", category='error')
             elif not pwd1:

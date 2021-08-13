@@ -37,9 +37,9 @@ def get_user(session, id=None, email=None, all=False):
 
 
 # - Given a User adds it to the database
-# - Given fullname, email and password of a User adds it to the database
+# - Given fullname, email, address, telephone and password of a User adds it to the database
 # Returns True if it was added correctly, False if the element was already contained
-def add_user(session, fullname=None, email=None, pwd=None, user=None):
+def add_user(session, fullname=None, email=None, address=None, telephone=None, pwd=None, user=None):
     if user is not None:
         exist = get_user(session, email=user.email)
         if exist is not None:
@@ -51,8 +51,10 @@ def add_user(session, fullname=None, email=None, pwd=None, user=None):
             return True
     elif fullname is not None and\
          email    is not None and\
+         address    is not None and\
+         telephone    is not None and\
          pwd      is not None:
-        return add_user(session, user=User(fullname=fullname, email=email, pwd=pwd))
+        return add_user(session, user=User(fullname=fullname, email=email, address=address, telephone=telephone, pwd=pwd))
     else:
         return False
 
