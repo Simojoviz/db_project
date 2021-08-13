@@ -16,7 +16,7 @@
         {% elif get_flashed_messages(category_filter=('success')) %}
           <p class="alert alert-success" role="alert"> {{ get_flashed_messages(category_filter=('success'))[0] }}
         {% endif %}
-        <form action="/login_form" method="POST">
+        <form action="{{url_for('login_form')}}" method="POST">
           Email
           <br>
           <input name="user" type="text" style="width: 250px;">

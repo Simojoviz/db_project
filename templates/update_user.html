@@ -15,7 +15,7 @@
         {% elif get_flashed_messages(category_filter=('success')) %}
           <p class="alert alert-success" role="alert"> {{ get_flashed_messages(category_filter=('success'))[0] }}
         {% endif %}
-        <form action="/update_user_form" method="POST">
+        <form action="{{url_for('update_user_form')}}" method="POST">
           Fullname
           <br>
           <input name="fullname" type="text" style="width: 250px;" value="{{ user.fullname }}">
@@ -44,7 +44,7 @@
     </div>
   </div>
   <div class="mt-4">
-    <form action="/private">
+    <form action="{{url_for('private')}}">
       <input type="submit", value="Back" class="btn btn-info text-light">
     </form>
   </div>

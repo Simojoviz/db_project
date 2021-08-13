@@ -14,7 +14,7 @@
         {% if get_flashed_messages(category_filter=('error')) %}
           <p class="alert alert-danger" role="alert"> {{ get_flashed_messages(category_filter=('error'))[0] }}
         {% endif %}
-        <form action="/signin_form" method="POST">
+        <form action="{{url_for('signin_form')}}" method="POST">
           Fullname
           <br>
           <input name="name" type="text" style="width: 250px;">

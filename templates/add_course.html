@@ -6,7 +6,7 @@
     <div class="card-body">
       <div class="container text-center" style="margin-top: 2rem;">
         <h3 class="card-title">Create New Course</h3>
-        <form action="/courses/new_course_form" method="POST">
+        <form action="{{url_for('new_course_form')}}" method="POST">
           Name
           <br>
           <input name="name" type="text" style="width: 250px;" value={{course_name}}>
@@ -30,7 +30,7 @@
     </div>
   </div>
   <div class="mt-4">
-    <form action="/courses">
+    <form action="{{url_for('courses')}}">
       <input type="submit", value="Back" class="btn btn-info text-light">
     </form>
   </div>

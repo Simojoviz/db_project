@@ -4,8 +4,8 @@
 
 <div class="container">
   <h1 class="text-center mb-4">{{trainer.user.fullname}}'s Courses</h1>
-  <form action="/courses/new_course" class="mb-3">
-    <input type="submit", value="Add Course" class="btn btn-success mt-2 ml-2">
+  <form action="{{url_for('new_course')}}" class="mb-3">
+    <input type="submit", value="New Course" class="btn btn-success mt-2 ml-2">
   </form>
   <div class="row">
     {% for c in courses%}

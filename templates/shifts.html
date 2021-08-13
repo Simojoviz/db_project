@@ -5,7 +5,7 @@
 <div class="container mb-5">
   <div>
     <h1 class="mb-2 text-center">Book a Shift</h1>
-    <form action="/shifts/load_date" method="POST">
+    <form action="{{url_for('shifts_load_state')}}" method="POST">
       <div class="row w-75 mx-auto mt-4">
         <div class="col text-center">
           <strong>Date</strong> 

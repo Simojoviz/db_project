@@ -832,7 +832,7 @@ def add_course_sign_up(session, user=None, course=None, course_sign_up=None):
     if user is not None and course is not None:
         session.add(CourseSignUp(user_id=user.id, course_id=course.id))
         add_message(session, sender_id=user.id, addresser_id=course.trainer.user.id, text="Hello! I've just Signed-Up for your " + course.name + "course ! ")
-        add_message(session, addresser_id=user.id, sender_id=course.trainer.user.id, text="Hello! Welcome to my " + course.name + " ìcourse! ")
+        add_message(session, addresser_id=user.id, sender_id=course.trainer.user.id, text="Hello! Welcome to my " + course.name + " course! ")
     elif course_sign_up is not None:
         user_  =  get_user(session, id=course_sign_up.user_id)
         course_ = get_shift(session, id=course_sign_up.user_id)

@@ -25,12 +25,12 @@
     </table>
     <div class="row">
       <div class="col-2">
-        <form action="/private/update_user">
+        <form action="{{url_for('upd_user')}}">
           <input type="submit" value="Update User" class="btn btn-warning text-white">
         </form>
       </div>
       <div class="col-2">
-        <form action="/logout">
+        <form action="{{url_for('logout')}}">
           <input type="submit", value="Logout" class="btn btn-info text-light">
         </form>
       </div>
@@ -39,23 +39,23 @@
 
   <div class="row w-75 mx-auto">
     <div class="col text-center">
-      <form action="/private/prenotations">
+      <form action="{{url_for('prenotations')}}">
         <input type="submit", value="Prenotations" class="btn btn-info text-white" style="width: 120px;">
       </form>
     </div>
     <div class="col text-center">
       {% if "Staff" in current_user.roles %}
-        <form action="/private/trainer_courses">
+        <form action="{{url_for('trainer_courses')}}">
           <input type="submit", value="Courses" class="btn btn-info text-white" style="width: 120px;">
         </form>
       {% else %}
-        <form action="/private/courses_sign_up">
+        <form action="{{url_for('courses_sign_up')}}">
           <input type="submit", value="Courses" class="btn btn-info text-white" style="width: 120px;">
         </form>
       {% endif %}
     </div>
     <div class="col text-center">
-      <form action="/private/messages">
+      <form action="{{url_for('messages')}}">
         <input type="submit", value="Messages" class="btn btn-info text-white" style="width: 120px;">
       </form>
     </div>
@@ -69,7 +69,7 @@
   function covid_report() {
     var r = confirm("If you Confirm all client of the Gym you came into contact will be notified. Your identity is anonymous");
     if (r == true) {
-      window.location.href = "/private/covid_report";
+      window.location.href = "{{url_for('covid_report')}}";
     }
   }
 </script>
