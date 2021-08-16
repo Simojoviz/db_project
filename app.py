@@ -119,27 +119,52 @@ def courses_sign_up():
 @login_required
 def trainer_courses():
     session = Session()
-    trainer = get_trainer(session, id = current_user.id)
-    courses = trainer.courses
-    return render_template("trainer_courses.html", courses = courses, trainer = trainer)
+    try:
+        trainer = get_trainer(session, id = current_user.id)
+        if trainer is not None:
+            courses = trainer.courses
+            session.commit()
+            return render_template("trainer_courses.html", courses = courses, trainer = trainer)
+        else:
+            session.commit()
+            abort(401)
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
 
 @app.route('/private/trainer_courses/<course_name>')
 @login_required
 def trainer_course(course_name):
     session = Session()
-    course = get_course(session, name = course_name)
-    course_program = get_course_program(session, course_id = course.id)
-    sh = []
-    for i in course_program:
-        sh.append(get_shift(session, id=i.turn_number))
-    return render_template("trainer_course.html", course = course, course_program = course_program, shifts = sh, isStaff=True)
+    try:
+        trainer = get_trainer(session, id = current_user.id)
+        course = get_course(session, name = course_name)
+        if trainer is not None and course.instructor_id == trainer.id:
+            course_program = get_course_program(session, course_id = course.id)
+            sh = []
+            for i in course_program:
+                sh.append(get_shift(session, id=i.turn_number))
+            session.commit()
+            return render_template("trainer_course.html", course = course, course_program = course_program, shifts = sh)
+        else:
+            session.commit()
+            abort(401)
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
 
 # ________________________________________________________PRENOTATION________________________________________________________
 @app.route('/shifts/<year>/<month>/<day>/<room>')
 #@app.route('/shifts?year=&month=&day=&room=')
 def shifts(day, month, year, room):
+    session = Session()
     try:
-        session = Session()
         date = datetime.date(year=int(year), month=int(month), day=int(day))
         date_string = date.strftime("%Y-%m-%d")
         r = get_room(session, all=True)
@@ -163,7 +188,7 @@ def shifts(day, month, year, room):
 @app.route('/shifts/first')
 def shifts_first():
     curr = datetime.date.today()
-    return redirect(url_for('shifts', year = curr.year, month=curr.month, day=curr.day, room='All'))
+    return redirect('/shifts?year=%s&month=%s&day=%s&room=All' % (curr.year, curr.month, curr.day))
 
 @app.route('/shifts/load_date', methods=['GET', 'POST'])
 def shifts_load_state():
@@ -176,6 +201,8 @@ def shifts_load_state():
             date = datetime.datetime.strptime(date_str, '%Y/%m/%d')
             session.commit()
             return redirect(url_for('shifts', year = date.year, month=date.month, day=date.day, room=room))
+            return redirect('/shifts?year=%s&month=%s&day=%s&room=%s' % (date.year, date.month, date.day, room))
+
         except:
             session.rollback()
             raise
@@ -201,9 +228,10 @@ def prenotation(shift):
     
 
 @app.route('/del_prenotation/<shift>')
+@login_required
 def del_prenotation(shift):
+    session = Session()
     try:
-        session = Session()
         us = get_user(session,id = current_user.id)
         s = get_shift(session, id = shift)
         delete_prenotation(session, shift=s, user=us)
@@ -219,8 +247,8 @@ def del_prenotation(shift):
 
 @app.route('/courses')
 def courses():
+    session = Session()
     try:
-        session = Session()
         courses = get_course(session, all=True)
         if current_user.is_authenticated and "Staff" in current_user.roles:
             return render_template("courses.html", courses = courses, isStaff=True)
@@ -234,23 +262,29 @@ def courses():
 @app.route('/courses/<course_name>')
 def course(course_name):
     session = Session()
-    c = get_course(session,name = course_name)
-    cp = get_course_program(session,course_id = c.id)
-    sh = []
-    for i in cp:
-        sh.append(get_shift(session, id=i.turn_number))
-    if current_user.is_authenticated:
-        u = get_user(session, id = current_user.id)
-        cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
-        if "Staff" in current_user.roles:
-            return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=True)
-        return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=False)
-    return render_template("course.html", course = c, course_program = cp, shift = sh, isStaff=False)
+    try:
+        c = get_course(session,name = course_name)
+        cp = get_course_program(session,course_id = c.id)
+        sh = []
+        for i in cp:
+            sh.append(get_shift(session, id=i.turn_number))
+        if current_user.is_authenticated:
+            u = get_user(session, id = current_user.id)
+            cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
+            if "Staff" in current_user.roles:
+                return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=True)
+            return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=False)
+        return render_template("course.html", course = c, course_program = cp, shift = sh, isStaff=False)
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 @app.route('/courses/delete_course/<course_name>', methods=['POST'])
 def del_course(course_name):
+    session = Session()
     try:
-        session = Session()
         c = get_course(session, name = course_name)
         if current_user.is_authenticated :
             delete_course(session, course = c)
@@ -265,11 +299,17 @@ def del_course(course_name):
 @app.route('/courses/new_course')
 def new_course():
     session = Session()
-    if current_user.is_authenticated:
-        if "Staff" in current_user.roles:
-            r = get_room(session, all=True)
-            return render_template('add_course.html', rooms=r)
-        return redirect(url_for('courses'))
+    try:
+        if current_user.is_authenticated:
+            if "Staff" in current_user.roles:
+                r = get_room(session, all=True)
+                return render_template('add_course.html', rooms=r)
+            return redirect(url_for('courses'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 @app.route('/courses/new_course_form', methods=['GET', 'POST'])
 def new_course_form():
@@ -293,29 +333,46 @@ def new_course_form():
 @app.route('/courses/new_course/new_program/<course_name>')
 def new_program(course_name):
     session = Session()
-    rooms = get_room(session, all=True)
-    r = {}
-    for room in rooms:
-        r[room.id] = room.name
-    return render_template('new_program.html', course = get_course(session, name=course_name), room_dict = r)
+    try:
+        rooms = get_room(session, all=True)
+        r = {}
+        for room in rooms:
+            r[room.id] = room.name
+        return render_template('new_program.html', course = get_course(session, name=course_name), room_dict = r)
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 @app.route('/courses/undo_course/<course_name>')
 def undo_course(course_name):
     session = Session()
-    c = get_course(session, name=course_name)
-    starting = c.starting
-    ending = c.ending
-    max_partecipants = c.max_partecipants
-    delete_course(session, course=c)
-    session.commit()
-    return render_template('add_course.html', rooms=get_room(session, all=True), course_name=course_name, starting=starting, ending=ending, max_partecipants=max_partecipants)
-    
+    try:
+        c = get_course(session, name=course_name)
+        starting = c.starting
+        ending = c.ending
+        max_partecipants = c.max_partecipants
+        delete_course(session, course=c)
+        session.commit()
+        return render_template('add_course.html', rooms=get_room(session, all=True), course_name=course_name, starting=starting, ending=ending, max_partecipants=max_partecipants)
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 @app.route('/courses/new_course/add_program/<course_name>')
 def add_program(course_name):
     session = Session()
-    r = get_room(session, all=True)
-    return render_template('add_program.html', rooms = r, course = get_course(session, name=course_name), week_setting = get_week_setting(session, all=True))
+    try:
+        r = get_room(session, all=True)
+        return render_template('add_program.html', rooms = r, course = get_course(session, name=course_name), week_setting = get_week_setting(session, all=True))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 @app.route('/courses/new_course/add_program_form/<course_name>', methods=['POST', 'GET'])
 def add_program_form(course_name):
@@ -325,65 +382,82 @@ def add_program_form(course_name):
 
     if request.method == 'POST':
         session = Session()
-
-        room = request.form['room']
-        r = get_room(session, name = room)
-        day = request.form['day']
-        c = get_course(session, name = course_name)
-        course_id = c.id
-        tn = request.form['turn_number']
-        ws = get_week_setting(session, day_name=day)
-        tn = clamp(int(tn), 1, (to_second(ws.ending) - to_second(ws.starting) ) / to_second(ws.length))
-        add_course_program(session, week_day=day, turn_number=tn, room_id=r.id, course_id=course_id )
-        session.commit()
-        return redirect(url_for('new_program', course_name = course_name))
+        try:
+            room = request.form['room']
+            r = get_room(session, name = room)
+            day = request.form['day']
+            c = get_course(session, name = course_name)
+            course_id = c.id
+            tn = request.form['turn_number']
+            ws = get_week_setting(session, day_name=day)
+            tn = clamp(int(tn), 1, (to_second(ws.ending) - to_second(ws.starting) ) / to_second(ws.length))
+            add_course_program(session, week_day=day, turn_number=tn, room_id=r.id, course_id=course_id )
+            session.commit()
+            return redirect(url_for('new_program', course_name = course_name))
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
 @app.route('/courses/new_course/del_program/<program_id>/<course_name>')
 def del_program(program_id, course_name):
+    session = Session()
     try:
-        session = Session()
-        print("AAA")
-        print(course_name)
-        print("AAA")
-        print(program_id)
-        print("AAA")
         session.query(CourseProgram).where(CourseProgram.id==program_id).delete()
         session.commit()
         return redirect(url_for('new_program', course_name = course_name))
     except:
+        session.rollback()
         raise
+    finally:
+        session.close()
 
 @app.route('/courses/new_course/plan_course/<course_name>')
 def plan_course_(course_name):
+    session = Session()
     try:
-        session = Session()
         plan_course(session, course_name)
         session.commit()
         return redirect(url_for('course', course_name=course_name))
     except:
+        session.rollback()
         raise
+    finally:
+        session.close()
         
 
 @app.route('/sign_up/<course_name>')
 def sign_up(course_name):
     session = Session()
-    if current_user.is_authenticated:
-        us = get_user(session, id = current_user.id)
-        c = get_course(session, name= course_name)
-        add_course_sign_up(session, user=us, course=c)
-        session.commit()
-        return redirect(url_for('courses_sign_up'))
-    return redirect(url_for('login'))
-
+    try:
+        if current_user.is_authenticated:
+            us = get_user(session, id = current_user.id)
+            c = get_course(session, name= course_name)
+            add_course_sign_up(session, user=us, course=c)
+            session.commit()
+            return redirect(url_for('courses_sign_up'))
+        return redirect(url_for('login'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 @app.route('/delete_sign_up/<course_name>')
 def delete_sign_up(course_name):
     session = Session()
-    us = get_user(session,id = current_user.id)
-    c = get_course(session, name = course_name)
-    delete_course_sign_up(session,course = c, user = us)
-    session.commit()
-    return redirect(url_for('courses_sign_up'))
+    try:
+        us = get_user(session,id = current_user.id)
+        c = get_course(session, name = course_name)
+        delete_course_sign_up(session,course = c, user = us)
+        session.commit()
+        return redirect(url_for('courses_sign_up'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 # ________________________________________________________LOGIN - SIGNIN________________________________________________________
@@ -477,14 +551,20 @@ def logout():
 @login_required
 def upd_user():
     session = Session()
-    user = get_user(session, id = current_user.id)
-    return render_template("update_user.html", user = user)
+    try:
+        user = get_user(session, id = current_user.id)
+        return render_template("update_user.html", user = user)
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 @app.route('/update_user_form', methods=['POST'])
 @login_required
 def update_user_form():
-    session = Session()
     if request.method == 'POST':
+        session = Session()
         try:
             user = get_user(session, email= current_user.email)
             fullname = request.form['fullname']
