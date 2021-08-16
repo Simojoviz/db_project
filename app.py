@@ -160,11 +160,16 @@ def trainer_course(course_name):
 
 
 # ________________________________________________________PRENOTATION________________________________________________________
-@app.route('/shifts/<year>/<month>/<day>/<room>')
-#@app.route('/shifts?year=&month=&day=&room=')
-def shifts(day, month, year, room):
+
+#@app.route('/shifts/<year>/<month>/<day>/<room>')
+@app.route('/shifts')
+def shifts():
     session = Session()
     try:
+        year = request.args.get('year')
+        month = request.args.get('month')
+        day = request.args.get('day')
+        room = request.args.get('room')
         date = datetime.date(year=int(year), month=int(month), day=int(day))
         date_string = date.strftime("%Y-%m-%d")
         r = get_room(session, all=True)
@@ -200,9 +205,7 @@ def shifts_load_state():
             date_str = date_str.replace('-', '/')
             date = datetime.datetime.strptime(date_str, '%Y/%m/%d')
             session.commit()
-            return redirect(url_for('shifts', year = date.year, month=date.month, day=date.day, room=room))
             return redirect('/shifts?year=%s&month=%s&day=%s&room=%s' % (date.year, date.month, date.day, room))
-
         except:
             session.rollback()
             raise
