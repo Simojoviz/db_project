@@ -212,6 +212,7 @@ class Message(Base):
     addressee = Column(Integer, ForeignKey('users.id'), primary_key=True)
     date = Column(DateTime, primary_key=True)
     text = Column(String, nullable=False)
+    read = Column(Boolean, nullable=False)
 
     addresser = relationship("User", foreign_keys=[addressee])
     sender_    = relationship("User", foreign_keys=[sender])
