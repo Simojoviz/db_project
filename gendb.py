@@ -67,6 +67,17 @@ conn.execute(
         IS 'the starting hour must be before the ending hour';"
 )
 
+
+#___________GLOBAL SETTING___________
+conn.execute(
+    "ALTER TABLE public.global_settings\
+    DROP CONSTRAINT IF EXISTS positive_value;\
+    ALTER TABLE public.global_settings\
+    ADD CONSTRAINT positive_value CHECK (""value"" > 0);\
+    COMMENT ON CONSTRAINT positive_value ON public.global_settings\
+    IS 'setting value must be positive';"
+)
+
 #___________COURSE___________
 conn.execute(
     "ALTER TABLE public.courses\
@@ -253,42 +264,4 @@ conn.execute(
     \
     COMMENT ON TRIGGER NoInvalidSignUp ON public.course_signs_up\
     IS 'Raise an exception if - Trainer sign-up for his own course, User  sign-up twice for the same course, The course is full ';"
-)
-
-#___________USER ROLES___________
-conn.execute(
-    "DROP FUNCTION IF EXISTS public.no_same_role_twice() CASCADE;\
-    CREATE FUNCTION public.no_same_role_twice()\
-    RETURNS trigger\
-    LANGUAGE 'plpgsql'\
-    COST 100\
-    VOLATILE NOT LEAKPROOF\
-    AS $BODY$\
-    BEGIN\
-        IF NEW.user_id IN (\
-            SELECT user_id\
-            FROM user_roles\
-            WHERE role_id=NEW.role_id\
-        ) THEN\
-            RAISE EXCEPTION 'User already has that role';\
-            RETURN NULL;\
-        END IF;\
-        RETURN NEW;\
-    END\
-    $BODY$;\
-    \
-    ALTER FUNCTION public.no_same_role_twice()\
-        OWNER TO postgres;\
-    \
-    COMMENT ON FUNCTION public.no_same_role_twice()\
-        IS 'Raise an exception if the same role is assigned to the same user twice ';\
-    \
-    CREATE TRIGGER NoSameRoleTwice\
-    BEFORE INSERT OR UPDATE\
-    ON public.user_roles\
-    FOR EACH ROW\
-    EXECUTE PROCEDURE public.no_same_role_twice();\
-    \
-    COMMENT ON TRIGGER NoSameRoleTwice ON public.user_roles\
-    IS 'Raise an exception if the same role is assigned to the same user twice ';"
 )
