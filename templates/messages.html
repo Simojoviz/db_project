@@ -14,7 +14,7 @@
     <tr>
       <td>{{m.sender_.fullname}}</td>
       <td>{{m.date.strftime('%m/%d/%Y %H:%M')}}</td>
-      <td>{{m.text}}</td>
+      <td>{% if m.read == False %} NEW {% endif %} {{m.text}}</td>
     </tr>
     {% endfor %}
 

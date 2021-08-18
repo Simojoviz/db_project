@@ -886,22 +886,23 @@ def get_message(session, sender=None, addresser=None, all=False):
 # Returns True if it was added correctly, False otherwise
 # Raises an error if
 #  - the sender and the addresser are the same User (check)
-def add_message(session, sender_id=None, addresser_id=None, text=None, message=None):
+def add_message(session, sender_id=None, addresser_id=None, text=None):
 
-    if message is not None:
-        exist = get_message(session, sender=message.sender, addresser=message.addressee)
-        if exist is not None:
-            return False   
-        else:
-            session.add(message)
-            return True
-    elif sender_id    is not None and\
-         addresser_id is not None and\
-         text         is not None:
-        return add_message(session, message=Message(sender=sender_id, addressee=addresser_id, text=text, date=datetime.datetime.now()))
+    if sender_id    is not None and\
+       addresser_id is not None and\
+       text         is not None:
+        mess = Message(sender=sender_id, addressee=addresser_id, text=text, date=datetime.datetime.now(), read=False)
+        session.add(mess)
     else:
+    
         return False
 
+# - Given a list of messages update read field as True where is False
+def mark_read(session, messages=None):
+    if messages is not None:
+        for message in messages:
+            if message.read is False:
+                session.query(Message).filter(Message.addressee == message.addresser.id).update({Message.read:True}, synchronize_session = False)
 
 # Adds all Messages from the list given to the Database
 # Returns True if all elements were added,

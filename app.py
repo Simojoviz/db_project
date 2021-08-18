@@ -67,11 +67,20 @@ def home():
 @app.route('/private')
 @login_required
 def private():
+
     session = Session()
+
+    def new_messages():
+        messages = get_message(session, addresser=current_user.id)
+        new = False
+        for message in messages:
+            new |= (not message.read)
+        return new
+
     try:
         email = current_user.email
         user = get_user(session, email=email)
-        resp = make_response(render_template("private.html", us = user))
+        resp = make_response(render_template("private.html", us = user, new_mess=new_messages()))
         session.commit()
         return resp
     except:
@@ -628,7 +637,10 @@ def messages():
     session = Session() 
     try:
         messages = get_message(session, addresser=current_user.id)
+        for message in messages:
+            print(message.text)
         resp = make_response(render_template("messages.html", messages=messages))
+        mark_read(session, messages)
         session.commit()
         return resp
     except:
