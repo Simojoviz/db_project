@@ -11,11 +11,19 @@
     </tr>
 
     {% for m in messages %}
-    <tr>
-      <td>{{m.sender_.fullname}}</td>
-      <td>{{m.date.strftime('%m/%d/%Y %H:%M')}}</td>
-      <td>{% if m.read == False %} NEW {% endif %} {{m.text}}</td>
-    </tr>
+    {% if m.read == False %}
+      <tr>
+        <td><strong>{{m.sender_.fullname}}</strong></td>
+        <td><strong>{{m.date.strftime('%m/%d/%Y %H:%M')}}</strong></td>
+        <td><strong>{{m.text}}</strong></td>
+      </tr>
+    {% else %}
+      <tr>
+        <td>{{m.sender_.fullname}}</td>
+        <td>{{m.date.strftime('%m/%d/%Y %H:%M')}}</td>
+        <td>{{m.text}}</td>
+      </tr>
+    {% endif %} 
     {% endfor %}
 
   </table>

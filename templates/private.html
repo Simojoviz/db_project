@@ -51,11 +51,19 @@
           </form>
       </div>
     {% endif %}
-    <div class="col text-center">
-      <form action="{{url_for('messages')}}">
-        <input type="submit", value="Messages" class="btn btn-info text-white" style="width: 120px;">
-      </form>
-    </div>
+    {% if new_mess==True %}
+      <div class="col text-center">
+        <form action="{{url_for('messages')}}">
+          <input type="submit", value="Messages" class="btn btn-warning text-white" style="width: 120px;">
+        </form>
+      </div>
+    {% else %}
+      <div class="col text-center">
+        <form action="{{url_for('messages')}}">
+          <input type="submit", value="Messages" class="btn btn-info text-white" style="width: 120px;">
+        </form>
+      </div>
+    {% endif %}
     
     {% if "Admin" in current_user.roles %}
       <div class="col text-center">
@@ -69,10 +77,6 @@
       </div>
     {% endif %}
   </div>
-
-  {% if new_mess==True %}
-    New messages to read!
-  {% endif %}
 </div>
 
 <script>
