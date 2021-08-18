@@ -22,9 +22,15 @@
           <li class="nav-item">
             <a class="nav-link text-light" aria-current="page" href="{{ url_for('home') }}">Home</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link text-light" href="{{ url_for('courses')}}">Courses</a>
-          </li>
+          {% if current_user.is_authenticated and "Staff" in current_user.roles %}
+            <li class="nav-item">
+              <a class="nav-link text-light" href="{{ url_for('trainer_courses')}}">Courses</a>
+            </li>
+          {% else %}
+            <li class="nav-item">
+              <a class="nav-link text-light" href="{{ url_for('courses')}}">Courses</a>
+            </li>
+          {% endif %}
           <li class="nav-item">
             <a class="nav-link text-light" href="{{ url_for('shifts_first') }}">Prenotations</a>
           </li>
