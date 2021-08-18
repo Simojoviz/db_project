@@ -11,9 +11,9 @@ from model import *
 app = Flask ( __name__ )
 
 #engine = create_engine('sqlite:///database.db', echo=True)
-#engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
+engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
 # engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=True)
-engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
+#engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
 
 app.config ['SECRET_KEY'] = 'ubersecret'
 
@@ -106,7 +106,7 @@ def courses_sign_up():
         email = current_user.email
         user = get_user(session, email=email)
         courses = user.courses
-        resp = make_response(render_template("courses_sign_up.html", courses=courses))
+        resp = make_response(render_template("courses_sign_up.html", courses=courses, today=datetime.date.today()))
         session.commit()
         return resp
     except:
@@ -630,7 +630,7 @@ def messages():
     session = Session() 
     try:
         messages = get_message(session, addresser=current_user.id)
-        resp = make_response(render_template("messages.html", messages=messages))
+        resp = make_response(render_template("messages.html", messages=reversed(messages)))
         session.commit()
         return resp
     except:

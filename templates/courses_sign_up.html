@@ -63,12 +63,14 @@
         </tr>
 
         {% for s in c.shifts %}
-        <tr>
-          <td>{{s.date}}</td>
-          <td>{{s.h_start}}</td>
-          <td>{{s.h_end}}</td>
-          <td>{{s.room.name}}</td>
-        </tr>
+          {% if s.date >= today %}
+            <tr>
+              <td>{{s.date}}</td>
+              <td>{{s.h_start}}</td>
+              <td>{{s.h_end}}</td>
+              <td>{{s.room.name}}</td>
+            </tr>
+          {% endif %}
         {% endfor %}
       </table>
 
