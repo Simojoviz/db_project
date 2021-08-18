@@ -56,7 +56,11 @@ trainers = [
 add_trainer_from_list(session, trainers)
 add_trainer(session, fullname='Riccardo Focardi', email='riccardo@gmail.com', pwd='riccardo1',  telephone='8302837481',     address='Via Ciao 2')
 
-
+add_user_roles(
+    session,
+    user = get_user(session, email='admin@gmail.com'),
+    role = get_role(session, name="Admin")
+)
 
 courses = [
     Course(name = 'Boxe',
@@ -83,26 +87,26 @@ week_settings = [
     WeekSetting(day_name='Wednesday', starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), changed = True), # 9
     WeekSetting(day_name='Thursday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00), changed = True), # 6
     WeekSetting(day_name='Friday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), changed = True), # 9
-    WeekSetting(day_name='Saturday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=15, minute=00), length=datetime.time(hour=1, minute=30), changed = True), # 4
+    WeekSetting(day_name='Saturday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=15, minute=00), length=datetime.time(hour=1, minute=30), changed = True) # 4
 ]
 
 for ws in week_settings:
     add_week_setting(session, week_setting=ws)
 
 # GlobalSettings
+"""
 global_settings = [
     GlobalSetting(name='MaxWeeklyEntry',       value =   3),   # max-week entry
-    GlobalSetting(name='MaxCapacity',          value =  15),   # max-capacity of room
-    GlobalSetting(name='MinutesShiftLength',   value =  90),   # stanadard shifts' length in minutes
     GlobalSetting(name='MaximumShiftLength',   value = 180),   # maximum shift's length
     GlobalSetting(name='MinimumShiftLength',   value =  30),   # minimum shift's length
     GlobalSetting(name='HourOpening',          value =   8),   # gym opening hour
     GlobalSetting(name='HourClosing',          value =  22),   # gym closing hour
 ]
-
-
 for gs in global_settings:
-    add_global_setting(session, global_setting=gs)
+    add_global_setting(session, global_setting=gs)"""
+
+add_global_setting(session, global_setting=GlobalSetting(name='MaxWeeklyEntry', value=3))
+
 
 # Shifts
 plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=365)

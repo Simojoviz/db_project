@@ -512,11 +512,18 @@ def add_week_setting(session, day_name=None, starting=None, ending=None, length=
 
 # Returns the GlobalSetting with the corresponding name
 # If all flag is true, returns all GlobalSettings
-# Returns None if the name is not valid
+# Raise an exception if the name is not valid
 
 def get_global_setting(session, name=None, all=False):
     if name is not None:
-        return session.query(GlobalSetting).filter(GlobalSetting.name == name).one_or_none()
+        gss = get_global_setting(session, all=True)
+        names = []
+        for gs in gss:
+            names.append(gs.name)
+        if(name in names):
+            return session.query(GlobalSetting).filter(name == name).one_or_none()
+        else:
+            raise Exception(name + " not in GlobalSettings")
     elif all is True:
         return session.query(GlobalSetting).all()
     else:
@@ -525,60 +532,33 @@ def get_global_setting(session, name=None, all=False):
 # - Given a GlobalSetting add it to the Database
 # - Given GlobalSetting's name and value add it to the Database
 # Returns True if it was added correctly, False if the element was already contained
-def add_global_setting(session,name=None, value=None,  global_setting=None):
+def add_global_setting(session, name=None, value=None,  global_setting=None):
     if global_setting is not None:
-        exist = get_global_setting(session, name=global_setting.name)
-        if exist is not None:
-            return False
-        else:
+        try:
+            get_global_setting(session, name=global_setting.name)
+        except:
             session.add(global_setting)
             return True
+        return False
     elif name is not None and\
-         value is not None :
-        exist = get_user(session, name=name)
-        if exist is not None:
-            return False
-        else:
-            session.add(GlobalSetting(name=name, value=value))
-            return True
+         value is not None:
+        add_global_setting(session, global_setting=GlobalSetting(name=name, value=value))
     else:
         return False
 
 
-# Update the GlobalSetting with the given parameters
-def update_global_setting(session, CovidCapacity=None, MinutesShiftLength=None, MaxWeeklyEntry=None):
-
-    def update(name, val):
-        session.query(GlobalSetting).filter(GlobalSetting.name == name).update({GlobalSetting.value:val}, synchronize_session = False)
-    
+# Update the GlobalSetting name with the given parameters
+# Return true if the changes are done, false otherwisw
+# Raise an exception if the name is not valid
+def update_global_setting(session, name=None, value=None):
+    if name is not None and value is not None:
+        get_global_setting(session, name=name) # raise an exeption if doesn't exixsts
+        print("Metto come nuovo valore " + str(value))
+        session.query(GlobalSetting).filter(GlobalSetting.name == name).update({GlobalSetting.value:value}, synchronize_session = False)
+        return True
+    else:
+        return False
  
-    if CovidCapacity is not None:
-        CovidCapacity = clamp(
-            CovidCapacity,
-            1,
-            get_global_setting(session, name='MaxCapacity').value
-        )
-        update('CovidCapacity', CovidCapacity)
-
-    if MinutesShiftLength is not None:
-
-        MinutesShiftLength = clamp(
-            MinutesShiftLength,
-            get_global_setting(session, name='MinimumShiftLength').value,
-            get_global_setting(session, name='MaximumShiftLength').value
-        )
-        update('MinutesShiftLength', MinutesShiftLength)
-
-    if MaxWeeklyEntry is not None:
-
-        MaxWeeklyEntry = clamp(
-            MaxWeeklyEntry,
-            1,
-            100
-        )
-        update('MaxWeeklyEntry', MaxWeeklyEntry)
-
-
 # ________________________________________ ROOM ________________________________________
 
 # - Given the id,        returns the Room who has got that id if exixsts

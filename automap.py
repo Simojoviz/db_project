@@ -106,7 +106,7 @@ class Prenotation(Base):
 
 
 class GlobalSetting(Base):
-    __tablename__ = 'global_setting'
+    __tablename__ = 'global_settings'
 
     name = Column(String, primary_key=True)
     value = Column(Integer, nullable=False)

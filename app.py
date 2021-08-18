@@ -636,3 +636,55 @@ def messages():
         raise
     finally:
         session.close()
+
+# ________________________________________________________ADMIN SETTINGS________________________________________________________
+def is_admin(us):
+    return us.is_authenticated and "Admin" in us.roles
+
+@app.route('/admin/settings')
+@login_required
+def settings():
+    try:
+        if is_admin(current_user):
+            return make_response(render_template("settings.html"))
+        else:
+            return redirect(url_for('private'))
+    except:
+        raise
+
+@app.route('/admin/global_settings')
+@login_required
+def global_settings():
+    session = Session()
+    try:
+        if is_admin(current_user):
+            global_settings = get_global_setting(session, all=True)
+            resp= make_response(render_template("update_global_settings.html", global_settings=global_settings))
+            return resp
+        else:
+            return redirect(url_for('private'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+@app.route('/admin/global_settings_form', methods=['POST'])
+@login_required
+def global_settings_form():
+    if request.method == 'POST':
+        session = Session()
+        try:
+            global_settings = get_global_setting(session, all=True)
+            for global_setting in global_settings:
+                val = int(request.form[global_setting.name])
+                if val != global_setting.value:
+                    update_global_setting(session, name=global_setting.name, value=val)
+            session.commit()
+            return redirect(url_for('settings'))
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
