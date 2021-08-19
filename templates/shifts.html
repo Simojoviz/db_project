@@ -46,9 +46,13 @@
         <td>{{s.room.name}}</td>
         <td>{{s.room.max_capacity - s.prenotations|length}}/{{s.room.max_capacity}}</td>
         <td>
-          <form action= "{{ url_for('prenotation', shift = s.id) }}">
-            <input type="submit", value="Book" class="btn btn-success btn-sm">
-          </form>
+          {% if s.room.max_capacity - s.prenotations|length > 0 %}
+            <form action= "{{ url_for('prenotation', shift = s.id) }}">
+              <input type="submit", value="Book" class="btn btn-success btn-sm">
+            </form>
+          {% else %}
+            <input type="submit", value="Full" class="btn btn-success btn-sm">
+          {% endif %}
         </td>
       </tr>
       {% endfor %}

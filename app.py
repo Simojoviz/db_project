@@ -698,6 +698,23 @@ def global_settings():
     finally:
         session.close()
 
+@app.route('/admin/room_settings')
+@login_required
+def room_settings():
+    session = Session()
+    try:
+        if is_admin(current_user):
+            rooms = get_room(session, all=True)
+            resp= make_response(render_template("update_room_settings.html", rooms=rooms))
+            return resp
+        else:
+            return redirect(url_for('private'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
 
 @app.route('/admin/global_settings_form', methods=['POST'])
 @login_required
@@ -710,6 +727,25 @@ def global_settings_form():
                 val = int(request.form[global_setting.name])
                 if val != global_setting.value:
                     update_global_setting(session, name=global_setting.name, value=val)
+            session.commit()
+            return redirect(url_for('settings'))
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+@app.route('/admin/room_settings_form', methods=['POST'])
+@login_required
+def room_settings_form():
+    if request.method == 'POST':
+        session = Session()
+        try:
+            rooms = get_room(session, all=True)
+            for room in rooms:
+                val = int(request.form[str(room.id)])
+                if val != room.max_capacity:
+                    update_room_max_capacity(session, name=room.name, mc=val)
             session.commit()
             return redirect(url_for('settings'))
         except:

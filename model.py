@@ -601,6 +601,36 @@ def add_room_from_list(session, rooms_list):
         b &= add_room(session, room=room)
     return b
 
+# Update Room Max Capacity with the given parameters
+# Return true if the changes are done, false otherwise
+# Raise an exception if the name is not valid
+def update_room_max_capacity(session, name=None, mc=None):
+    if name is not None and mc is not None:
+        exixst = get_room(session, name=name)
+        if exixst is not None:
+            first = exixst.max_capacity
+            session.query(Room).filter(Room.name == name).update({Room.max_capacity:mc}, synchronize_session = False)
+            # It is possible to remove some prenotation because the capacity has decreased
+            if first > mc:
+                room = get_room(session, name=name)
+                shifts = get_shift(session, room_id=room.id)
+                for shift in shifts:
+                    prenotations = shift.prenotations
+                    num = len(prenotations)
+                    if num > mc:
+                        to_remove = num-mc
+                        admin_id = get_user(session, email='admin@gmail.com').id
+                        for i in range(to_remove-1):
+                            pr = prenotations[num-i]
+                            add_message(session, sender_id=admin_id, addresser_id=pr.client_id,
+                                text="Your prenotation on " + shift.date + " in " + shift.room + " from " + shift.starting + " to " + shift.ending + " has been deleted due to the decrease of room_capacity")
+                            session.query(Prenotation).filter(Prenotation.client_id==pr.client_id, Prenotation.shift_id==pr.shift_id).delete()
+            return True
+        else:
+            raise Exception("Room " + name + " doesn't exists")
+    else:
+        return False
+
 
 # ________________________________________ COURSE ________________________________________
 
