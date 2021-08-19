@@ -208,9 +208,10 @@ class CourseSignUp(Base):
 class Message(Base):
     __tablename__ = 'messages'
 
-    sender =    Column(Integer, ForeignKey('users.id'), primary_key=True)
-    addressee = Column(Integer, ForeignKey('users.id'), primary_key=True)
-    date = Column(DateTime, primary_key=True)
+    id = Column(Integer, primary_key=True)
+    sender =    Column(Integer, ForeignKey('users.id'), nullable=False)
+    addressee = Column(Integer, ForeignKey('users.id'), nullable=False)
+    date = Column(DateTime, nullable=False)
     text = Column(String, nullable=False)
     read = Column(Boolean, nullable=False)
 

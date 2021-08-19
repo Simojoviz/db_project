@@ -880,6 +880,11 @@ def get_message(session, sender=None, addresser=None, all=False):
     else:
         return None
 
+# - Given message_id the corresponding shift if exists
+def del_message(session, id=None):
+    if id is not None:
+        session.query(Message).filter(Message.id == id).delete()
+
 
 # - Given a Message adds it to the database
 # - Given the sender_id, the addresser_id and the text of a Message adds it to the database
@@ -902,7 +907,7 @@ def mark_read(session, messages=None):
     if messages is not None:
         for message in messages:
             if message.read is False:
-                session.query(Message).filter(Message.addressee == message.addresser.id).update({Message.read:True}, synchronize_session = False)
+                session.query(Message).filter(Message.id == message.id).update({Message.read:True}, synchronize_session = False)
 
 # Adds all Messages from the list given to the Database
 # Returns True if all elements were added,

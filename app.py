@@ -651,6 +651,21 @@ def messages():
     finally:
         session.close()
 
+@app.route('/private/messages/del/<mess_id>', methods=['POST'])
+@login_required
+def delete_message(mess_id):
+    if request.method == 'POST':
+        session = Session()
+        try:
+            del_message(session, id=mess_id)
+            session.commit()
+            return redirect(url_for('messages'))
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
 # ________________________________________________________ADMIN SETTINGS________________________________________________________
 def is_admin(us):
     return us.is_authenticated and "Admin" in us.roles
