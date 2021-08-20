@@ -54,7 +54,7 @@ def add_user(session, fullname=None, email=None, address=None, telephone=None, p
          address    is not None and\
          telephone    is not None and\
          pwd      is not None:
-        return add_user(session, user=User(fullname=fullname, email=email, address=address, telephone=telephone, pwd=pwd))
+        return add_user(session, user=User(fullname=fullname, email=email, address=address, telephone=telephone, pwd=pwd, covid_state=0, membership_deadline=datetime.date.today()))
     else:
         return False
 
@@ -80,6 +80,11 @@ def update_user(session, user=None, fullname=None, telephone=None, address=None,
         session.commit()
         return True
     return False
+
+# Update User Covid State with given user_id and value
+def update_user_covid_state(session, user_id=None, value=None):
+    if user_id is not None and value is not None:
+        session.query(User).filter(User.id == user_id).update({User.covid_state:value}, synchronize_session = False)
 
 # ________________________________________ ROLE ________________________________________ 
 
@@ -195,7 +200,7 @@ def add_trainer(session, fullname=None, email=None, pwd=None, telephone=None, ad
     elif fullname is not None and\
          email    is not None and\
          pwd      is not None: 
-        return add_trainer(session, user=User(fullname=fullname, email=email, pwd=pwd, telephone=telephone, address=address))
+        return add_trainer(session, user=User(fullname=fullname, email=email, pwd=pwd, telephone=telephone, address=address, covid_state=0, membership_deadline=datetime.date.today()+timedelta(days=365)))
     else:
         return False
 
@@ -607,26 +612,19 @@ def update_room_max_capacity(session, name=None, mc=None):
     if name is not None and mc is not None:
         exixst = get_room(session, name=name)
         if exixst is not None:
-            print("AAA")
             first = exixst.max_capacity
             session.query(Room).filter(Room.name == name).update({Room.max_capacity:mc}, synchronize_session = False)
             # It is possible to remove some prenotation because the capacity has decreased
             if first > mc:
-                print("BBB")
                 room = exixst
                 shifts = get_shift(session, room_id=room.id)
                 for shift in shifts:
                     prenotations = shift.prenotations
                     num = len(prenotations)
                     if num > mc:
-                        print("CCC")
                         to_remove = num-mc
-                        print("Num of old prenotation " + str(num))
-                        print("Num of prenotation to remove " + str(to_remove))
                         admin_id = get_user(session, email='admin@gmail.com').id
                         for i in range(to_remove):
-                            print("DDD")
-                            print("i: " + str(i))
                             pr = prenotations[num-1-i]
                             add_message(session, sender_id=admin_id, addresser_id=pr.client_id,
                                 text="Your prenotation on " + shift.date.strftime('%d/%m/%Y') + " in " + shift.room.name +  " from " + shift.h_start.strftime('%H:%M') + " to " + shift.h_end.strftime('%H:%M') +\
@@ -637,6 +635,37 @@ def update_room_max_capacity(session, name=None, mc=None):
             raise Exception("Room " + name + " doesn't exists")
     else:
         return False
+
+# Delete a room. Notify all users that had a course or a prenotation in that room
+def delete_room(session, room_id=None):
+    if room_id is not None:
+        room = get_room(session, id=room_id)
+        # Notify for courses
+        courses = get_course(session, all=True)
+        to_notify = []
+        for course in courses:
+            course_programs = course.course_programs
+            for course_program in course_programs:
+                if int(room_id) == course_program.room_id:
+                    to_notify.append(course.id)
+                    session.query(CourseProgram).filter(CourseProgram.id==course_program.id).delete()
+        admin_id = get_user(session, email='admin@gmail.com').id
+        for course_id in to_notify:
+            course = get_course(session, id=course_id)
+            for user in course.users:
+                add_message(session, sender_id=admin_id, addresser_id=user.id, text=room.name + " has been deleted: your " + course.name + " program could have changed, please check on course's page")
+            add_message(session, sender_id=admin_id, addresser_id=course.instructor_id, text=room.name + " has been deleted: please ridefine " + course.name + " program")
+        # Notify for prenotations
+        shifts = get_shift(session, room_id=room_id)
+        for shift in shifts:
+            prenotations = shift.prenotations
+            for pr in prenotations:
+                add_message(session, sender_id=admin_id, addresser_id=pr.client_id,
+                                text="Your prenotation on " + shift.date.strftime('%d/%m/%Y') + " in " + shift.room.name +  " from " + shift.h_start.strftime('%H:%M') + " to " + shift.h_end.strftime('%H:%M') +\
+                                     " has been deleted due to the deletion of " + room.name)
+                session.query(Prenotation).filter(Prenotation.client_id==pr.client_id, Prenotation.shift_id==pr.shift_id).delete()
+            session.query(Shift).filter(Shift.id==shift.id).delete()
+        session.query(Room).filter(Room.id==room_id).delete()
 
 
 # ________________________________________ COURSE ________________________________________
@@ -960,6 +989,7 @@ def add_messagge_from_list(session, message_list):
 # - all users who have a course in common (and also to the trainer)
 def covid_report_messages(session, user_id):
     user = get_user(session, id = user_id)
+    update_user_covid_state(session, user_id=user_id, value=2)
     today = datetime.date.today()
     prev = today - timedelta(days=14)
     admin_id = get_user(session, email='admin@gmail.com').id
@@ -970,6 +1000,7 @@ def covid_report_messages(session, user_id):
         users = shift.users_prenotated
         for us in users:
             if us.id != user.id:
+                update_user_covid_state(session, user_id=us.id, value=1)
                 add_message(
                     session,
                     sender_id=admin_id,
@@ -984,12 +1015,14 @@ def covid_report_messages(session, user_id):
         course_signs_up = get_course_sign_up(session, course_id=course.id)
         for csu in course_signs_up:
             if csu.user_id != user.id:
+                update_user_covid_state(session, user_id=csu.user_id, value=1)
                 add_message(
                     session,
                     sender_id=admin_id,
                     addresser_id=csu.user_id,
                     text= "One person in course " + course.name + " you signed-up for is affected from COVID19"
                 )
+        update_user_covid_state(session, user_id=course.instructor_id, value=1)
         add_message(
                     session,
                     sender_id=admin_id,
@@ -1002,6 +1035,7 @@ def covid_report_messages(session, user_id):
         for course in trainer.courses:
             course_signs_up = get_course_sign_up(session, course_id=course.id)
             for csu in course_signs_up:
+                update_user_covid_state(session, user_id=csu.user_id, value=1)
                 add_message(
                     session,
                     sender_id=admin_id,

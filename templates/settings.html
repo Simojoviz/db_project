@@ -4,13 +4,15 @@
 <div class="container">
   <h1 class="text-center">Change Settings</h1>
 
-  <div class="row w-75 mx-auto">
-    <div class="col text-center">
+  <div class="row w-50 mx-auto">
+    <div class="col-md-6 text-center">
       <form action="{{url_for('global_settings')}}">
-        <input type="submit", value="Global Settings" class="btn btn-info text-white" style="width: 120px;">
+        <input type="submit", value="Global Settings" class="btn btn-info text-white" >
       </form>
+    </div>
+    <div class="col-md-6 text-center">
       <form action="{{url_for('room_settings')}}">
-        <input type="submit", value="Room Settings" class="btn btn-info text-white" style="width: 120px;">
+        <input type="submit", value="Room Settings" class="btn btn-info text-white">
       </form>
     </div>
   </div>

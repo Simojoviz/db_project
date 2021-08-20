@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, Boolean, String, Date, Time, DateTime
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.sql.expression import false, null
 
 
 Base = declarative_base()
@@ -16,6 +17,8 @@ class User(Base):
     pwd = Column(String, nullable=False)
     telephone = Column(String, unique=True, nullable=False)
     address = Column(String, nullable=False)
+    membership_deadline = Column(Date, nullable=False)
+    covid_state = Column(Integer, nullable=false)
 
     prenotations = relationship("Prenotation", viewonly=True)
     prenotations_shifts = relationship("Shift", secondary="prenotations", back_populates="users_prenotated")
@@ -74,7 +77,7 @@ class Shift(Base):
     prenotations = relationship("Prenotation", viewonly=True)
     users_prenotated = relationship("User", secondary="prenotations", back_populates="prenotations_shifts")
     course = relationship("Course", back_populates="shifts")
-    room = relationship("Room", back_populates="shifts")
+    room = relationship("Room", back_populates="shifts", cascade="all,delete")
 
     def __repr__(self):
         if self.course is not None:
@@ -172,7 +175,7 @@ class CourseProgram(Base):
 
     __table_args__ = (UniqueConstraint('course_id', 'week_day', 'turn_number', ),)
     
-    room = relationship("Room", back_populates="course_programs")
+    room = relationship("Room", back_populates="course_programs", cascade="all,delete")
     course = relationship("Course", back_populates="course_programs")
 
     def __repr__(self):
