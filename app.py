@@ -755,15 +755,46 @@ def room_settings_form():
         finally:
             session.close()
 
+@app.route('/admin/room_settings/add_room')
+@login_required
+def add_room_():
+    session = Session()
+    try:
+        if is_admin(current_user):
+            return make_response(render_template("add_room.html"))
+        else:
+            return redirect(url_for('private'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/admin/room_settings/add_room_form', methods=['POST'])
+@login_required
+def add_room_form():
+    if request.method == 'POST':
+        session = Session()
+        try:
+            name = request.form['name']
+            max_capacity = request.form['max_capacity']
+            add_room(session, name=name, max_capacity=max_capacity)
+            session.commit()
+            return redirect(url_for('room_settings'))
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
 @app.route('/admin/room_settings/delete_room/<room_id>', methods=['POST'])
 @login_required
 def del_room(room_id):
     if request.method == 'POST':
-        raise Exception("Sono entrato")
         session = Session()
         try:
-            room = get_room(session, id=room_id)
-            delete_room(room)
+            print("!!!!!!!!!!!!!!!!!!!!    " + room_id)
+            delete_room(session, room_id=room_id)
             session.commit()
             return redirect(url_for('room_settings'))
         except:

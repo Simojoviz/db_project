@@ -74,7 +74,7 @@ class Shift(Base):
     prenotations = relationship("Prenotation", viewonly=True)
     users_prenotated = relationship("User", secondary="prenotations", back_populates="prenotations_shifts")
     course = relationship("Course", back_populates="shifts")
-    room = relationship("Room", back_populates="shifts")
+    room = relationship("Room", back_populates="shifts", cascade="all,delete")
 
     def __repr__(self):
         if self.course is not None:
@@ -172,7 +172,7 @@ class CourseProgram(Base):
 
     __table_args__ = (UniqueConstraint('course_id', 'week_day', 'turn_number', ),)
     
-    room = relationship("Room", back_populates="course_programs")
+    room = relationship("Room", back_populates="course_programs", cascade="all,delete")
     course = relationship("Course", back_populates="course_programs")
 
     def __repr__(self):

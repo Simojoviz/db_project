@@ -13,19 +13,24 @@
       <form action="{{url_for('room_settings_form')}}" method="POST">
         {% for room in rooms %}
           {{room.name}}
-          <input name={{room.id}} type="number" style="width: 250px;" value="{{ room.max_capacity }}">
-            <!--<form action="{{url_for('del_room', room_id = room.id)}}">-->
-            <div>
-            <form action="{{url_for('private')}}">
+            <input name={{room.id}} type="number" style="width: 250px;" value="{{ room.max_capacity }}">
+          
+            <form action="{{url_for('del_room', room_id = room.id)}}" method="POST">
               <input type="submit" value="Delete" class="btn btn-danger">
             </form>
-            </div>
           <br>
         {% endfor %}
         <input type="submit" class="btn btn-info text-light" value="Update">
+          <form action="{{url_for('add_room_')}}">
+            <input type="submit" value="Add Room" class="btn btn-danger">
+          </form>
       </form>
+      <div>
+        
+      </div>
     </div>
   </div>
+
   <div class="mt-4">
     <form action="{{url_for('settings')}}">
       <input type="submit", value="Back" class="btn btn-info text-light">
