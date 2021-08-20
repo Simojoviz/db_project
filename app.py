@@ -183,16 +183,31 @@ def shifts():
         if date < datetime.date.today():
             date = datetime.date.today()
         date_string = date.strftime("%Y-%m-%d")
-        r = get_room(session, all=True)
+        settings = get_week_setting(session, day_name=date.strftime("%A"))
+        length = timedelta(hours=settings.length.hour,   minutes=settings.length.minute)
+        start = timedelta(hours=settings.starting.hour,   minutes=settings.starting.minute)
+        end_ = timedelta(hours=settings.ending.hour,   minutes=settings.ending.minute)
+        end = start + length 
+        shifts = []
         if room == 'All':
-            shifts = get_shift(session, date=date)
+            for r in get_room(session, all=True):
+                while (end <= end_):
+                    l.append(datetime.time(hour=start.seconds//3600, minute=(start.seconds//60)%60), 
+                        datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
+                        r.id
+                    )
         else:
             room_id = get_room(session, name=room).id
-            shifts = get_shift(session, date=date, room_id=room_id)
-        shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
+            while (end <= end_):
+                l.append(
+                    (datetime.time(hour=start.seconds//3600, minute=(start.seconds//60)%60), 
+                    datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
+                    room.id)
+                )
+        shifts = filter(lambda t: get_shift(session, date=date, start=t[0], room_id=t[2]) is None or get_shift(session, date=date, start=t[0], room_id=t[2]).course_id is None, shifts) # Remove the shifts occupied from a course
         if date == date.today():
-            shifts = filter(lambda sh: sh.h_start >= datetime.datetime.now().time(), shifts)
-        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda x: (x.room_id, x.h_start)), date_string=date_string, rooms=r))
+            shifts = filter(lambda t: t[0] >= datetime.datetime.now().time(), shifts)
+        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda t: (t[2], t[0])), date_string=date_string, rooms=r))
         session.commit()
         return resp
     except:
