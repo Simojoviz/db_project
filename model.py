@@ -81,6 +81,11 @@ def update_user(session, user=None, fullname=None, telephone=None, address=None,
         return True
     return False
 
+# Update User Covid State with given user_id and value
+def update_user_covid_state(session, user_id=None, value=None):
+    if user_id is not None and value is not None:
+        session.query(User).filter(User.id == user_id).update({User.covid_state:value}, synchronize_session = False)
+
 # ________________________________________ ROLE ________________________________________ 
 
 
@@ -984,6 +989,7 @@ def add_messagge_from_list(session, message_list):
 # - all users who have a course in common (and also to the trainer)
 def covid_report_messages(session, user_id):
     user = get_user(session, id = user_id)
+    update_user_covid_state(session, user_id=user_id, value=2)
     today = datetime.date.today()
     prev = today - timedelta(days=14)
     admin_id = get_user(session, email='admin@gmail.com').id
@@ -994,6 +1000,7 @@ def covid_report_messages(session, user_id):
         users = shift.users_prenotated
         for us in users:
             if us.id != user.id:
+                update_user_covid_state(session, user_id=us.id, value=1)
                 add_message(
                     session,
                     sender_id=admin_id,
@@ -1008,12 +1015,14 @@ def covid_report_messages(session, user_id):
         course_signs_up = get_course_sign_up(session, course_id=course.id)
         for csu in course_signs_up:
             if csu.user_id != user.id:
+                update_user_covid_state(session, user_id=csu.user_id, value=1)
                 add_message(
                     session,
                     sender_id=admin_id,
                     addresser_id=csu.user_id,
                     text= "One person in course " + course.name + " you signed-up for is affected from COVID19"
                 )
+        update_user_covid_state(session, user_id=course.instructor_id, value=1)
         add_message(
                     session,
                     sender_id=admin_id,
@@ -1026,6 +1035,7 @@ def covid_report_messages(session, user_id):
         for course in trainer.courses:
             course_signs_up = get_course_sign_up(session, course_id=course.id)
             for csu in course_signs_up:
+                update_user_covid_state(session, user_id=csu.user_id, value=1)
                 add_message(
                     session,
                     sender_id=admin_id,
