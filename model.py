@@ -553,7 +553,6 @@ def add_global_setting(session, name=None, value=None,  global_setting=None):
 def update_global_setting(session, name=None, value=None):
     if name is not None and value is not None:
         get_global_setting(session, name=name) # raise an exeption if doesn't exixsts
-        print("Metto come nuovo valore " + str(value))
         session.query(GlobalSetting).filter(GlobalSetting.name == name).update({GlobalSetting.value:value}, synchronize_session = False)
         return True
     else:
@@ -608,22 +607,30 @@ def update_room_max_capacity(session, name=None, mc=None):
     if name is not None and mc is not None:
         exixst = get_room(session, name=name)
         if exixst is not None:
+            print("AAA")
             first = exixst.max_capacity
             session.query(Room).filter(Room.name == name).update({Room.max_capacity:mc}, synchronize_session = False)
             # It is possible to remove some prenotation because the capacity has decreased
             if first > mc:
-                room = get_room(session, name=name)
+                print("BBB")
+                room = exixst
                 shifts = get_shift(session, room_id=room.id)
                 for shift in shifts:
                     prenotations = shift.prenotations
                     num = len(prenotations)
                     if num > mc:
+                        print("CCC")
                         to_remove = num-mc
+                        print("Num of old prenotation " + str(num))
+                        print("Num of prenotation to remove " + str(to_remove))
                         admin_id = get_user(session, email='admin@gmail.com').id
-                        for i in range(to_remove-1):
-                            pr = prenotations[num-i]
+                        for i in range(to_remove):
+                            print("DDD")
+                            print("i: " + str(i))
+                            pr = prenotations[num-1-i]
                             add_message(session, sender_id=admin_id, addresser_id=pr.client_id,
-                                text="Your prenotation on " + shift.date + " in " + shift.room + " from " + shift.starting + " to " + shift.ending + " has been deleted due to the decrease of room_capacity")
+                                text="Your prenotation on " + shift.date.strftime('%d/%m/%Y') + " in " + shift.room.name +  " from " + shift.h_start.strftime('%H:%M') + " to " + shift.h_end.strftime('%H:%M') +\
+                                     " has been deleted due to the decrease of room capacity from " + str(first) + " to " + str(mc))
                             session.query(Prenotation).filter(Prenotation.client_id==pr.client_id, Prenotation.shift_id==pr.shift_id).delete()
             return True
         else:
@@ -691,7 +698,7 @@ def plan_course(session, name):
                 prenotations = session.query(Prenotation).where(Prenotation.shift_id==shift.id)
                 for prenotation in prenotations:
                     add_message(session, sender_id=get_user(session, email='admin@gmail.com').id, addresser_id=prenotation.client_id,
-                    text='Your prenotation on ' + prenotation.shift.date.strftime('%d/%m/%Y') + " in " + prenotation.shift.room.name + " has been deleted due to the planning of " + course.name + " by the trainer " + course.trainer.user.fullname
+                    text='Your prenotation on ' + prenotation.shift.date.strftime('%d/%m/%Y') + " from " + shift.h_start.strftime('%H:%M') + " to " + shift.h_end.strftime('%H:%M') + " in " + prenotation.shift.room.name + " has been deleted due to the planning of " + course.name + " by the trainer " + course.trainer.user.fullname
                     )
                 prenotations = session.query(Prenotation).where(Prenotation.shift_id==shift.id).delete()
         
