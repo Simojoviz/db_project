@@ -607,26 +607,19 @@ def update_room_max_capacity(session, name=None, mc=None):
     if name is not None and mc is not None:
         exixst = get_room(session, name=name)
         if exixst is not None:
-            print("AAA")
             first = exixst.max_capacity
             session.query(Room).filter(Room.name == name).update({Room.max_capacity:mc}, synchronize_session = False)
             # It is possible to remove some prenotation because the capacity has decreased
             if first > mc:
-                print("BBB")
                 room = exixst
                 shifts = get_shift(session, room_id=room.id)
                 for shift in shifts:
                     prenotations = shift.prenotations
                     num = len(prenotations)
                     if num > mc:
-                        print("CCC")
                         to_remove = num-mc
-                        print("Num of old prenotation " + str(num))
-                        print("Num of prenotation to remove " + str(to_remove))
                         admin_id = get_user(session, email='admin@gmail.com').id
                         for i in range(to_remove):
-                            print("DDD")
-                            print("i: " + str(i))
                             pr = prenotations[num-1-i]
                             add_message(session, sender_id=admin_id, addresser_id=pr.client_id,
                                 text="Your prenotation on " + shift.date.strftime('%d/%m/%Y') + " in " + shift.room.name +  " from " + shift.h_start.strftime('%H:%M') + " to " + shift.h_end.strftime('%H:%M') +\
@@ -637,6 +630,47 @@ def update_room_max_capacity(session, name=None, mc=None):
             raise Exception("Room " + name + " doesn't exists")
     else:
         return False
+
+# Delete a room. Notify all users that had a course or a prenotation in that room
+def delete_room(session, room_id=None):
+    if room_id is not None:
+        print("AAA")
+        room = get_room(session, id=room_id)
+        # Notify for courses
+        courses = get_course(session, all=True)
+        to_notify = []
+        for course in courses:
+            print("BBB")
+            course_programs = course.course_programs
+            for course_program in course_programs:
+                print("CCC")
+                if room_id == course_program.room_id:
+                    to_notify.append(course.id)
+                    session.query(CourseProgram).filter(CourseProgram.id==course_program.id).delete()
+        admin_id = get_user(session, email='admin@gmail.com').id
+        print("DDD")
+        for course_id in to_notify:
+            print("EEE")
+            course = get_course(session, id=course_id)
+            for user in course.users:
+                print("FFF")
+                add_message(session, sender_id=admin_id, addresser_id=user.id, text="Room " + room.name + " has been deleted: your " + course.name + " program could have changed, please check on course's page")
+            add_message(session, sender_id=admin_id, addresser_id=course.instructor_id, text= "Room " + room.name + " has been deleted: please ridefine " + course.name + " program")
+        # Notify for prenotations
+        print("GGG")
+        shifts = get_shift(session, room_id=room_id)
+        for shift in shifts:
+            print("HHH")
+            prenotations = shift.prenotations
+            for pr in prenotations:
+                print("III")
+                add_message(session, sender_id=admin_id, addresser_id=pr.client_id,
+                                text="Your prenotation on " + shift.date.strftime('%d/%m/%Y') + " in " + shift.room.name +  " from " + shift.h_start.strftime('%H:%M') + " to " + shift.h_end.strftime('%H:%M') +\
+                                     " has been deleted due to the deletion of " + room.name)
+                session.query(Prenotation).filter(Prenotation.client_id==pr.client_id, Prenotation.shift_id==pr.shift_id).delete()
+            session.query(Shift).filter(Shift.id==shift.id).delete()
+        # Delete of room (on delete set null for shifts)
+        session.query(Room).filter(Room.id==room_id).delete()
 
 
 # ________________________________________ COURSE ________________________________________

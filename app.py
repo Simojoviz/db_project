@@ -705,6 +705,7 @@ def room_settings():
     try:
         if is_admin(current_user):
             rooms = get_room(session, all=True)
+            rooms = sorted(rooms, key=lambda x: x.id)
             resp= make_response(render_template("update_room_settings.html", rooms=rooms))
             return resp
         else:
@@ -748,6 +749,23 @@ def room_settings_form():
                     update_room_max_capacity(session, name=room.name, mc=val)
             session.commit()
             return redirect(url_for('settings'))
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+@app.route('/admin/room_settings/delete_room/<room_id>', methods=['POST'])
+@login_required
+def del_room(room_id):
+    if request.method == 'POST':
+        raise Exception("Sono entrato")
+        session = Session()
+        try:
+            room = get_room(session, id=room_id)
+            delete_room(room)
+            session.commit()
+            return redirect(url_for('room_settings'))
         except:
             session.rollback()
             raise
