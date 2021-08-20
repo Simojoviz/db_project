@@ -18,21 +18,6 @@ def clamp(x, a, b):
     else:
         return x 
 
-
-# Max function
-def max(a, b):
-    if a>b:
-        return a
-    return b
-
-
-# Min function
-def min(a, b):
-    if a<b:
-        return a
-    return b
-
-
 # ________________________________________ USER ________________________________________ 
 
 
@@ -52,20 +37,24 @@ def get_user(session, id=None, email=None, all=False):
 
 
 # - Given a User adds it to the database
-# - Given fullname, email and password of a User adds it to the database
+# - Given fullname, email, address, telephone and password of a User adds it to the database
 # Returns True if it was added correctly, False if the element was already contained
-def add_user(session, fullname=None, email=None, pwd=None, user=None):
+def add_user(session, fullname=None, email=None, address=None, telephone=None, pwd=None, user=None):
     if user is not None:
         exist = get_user(session, email=user.email)
         if exist is not None:
             return False
         else:
             session.add(user)
+            session.flush()
+            add_user_roles(session, user=user, role=get_role(session, name='Client'))
             return True
     elif fullname is not None and\
          email    is not None and\
+         address    is not None and\
+         telephone    is not None and\
          pwd      is not None:
-        return add_user(session, user=User(fullname=fullname, email=email, pwd=pwd))
+        return add_user(session, user=User(fullname=fullname, email=email, address=address, telephone=telephone, pwd=pwd))
     else:
         return False
 
@@ -78,6 +67,86 @@ def add_user_from_list(session, user_list):
         b &= add_user(session, user=user)
     return b
 
+def update_user(session, user=None, fullname=None, telephone=None, address=None, pwd1=None, pwd2=None):
+    if user is not None:
+        if fullname != user.fullname:
+            user.fullname = fullname
+        if telephone != user.telephone:
+            user.telephone = telephone
+        if address != user.address:
+            user.address = address
+        if pwd1 != user.pwd:
+            user.pwd = pwd1
+        session.commit()
+        return True
+    return False
+
+# ________________________________________ ROLE ________________________________________ 
+
+
+# - Given the name,     returns the Role who has got that name if exixsts
+# - Given the id,       returns the Role who has got that id if exists
+# - If all flag is true, returns all Roles
+# Otherwise return None
+def get_role(session, id=None, name=None, all=False):
+    if id is not None:
+        return session.query(Role).filter(Role.id == id).one_or_none()
+    elif name is not None:
+        return session.query(Role).filter(Role.name == name).one_or_none()
+    elif all is True:
+        return session.query(Role).all()
+    else:
+        return None
+
+
+# - Given a Role adds it to the database
+# - Given the name of a a Role adds it to the databases
+# Returns True if it was added correctly, False if the element was already contained
+def add_role(session, name=None, role=None):
+    if role is not None:
+        exist = get_role(session, name=role.name)
+        if exist is not None:
+            return False
+        else:
+            session.add(role)
+            return True
+    elif name is not None:
+        return add_role(session, role=Role(name=name))
+    else:
+        return False
+
+    
+# Adds all Roles from the list given to the Database
+# Returns True if all elements were added, False if at least one was already contained
+def add_role_from_list(session, role_list):
+    b = True
+    for role in role_list:
+        b &= add_role(session, role=role)
+    return b
+
+# ________________________________________ USER-ROLES ________________________________________
+
+# - Given a user_id and a role_id returns the correponding UserRoles if exists
+# - If all flag is true, returns all UserRoles
+# Returns None otherwise
+def get_user_roles(session, user_id=None, role_id=None):
+    if user_id is not None and role_id is not None:
+        return session.query(Role).join(UserRoles).filter(UserRoles.user_id == user_id, UserRoles.role_id == role_id).one_or_none()
+    elif user_id is not None:
+        return session.query(Role).join(UserRoles).filter(UserRoles.user_id == user_id).all()
+    else:
+        return None   
+
+# - Given a User and a Role adds the corresponding User-Roles to the Database
+# - Given a Roles adds it to the Database
+# Returns True if it was added correctly
+# Raise an Exception if
+# - The User already had that Role (trigger)
+def add_user_roles(session, user=None, role=None):
+
+    if user is not None and role is not None:
+        session.add(UserRoles(user_id=user.id, role_id=role.id))
+        return True
 
 # ________________________________________ TRAINER ________________________________________ 
 
@@ -106,17 +175,19 @@ def get_trainer(session, id=None, email=None, all=False):
 # - Given fullname, email and password of a User does the same as above
 # Returns True if it was added correctly, False if the element was already contained
 #TODO controllare con con utilizzo di autoflush 
-def add_trainer(session, fullname=None, email=None, pwd=None, user=None):
+def add_trainer(session, fullname=None, email=None, pwd=None, telephone=None, address=None, user=None):
     if user is not None:
         if get_user(session, email=user.email) is None:
             # a) Neither a User nor a Trainer
             add_user(session,user=user)
+            session.flush()
             session.add(Trainer(id=user.id))
+            add_user_roles(session, user=user, role=get_role(session, name='Staff'))
             return True
         elif get_trainer(session, email=user.email) is None:
             # b) User yet, but not a Trainer
-            new = get_user(session, email=user.email)
-            session.add(Trainer(id=new.id))
+            session.add(Trainer(id=user.id))
+            add_user_roles(session, user=user, role=get_role(session, name='Staff'))
             return True
         else:  
             # c) Both a User and a Trainer
@@ -124,7 +195,7 @@ def add_trainer(session, fullname=None, email=None, pwd=None, user=None):
     elif fullname is not None and\
          email    is not None and\
          pwd      is not None: 
-        return add_trainer(session, user=User(fullname=fullname, email=email, pwd=pwd))
+        return add_trainer(session, user=User(fullname=fullname, email=email, pwd=pwd, telephone=telephone, address=address))
     else:
         return False
 
@@ -238,7 +309,7 @@ def plan_shifts(session, starting, n=1, ending=None):
     while(day <= ending):
         day_name = calendar.day_name[day.weekday()]
         ws = get_week_setting(session, day_name=day_name)
-        if ws.changed is True:
+        if ws is not None and ws.changed is True:
             session.query(Shift).where(Shift.date==day).delete()
             l = generate_daily_shifts(session, datetime.date(year=day.year, month=day.month, day=day.day))
             add_shift_from_list(session, l)
@@ -302,18 +373,18 @@ def get_prenotation(session, user_id=None, shift_id=None, date=None, all=False):
 
 # - Given a User and a Shift adds the corresponding Prenotation to the Database
 # - Given a Prenotation adds it to the Database
-# Returns True if it was added correctly, False if the element was already contained
+# Returns True if it was added correctly, False otherwise
 # Raise an Exception if
-# - shift is occupied by a course
-# - maximum capacity has already been reached
-# - the user is already in that turn
-# - the user has reached week-limit hours
+# - shift is occupied by a course (trigger)
+# - maximum capacity has already been reached (trigger)
+# - the user is already in that turn (trigger)
+# - the user has reached week-limit hours (app)
 def add_prenotation(session, user=None, shift=None, prenotation=None):
 
     # Returns the number of own-training-week-prenotations for the  given the user and a date
     def get_count_weekly_prenotations(session, user, date):
         # Move to monday
-        day = date + timedelta(day=0)
+        day = date + timedelta(days=0)
         while(calendar.day_name[day.weekday()] != 'Monday'):
             day = day - timedelta(days=1)
         count = 0
@@ -328,25 +399,13 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
         return count
 
     if user is not None and shift is not None:
-        exist = get_prenotation(session, user_id=user.id, shift_id=shift.id)
-        if exist is not None:
-            raise Exception("User already prenoted")
+        max_ = get_global_setting(session, name='MaxWeeklyEntry').value
+        count = get_count_weekly_prenotations(session, user, shift.date)
+        if (count < max_):
+            session.add(Prenotation(client_id=user.id, shift_id=shift.id))
+            return True
         else:
-            if shift.course_id == None:
-                nprenoted = len(shift.users_prenotated)
-                room_capacity = get_room(session, id=shift.room_id).max_capacity
-                if(nprenoted < room_capacity):
-                    max_ = get_global_setting(session, name='MaxWeeklyEntry').value
-                    count = get_count_weekly_prenotations(session, user, shift.date)
-                    if (count < max_):
-                        session.add(Prenotation(client_id=user.id, shift_id=shift.id))
-                        return True
-                    else:
-                        raise Exception("Week prenotation peak reached")
-                else:
-                    raise Exception("Maximum capacity already reached")
-            else:
-                raise Exception("Shift occupied by a course")
+            raise Exception("Week prenotation peak reached")
     elif prenotation is not None:
         user_  = get_user(session, id=prenotation.client_id)
         shift_ = get_shift(session, id=prenotation.shift_id)
@@ -363,6 +422,21 @@ def add_prenotation_from_list(session, prenotation_list):
         b &= add_prenotation(session, prenotation=prenotation)
     return b
 
+def delete_prenotation(session, shift=None, user=None):
+    if shift is not None and user is not None:
+        p = get_prenotation(session, user_id = user.id, shift_id = shift.id)
+        session.delete(p)
+        return True
+    elif shift is not None:
+        p = get_prenotation(session, shift_id=shift.id)
+        session.delete(p)
+        return True
+    elif user is not None:
+        p = get_prenotation(session, user_id = user.id)
+        session.delete(p)
+        return True
+    else:
+        return False
 
 # ________________________________________ WEEK SETTING ________________________________________
 
@@ -438,11 +512,18 @@ def add_week_setting(session, day_name=None, starting=None, ending=None, length=
 
 # Returns the GlobalSetting with the corresponding name
 # If all flag is true, returns all GlobalSettings
-# Returns None if the name is not valid
+# Raise an exception if the name is not valid
 
 def get_global_setting(session, name=None, all=False):
     if name is not None:
-        return session.query(GlobalSetting).filter(GlobalSetting.name == name).one_or_none()
+        gss = get_global_setting(session, all=True)
+        names = []
+        for gs in gss:
+            names.append(gs.name)
+        if(name in names):
+            return session.query(GlobalSetting).filter(name == name).one_or_none()
+        else:
+            raise Exception(name + " not in GlobalSettings")
     elif all is True:
         return session.query(GlobalSetting).all()
     else:
@@ -451,60 +532,33 @@ def get_global_setting(session, name=None, all=False):
 # - Given a GlobalSetting add it to the Database
 # - Given GlobalSetting's name and value add it to the Database
 # Returns True if it was added correctly, False if the element was already contained
-def add_global_setting(session,name=None, value=None,  global_setting=None):
+def add_global_setting(session, name=None, value=None,  global_setting=None):
     if global_setting is not None:
-        exist = get_global_setting(session, name=global_setting.name)
-        if exist is not None:
-            return False
-        else:
+        try:
+            get_global_setting(session, name=global_setting.name)
+        except:
             session.add(global_setting)
             return True
+        return False
     elif name is not None and\
-         value is not None :
-        exist = get_user(session, name=name)
-        if exist is not None:
-            return False
-        else:
-            session.add(GlobalSetting(name=name, value=value))
-            return True
+         value is not None:
+        add_global_setting(session, global_setting=GlobalSetting(name=name, value=value))
     else:
         return False
 
 
-# Update the GlobalSetting with the given parameters
-def update_global_setting(session, CovidCapacity=None, MinutesShiftLength=None, MaxWeeklyEntry=None):
-
-    def update(name, val):
-        session.query(GlobalSetting).filter(GlobalSetting.name == name).update({GlobalSetting.value:val}, synchronize_session = False)
-    
+# Update the GlobalSetting name with the given parameters
+# Return true if the changes are done, false otherwisw
+# Raise an exception if the name is not valid
+def update_global_setting(session, name=None, value=None):
+    if name is not None and value is not None:
+        get_global_setting(session, name=name) # raise an exeption if doesn't exixsts
+        print("Metto come nuovo valore " + str(value))
+        session.query(GlobalSetting).filter(GlobalSetting.name == name).update({GlobalSetting.value:value}, synchronize_session = False)
+        return True
+    else:
+        return False
  
-    if CovidCapacity is not None:
-        CovidCapacity = clamp(
-            CovidCapacity,
-            1,
-            get_global_setting(session, name='MaxCapacity').value
-        )
-        update('CovidCapacity', CovidCapacity)
-
-    if MinutesShiftLength is not None:
-
-        MinutesShiftLength = clamp(
-            MinutesShiftLength,
-            get_global_setting(session, name='MinimumShiftLength').value,
-            get_global_setting(session, name='MaximumShiftLength').value
-        )
-        update('MinutesShiftLength', MinutesShiftLength)
-
-    if MaxWeeklyEntry is not None:
-
-        MaxWeeklyEntry = clamp(
-            MaxWeeklyEntry,
-            1,
-            100
-        )
-        update('MaxWeeklyEntry', MaxWeeklyEntry)
-
-
 # ________________________________________ ROOM ________________________________________
 
 # - Given the id,        returns the Room who has got that id if exixsts
@@ -547,6 +601,36 @@ def add_room_from_list(session, rooms_list):
         b &= add_room(session, room=room)
     return b
 
+# Update Room Max Capacity with the given parameters
+# Return true if the changes are done, false otherwise
+# Raise an exception if the name is not valid
+def update_room_max_capacity(session, name=None, mc=None):
+    if name is not None and mc is not None:
+        exixst = get_room(session, name=name)
+        if exixst is not None:
+            first = exixst.max_capacity
+            session.query(Room).filter(Room.name == name).update({Room.max_capacity:mc}, synchronize_session = False)
+            # It is possible to remove some prenotation because the capacity has decreased
+            if first > mc:
+                room = get_room(session, name=name)
+                shifts = get_shift(session, room_id=room.id)
+                for shift in shifts:
+                    prenotations = shift.prenotations
+                    num = len(prenotations)
+                    if num > mc:
+                        to_remove = num-mc
+                        admin_id = get_user(session, email='admin@gmail.com').id
+                        for i in range(to_remove-1):
+                            pr = prenotations[num-i]
+                            add_message(session, sender_id=admin_id, addresser_id=pr.client_id,
+                                text="Your prenotation on " + shift.date + " in " + shift.room + " from " + shift.starting + " to " + shift.ending + " has been deleted due to the decrease of room_capacity")
+                            session.query(Prenotation).filter(Prenotation.client_id==pr.client_id, Prenotation.shift_id==pr.shift_id).delete()
+            return True
+        else:
+            raise Exception("Room " + name + " doesn't exists")
+    else:
+        return False
+
 
 # ________________________________________ COURSE ________________________________________
 
@@ -566,26 +650,30 @@ def get_course(session, id=None, name=None, all=False):
 
 # Given the name of the Course plan his Shifts
 # It raises an exception if:
-# - there's no the turn in that day
+# - there's no course with that name
+# - the course has no course program
+# - there's no turn in that day
 # - the course overlaps with any other 
 def plan_course(session, name):
 
     def get_shift_turn(session, date, room_id, turn):
         shifts = get_shift(session, date=date, room_id=room_id)
         if len(shifts) >= turn:
-            return shifts[turn]
+            return shifts[turn-1]
         else:
             return None
 
     def update_shift_course(session, shift_id, new_course_id):
         session.query(Shift).filter(Shift.id == shift_id).update({Shift.course_id:new_course_id}, synchronize_session = False)
-        
-
+    
     course = get_course(session, name=name)
-    courses_program = get_course_program(session, course_id=course.id)
-    own_training_id = None
+    if course is None:
+        raise Exception("Course " + name + " does not exixsts")
+    course_programs = get_course_program(session, course_id=course.id)
+    if course_programs is None:
+        raise Exception("Course " + name + " is planned with no course program")
     end = course.ending + timedelta(days=0)
-    for prog in courses_program:
+    for prog in course_programs:
         dayname = prog.week_day
         turn = prog.turn_number
         room_id = prog.room_id
@@ -596,11 +684,18 @@ def plan_course(session, name):
             shift = get_shift_turn(session, date=datetime.date(year=day.year, month=day.month, day=day.day), room_id=room_id, turn=turn)
             if shift is None:
                 raise Exception("There is not that turn in that day")
-            if(shift.course_id != own_training_id):
+            if(shift.course_id != None):
                 raise Exception("Course cannot be planned: it overlaps with an other course!")
             else:
                 # Delete all Prenotation in that Shift
-                session.query(Prenotation).where(Prenotation.shift_id==shift.id).delete()
+                prenotations = session.query(Prenotation).where(Prenotation.shift_id==shift.id)
+                for prenotation in prenotations:
+                    add_message(session, sender_id=get_user(session, email='admin@gmail.com').id, addresser_id=prenotation.client_id,
+                    text='Your prenotation on ' + prenotation.shift.date.strftime('%d/%m/%Y') + " in " + prenotation.shift.room.name + " has been deleted due to the planning of " + course.name + " by the trainer " + course.trainer.user.fullname
+                    )
+                prenotations = session.query(Prenotation).where(Prenotation.shift_id==shift.id).delete()
+        
+                
                 update_shift_course(session, shift.id, course.id)
             day = day + timedelta(days=7)
             
@@ -634,6 +729,26 @@ def add_course_from_list(session, courses_list):
         b &= add_course(session, course=course)
     return b
 
+# Delete the specified course or delete all the courses
+# Returns True if all elements were deleted, False otherwise
+def delete_course(session, course=None, all=False):
+    if course is not None:
+        c = get_course(session, id = course.id)
+        users = c.users
+        admin_id = get_user(session, email='admin@gmail.com').id
+        for user in users:
+            add_message(session, sender_id=admin_id, addresser_id=user.id, text= "The course " + c.name + " you signed-up has been deleted from " +  c.trainer.user.fullname)
+        delete_course_program(session, course = c)
+        delete_course_sign_up(session, course = c)
+        session.delete(c)
+        return True
+    elif all == True:
+        c = get_course(session, all = True)
+        delete_course_program(session, all = True)
+        delete_course_sign_up(session, all = True)
+        session.delete(c)
+        return True
+    return False
 
 # ________________________________________ COURSE PROGRAM ________________________________________
 
@@ -669,7 +784,7 @@ def add_course_program(session, week_day=None, turn_number=None, room_id=None, c
          turn_number is not None and\
          room_id     is not None and\
          course_id   is not None:
-        add_course_program(session, course=CourseProgram(week_day=week_day, turn_number=turn_number, room_id=room_id, course_id=course_id))
+        add_course_program(session, course_program=CourseProgram(week_day=week_day, turn_number=turn_number, room_id=room_id, course_id=course_id))
     else:
         return False
     
@@ -681,6 +796,20 @@ def add_course_program_from_list(session, course_programs_list):
         b &= add_course_program(session, course_program=course_program)
     return b
 
+# Delete course programs of the given course or delete all the course programs
+# Returns True if all elements were deleted, False otherwise
+def delete_course_program(session, course=None, all=False):
+    if course is not None:
+        cp = get_course_program(session, course_id=course.id)
+        for i in cp:
+            session.delete(i)
+        return True
+    elif all == True:
+        cp = get_course_program(session, all=True)
+        for i in cp:
+            session.delete(i)
+        return True
+    return False
 
 # ________________________________________ COURSE SIGN UP ________________________________________
 
@@ -705,24 +834,17 @@ def get_course_sign_up(session, user_id=None, course_id=None, all=False):
 # Adds a CourseSignUp to the Database given the User and the Course or the CourseSignUp
 # Returns True if it was added correctly, False otherwise
 # Raises an error if
-#  - the user has already SignedUp to the course
-#  - the capacity peak has already been reached
+#  - the trainer sign-up for his own course (trigger)
+#  - the user has already SignedUp to the course (trigger)
+#  - the capacity peak has already been reached (trigger)
 # TODO the course in in conflict with other courses the user has SignedIn
 # TODO controllare se ritornare falso o lanciare eccezione
 def add_course_sign_up(session, user=None, course=None, course_sign_up=None):
 
     if user is not None and course is not None:
-        exist = get_course_sign_up(session, user_id=user.id, course_id=course.id)
-        if exist is not None:
-            raise Exception("The user has already sign-up for the course")
-        else:
-            n_signed = len(course.users)
-            n_max = course.max_partecipants
-            if  n_signed < n_max:
-                session.add(CourseSignUp(user_id=user.id, course_id=course.id))
-            else:
-                raise Exception("Course peak has already been reached")
-                
+        session.add(CourseSignUp(user_id=user.id, course_id=course.id))
+        add_message(session, sender_id=user.id, addresser_id=course.trainer.user.id, text="Hello! I've just Signed-Up for your " + course.name + "course ! ")
+        add_message(session, addresser_id=user.id, sender_id=course.trainer.user.id, text="Hello! Welcome to my " + course.name + " course! ")
     elif course_sign_up is not None:
         user_  =  get_user(session, id=course_sign_up.user_id)
         course_ = get_shift(session, id=course_sign_up.user_id)
@@ -740,17 +862,142 @@ def add_course_sign_up_from_list(session, course_sign_up_list):
         b &= add_course_sign_up(session, course_sign_up=course_sign_up)
     return b
 
-def delete_course_sign_up(session, course=None, user=None):
+# Delete course sign up of the given user or course, or all the course programs
+# Returns True if all elements were deleted, False otherwise
+def delete_course_sign_up(session, course=None, user=None, all=False):
     if course is not None and user is not None:
         cs = get_course_sign_up(session, user_id = user.id, course_id = course.id)
         session.delete(cs)
-        return True
     elif course is not None:
-        cs = get_course_sign_up(session,course_id=course.id)
-        session.delete(cs)
+        cs = get_course_sign_up(session, course_id=course.id)
+        for i in cs:
+            session.delete(i)
         return True
     elif user is not None:
-        cs = get_course_sign_up(session,user_id=user.id)
-        session.delete(cs)
+        cs = get_course_sign_up(session, user_id=user.id)
+        for i in cs:
+            session.delete(i)
+        return True
+    elif all == True:
+        cs = get_course_sign_up(session, all=True)
+        for i in cs:
+            session.delete(i)
         return True
     return False
+
+
+# ________________________________________ MESSAGES ________________________________________
+
+
+# - Given a UserID both of the sender and the addresser returns all his Messages if the user is the same
+# - Given a UserID of the sender returns all his Messages
+# - Given a UserID of the addresser returns all his Messages
+# - If all flag is true, returns all Messages
+# Returns None otherwise
+def get_message(session, sender=None, addresser=None, all=False):
+    if sender is not None and addresser is not None:
+        if sender == addresser:
+            return session.query(Message).filter(Message.sender == sender).union.\
+                   session.query(Message).filter(Message.addressee == addresser).all()
+        else:
+            return None
+    elif sender is not None:
+        return session.query(Message).filter(Message.sender == sender).all()
+    elif addresser is not None:
+        return session.query(Message).filter(Message.addressee == addresser).all()
+    elif all is True:
+        return session.query(Message).all()
+    else:
+        return None
+
+# - Given message_id the corresponding shift if exists
+def del_message(session, id=None):
+    if id is not None:
+        session.query(Message).filter(Message.id == id).delete()
+
+
+# - Given a Message adds it to the database
+# - Given the sender_id, the addresser_id and the text of a Message adds it to the database
+# Returns True if it was added correctly, False otherwise
+# Raises an error if
+#  - the sender and the addresser are the same User (check)
+def add_message(session, sender_id=None, addresser_id=None, text=None):
+
+    if sender_id    is not None and\
+       addresser_id is not None and\
+       text         is not None:
+        mess = Message(sender=sender_id, addressee=addresser_id, text=text, date=datetime.datetime.now(), read=False)
+        session.add(mess)
+    else:
+    
+        return False
+
+# - Given a list of messages update read field as True where is False
+def mark_read(session, messages=None):
+    if messages is not None:
+        for message in messages:
+            if message.read is False:
+                session.query(Message).filter(Message.id == message.id).update({Message.read:True}, synchronize_session = False)
+
+# Adds all Messages from the list given to the Database
+# Returns True if all elements were added,
+# False if at least one was already contained
+def add_messagge_from_list(session, message_list):
+    b = True
+    for message in message_list:
+        b &= add_message(session, message=message)
+    return b
+
+# Given the user_id who did the report send a message to:
+# - all users who had a shift in common in the two previous week
+# - all users who have a course in common (and also to the trainer)
+def covid_report_messages(session, user_id):
+    user = get_user(session, id = user_id)
+    today = datetime.date.today()
+    prev = today - timedelta(days=14)
+    admin_id = get_user(session, email='admin@gmail.com').id
+    # Shift
+    shifts = user.prenotations_shifts
+    shifts = filter(lambda sh: prev <= sh.date <= today, shifts) # Remove the shifts that are not in the previous two weeks
+    for shift in shifts:
+        users = shift.users_prenotated
+        for us in users:
+            if us.id != user.id:
+                add_message(
+                    session,
+                    sender_id=admin_id,
+                    addresser_id=us.id,
+                    text= "On " + shift.date.strftime('%d/%m/%Y') + " from " +\
+                        shift.h_start.strftime('%H:%M') + " to " + shift.h_end.strftime('%H:%M') + " in " + shift.room.name +\
+                        " you came into contacts with a person affected from COVID19"
+                )
+    # Course
+    courses = user.courses
+    for course in courses:
+        course_signs_up = get_course_sign_up(session, course_id=course.id)
+        for csu in course_signs_up:
+            if csu.user_id != user.id:
+                add_message(
+                    session,
+                    sender_id=admin_id,
+                    addresser_id=csu.user_id,
+                    text= "One person in course " + course.name + " you signed-up for is affected from COVID19"
+                )
+        add_message(
+                    session,
+                    sender_id=admin_id,
+                    addresser_id= course.instructor_id,
+                    text= "One person in your course " + course.name + " is affected from COVID19"
+        )
+    # Trainer
+    if(get_role(session, name="Staff")) in user.roles:
+        trainer = get_trainer(session, email=user.email)
+        for course in trainer.courses:
+            course_signs_up = get_course_sign_up(session, course_id=course.id)
+            for csu in course_signs_up:
+                add_message(
+                    session,
+                    sender_id=admin_id,
+                    addresser_id=csu.user_id,
+                    text= "One person in course " + course.name + " you signed-up for is affected from COVID19"
+                )

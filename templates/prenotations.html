@@ -1,19 +1,42 @@
 {% extends 'base.html' %}
 
 {% block pagebody %}
-
 <div class="container">
-  <h3>Prenotazioni</h3>
-  <ul>
-    {% for p in prenotations %}
-       <li> Own Training in {{p.room.name}} il giorno {{ p.date }} dalle {{p.h_start}} alle {{p.h_end}} </li>
-     {% endfor %}
-   </ul>
+  <h1>Prenotations</h1>
+  <table class="table table-borderless">
+    <tr>
+      <th>Date</th>
+      <th>Start</th>
+      <th>End</th>
+      <th>Room</th>
+      <th>Booking</th>
+      <th>Delete</th>
+    </tr>
+
+    {% for s in shifts %}
+    <tr>
+      <td>{{s.date}}</td>
+      <td>{{s.h_start}}</td>
+      <td>{{s.h_end}}</td>
+      <td>{{s.room.name}}</td>
+      <td>{{s.room.max_capacity - s.prenotations|length}}/{{s.room.max_capacity}}</td>
+      <td>
+        <form action="{{ url_for('del_prenotation', shift=s.id) }}">
+          <input type="submit", value="Delete" class="btn btn-danger btn-sm">
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+
+  </table>
+  <div class="mt-4">
+    <form action="{{url_for('private')}}">
+      <input type="submit", value="Back" class="btn btn-info text-light">
+    </form>
+  </div>
 </div>
 
-<form action="/private">
-    <input type="submit", value="Back">
-</form>
+
   
   
 {% endblock %}

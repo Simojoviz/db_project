@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block pagebody %}
+<div class="container">
+  <h1 class="text-center">Received Messages</h1>
+  <table class="table table-borderless">
+    <tr>
+      <th>From</th>
+      <th>Date</th>
+      <th>Text</th>
+      <th>Delete</th>
+    </tr>
+
+    {% for m in messages %}
+    
+      <tr>
+        {% if m.read == False %}
+          <td><strong>{{m.sender_.fullname}}</strong></td>
+          <td><strong>{{m.date.strftime('%m/%d/%Y %H:%M')}}</strong></td>
+          <td><strong>{{m.text}}</strong></td>
+        {% else %}
+          <td>{{m.sender_.fullname}}</td>
+          <td>{{m.date.strftime('%m/%d/%Y %H:%M')}}</td>
+          <td>{{m.text}}</td>
+        {% endif %} 
+        <td>
+          <form action= "{{ url_for('delete_message', mess_id=m.id) }}" method="POST">
+            <input type="submit", value="Delete" class="btn btn-danger btn-sm">
+          </form>
+    </tr>
+    
+    {% endfor %}
+
+  </table>
+  <form action= "{{ url_for('private')}}">
+    <input type="submit" value="Back" class="btn btn-info text-white">
+  </form>
+</div>
+
+{% endblock %}

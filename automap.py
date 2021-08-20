@@ -1,20 +1,21 @@
-from sqlalchemy import Column, Integer, Boolean, String, Date, Time
+from sqlalchemy import Column, Integer, Boolean, String, Date, Time, DateTime
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, declarative_base
-from flask_login import UserMixin
 
 
 Base = declarative_base()
 
 #_________________________________________________TABLES_________________________________________________
 
-class User(Base, UserMixin):
+class User(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
     fullname = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
     pwd = Column(String, nullable=False)
+    telephone = Column(String, unique=True, nullable=False)
+    address = Column(String, nullable=False)
 
     prenotations = relationship("Prenotation", viewonly=True)
     prenotations_shifts = relationship("Shift", secondary="prenotations", back_populates="users_prenotated")
@@ -32,6 +33,7 @@ class Role(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
+    
     users = relationship("User", secondary="user_roles", back_populates="roles")
 
 # Define UserRoles model
@@ -104,7 +106,7 @@ class Prenotation(Base):
 
 
 class GlobalSetting(Base):
-    __tablename__ = 'global_setting'
+    __tablename__ = 'global_settings'
 
     name = Column(String, primary_key=True)
     value = Column(Integer, nullable=False)
@@ -202,3 +204,16 @@ class CourseSignUp(Base):
 
     user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
     course_id = Column(Integer, ForeignKey('courses.id'), primary_key=True)
+
+class Message(Base):
+    __tablename__ = 'messages'
+
+    id = Column(Integer, primary_key=True)
+    sender =    Column(Integer, ForeignKey('users.id'), nullable=False)
+    addressee = Column(Integer, ForeignKey('users.id'), nullable=False)
+    date = Column(DateTime, nullable=False)
+    text = Column(String, nullable=False)
+    read = Column(Boolean, nullable=False)
+
+    addresser = relationship("User", foreign_keys=[addressee])
+    sender_    = relationship("User", foreign_keys=[sender])
