@@ -11,9 +11,10 @@ from model import *
 app = Flask ( __name__ )
 
 #engine = create_engine('sqlite:///database.db', echo=True)
-engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
-# engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=True)
-# engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
+#engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
+engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=False)
+#engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
+
 
 app.config ['SECRET_KEY'] = 'ubersecret'
 
@@ -129,7 +130,11 @@ def shifts(day, month, year, room):
         else:
             room_id = get_room(session, name=room).id
             shifts = get_shift(session, date=date, room_id=room_id)
-        resp = make_response(render_template("shifts.html", shifts=shifts, date_string=date_string))
+        shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
+        if date == date.today():
+            shifts = filter(lambda sh: sh.h_start >= datetime.datetime.now().time(), shifts)
+        user = get_user(session, id=current_user.id)
+        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda x: (x.room_id, x.h_start)), date_string=date_string, rooms=r, user=user))
         session.commit()
         return resp
     except:

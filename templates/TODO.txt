@@ -1,0 +1,5 @@
+v fix /private/trainer_courses
+V fix /private/trainer_courses/<course_name>
+x fix del_prenotation
+
+RICORDARE SESSION FUORY TRY CATCH
