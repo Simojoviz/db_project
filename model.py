@@ -54,7 +54,7 @@ def add_user(session, fullname=None, email=None, address=None, telephone=None, p
          address    is not None and\
          telephone    is not None and\
          pwd      is not None:
-        return add_user(session, user=User(fullname=fullname, email=email, address=address, telephone=telephone, pwd=pwd))
+        return add_user(session, user=User(fullname=fullname, email=email, address=address, telephone=telephone, pwd=pwd, covid_state=0, membership_deadline=datetime.date.today()))
     else:
         return False
 
@@ -195,7 +195,7 @@ def add_trainer(session, fullname=None, email=None, pwd=None, telephone=None, ad
     elif fullname is not None and\
          email    is not None and\
          pwd      is not None: 
-        return add_trainer(session, user=User(fullname=fullname, email=email, pwd=pwd, telephone=telephone, address=address))
+        return add_trainer(session, user=User(fullname=fullname, email=email, pwd=pwd, telephone=telephone, address=address, covid_state=0, membership_deadline=datetime.date.today()+timedelta(days=365)))
     else:
         return False
 

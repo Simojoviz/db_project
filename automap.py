@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, Boolean, String, Date, Time, DateTime
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.sql.expression import false, null
 
 
 Base = declarative_base()
@@ -16,6 +17,8 @@ class User(Base):
     pwd = Column(String, nullable=False)
     telephone = Column(String, unique=True, nullable=False)
     address = Column(String, nullable=False)
+    membership_deadline = Column(Date, nullable=False)
+    covid_state = Column(Integer, nullable=false)
 
     prenotations = relationship("Prenotation", viewonly=True)
     prenotations_shifts = relationship("Shift", secondary="prenotations", back_populates="users_prenotated")
