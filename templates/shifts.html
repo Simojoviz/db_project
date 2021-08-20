@@ -1,10 +1,12 @@
 {% extends 'base.html' %}
 
 {% block pagebody %}
-
-<div class="container mb-5">
+<div style="background-image: url('static/prenotations.jpg'); width: 100%; height: 400px; background-size: cover; background-repeat: no-repeat; background-position: center center;"></div>
+<div class="py-4 bg-info text-white text-center">
+  <h1 class="display-3">Book a Shift</h1>
+</div>
+<div class="container py-4">
   <div>
-    <h1 class="mb-2 text-center">Book a Shift</h1>
     <form action="{{url_for('shifts_load_state')}}" method="POST">
       <div class="row w-75 mx-auto mt-4">
         <div class="col text-center">
@@ -60,5 +62,5 @@
   </div>
 </div>
 </div>
-
+<div class="py-5 bg-info text-white text-center"></div>
 {% endblock %}

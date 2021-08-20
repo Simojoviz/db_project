@@ -133,7 +133,7 @@ def trainer_courses():
         if trainer is not None:
             courses = trainer.courses
             session.commit()
-            return render_template("trainer_courses.html", courses = courses, trainer = trainer)
+            return render_template("trainer_courses.html", courses = courses, trainer = trainer, today= datetime.date.today())
         else:
             session.commit()
             abort(401)
