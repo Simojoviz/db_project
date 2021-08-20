@@ -27,7 +27,27 @@
       </td>
     </tr>
     {% endfor %}
+  </table>
 
+  <h3 class="display-5 text-center">Past Prenotations</h3>
+  <table class="table table-borderless">
+    <tr>
+      <th>Date</th>
+      <th>Start</th>
+      <th>End</th>
+      <th>Room</th>
+      <th>Booking</th>
+    </tr>
+
+    {% for s in past_shifts %}
+    <tr>
+      <td>{{s.date}}</td>
+      <td>{{s.h_start}}</td>
+      <td>{{s.h_end}}</td>
+      <td>{{s.room.name}}</td>
+      <td>{{s.room.max_capacity - s.prenotations|length}}/{{s.room.max_capacity}}</td>
+    </tr>
+    {% endfor %}
   </table>
   <div class="mt-4">
     <form action="{{url_for('private')}}">

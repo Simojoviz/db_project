@@ -96,9 +96,9 @@ def prenotations():
     try:
         email = current_user.email
         user = get_user(session, email=email)
-        shifts = user.prenotations_shifts
         shifts = filter(lambda sh: sh.date >= datetime.date.today(), user.prenotations_shifts)
-        resp = make_response(render_template("prenotations.html", shifts=shifts))
+        past_shifts = filter(lambda sh: sh.date <= datetime.date.today() and datetime.datetime.now().time() >= sh.h_end, user.prenotations_shifts)
+        resp = make_response(render_template("prenotations.html", shifts=shifts, past_shifts=past_shifts))
         session.commit()
         return resp
     except:
