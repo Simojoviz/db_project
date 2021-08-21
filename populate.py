@@ -107,7 +107,7 @@ add_global_setting(session, global_setting=GlobalSetting(name='MaxWeeklyEntry', 
 
 
 # Shifts
-plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=365)
+plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=365, all_room=True)
 
 # CourseProgram
 courses_program = [
@@ -188,6 +188,6 @@ add_course_sign_up(
     course=get_course(session, name='Zumba'),
 )
 
-covid_report_messages(session, get_user(session, email='andrea@gmail.com').id)
+#covid_report_messages(session, get_user(session, email='andrea@gmail.com').id)
 
 session.commit()
