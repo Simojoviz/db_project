@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block pagebody %}
+<div class="container">
+  <div class="col text-center">
+    <strong>Select User</strong>
+    <select id="user" name="user">
+        {% for u in users %}
+          <option value="{{ i.id }}"> {{ i.fullname }} </option>
+        {% endfor %}
+    </select>
+  </div>
+
+          
+</div>
+{% endblock %}

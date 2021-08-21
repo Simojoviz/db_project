@@ -681,7 +681,7 @@ def settings():
     except:
         raise
 
-@app.route('/admin/global_settings')
+@app.route('/admin/settings/global_settings')
 @login_required
 def global_settings():
     session = Session()
@@ -698,7 +698,7 @@ def global_settings():
     finally:
         session.close()
 
-@app.route('/admin/room_settings')
+@app.route('/admin/settings/room_settings')
 @login_required
 def room_settings():
     session = Session()
@@ -717,7 +717,7 @@ def room_settings():
         session.close()
 
 
-@app.route('/admin/global_settings_form', methods=['POST'])
+@app.route('/admin/settings/global_settings_form', methods=['POST'])
 @login_required
 def global_settings_form():
     if request.method == 'POST':
@@ -736,7 +736,7 @@ def global_settings_form():
         finally:
             session.close()
 
-@app.route('/admin/room_settings_form', methods=['POST'])
+@app.route('/admin/settings/room_settings_form', methods=['POST'])
 @login_required
 def room_settings_form():
     if request.method == 'POST':
@@ -755,7 +755,7 @@ def room_settings_form():
         finally:
             session.close()
 
-@app.route('/admin/room_settings/add_room')
+@app.route('/admin/settings/room_settings/add_room')
 @login_required
 def add_room_():
     session = Session()
@@ -770,7 +770,7 @@ def add_room_():
     finally:
         session.close()
 
-@app.route('/admin/room_settings/add_room_form', methods=['POST'])
+@app.route('/admin/settings/room_settings/add_room_form', methods=['POST'])
 @login_required
 def add_room_form():
     if request.method == 'POST':
@@ -787,13 +787,12 @@ def add_room_form():
         finally:
             session.close()
 
-@app.route('/admin/room_settings/delete_room/<room_id>', methods=['POST'])
+@app.route('/admin/settings/room_settings/delete_room/<room_id>', methods=['POST'])
 @login_required
 def del_room(room_id):
     if request.method == 'POST':
         session = Session()
         try:
-            print("!!!!!!!!!!!!!!!!!!!!    " + room_id)
             delete_room(session, room_id=room_id)
             session.commit()
             return redirect(url_for('room_settings'))
@@ -802,3 +801,21 @@ def del_room(room_id):
             raise
         finally:
             session.close()
+
+@app.route('/admin/settings/users_settings')
+@login_required
+def users_settings():
+    session = Session()
+    try:
+        if is_admin(current_user):
+            users = get_user(session, all=True)
+            users = filter(lambda us: us.email != 'admin@gmail.com', users)
+            return make_response(render_template("users_settings.html"))
+        else:
+            return redirect(url_for('private'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+

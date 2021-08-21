@@ -188,6 +188,6 @@ add_course_sign_up(
     course=get_course(session, name='Zumba'),
 )
 
-covid_report_messages(session, get_user(session, email='andrea@gmail.com').id)
+#covid_report_messages(session, get_user(session, email='andrea@gmail.com').id)
 
 session.commit()
