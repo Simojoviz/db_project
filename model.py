@@ -272,52 +272,71 @@ def get_shift(session, date=None, start=None, prenotation=None, id=None, course_
     else:
         return None
 
-# Generate a list of all shifts for a date given the date
-def generate_daily_shifts(session, date):
-    day_name = calendar.day_name[date.weekday()]
-    weeksetting = get_week_setting(session, day_name)
-    hour_start = weeksetting.starting
-    hour_end = weeksetting.ending
-    shift_length = weeksetting.length
-    rooms = get_room(session, all=True)
-    
-    l = []
-    start =     timedelta(hours=hour_start.hour,   minutes=hour_start.minute)
-    length =    timedelta(hours=shift_length.hour, minutes=shift_length.minute)
-    end_ =      timedelta(hours=hour_end.hour,     minutes=hour_end.minute)
-    end = start + length
-
-    while(end <= end_):
-        for room in rooms:
-            l.append(
-                Shift(
-                    date=date,
-                    h_start = datetime.time(hour=start.seconds//3600, minute=(start.seconds//60)%60),
-                    h_end =   datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
-                    room_id = room.id,
-                    course_id = None
-                )
-            )
-        start = end
+# Generate a list of all shifts for a date given the date and the room
+def generate_room_daily_shifts(session, date=None, room_id=None):
+    if date is not None and room_id is not None:
+        print("BBB")
+        day_name = calendar.day_name[date.weekday()]
+        weeksetting = get_week_setting(session, day_name)
+        hour_start = weeksetting.starting
+        hour_end = weeksetting.ending
+        shift_length = weeksetting.length
+        room = get_room(session, id=room_id)
+        
+        l = []
+        start =     timedelta(hours=hour_start.hour,   minutes=hour_start.minute)
+        length =    timedelta(hours=shift_length.hour, minutes=shift_length.minute)
+        end_ =      timedelta(hours=hour_end.hour,     minutes=hour_end.minute)
         end = start + length
 
-    return l
+        while(end <= end_):
+            print("CCC")
+            l.append(
+                    Shift(
+                        date=date,
+                        h_start = datetime.time(hour=start.seconds//3600, minute=(start.seconds//60)%60),
+                        h_end =   datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
+                        room_id = room.id,
+                        course_id = None
+                    )
+                )
+            start = end
+            end = start + length
+
+        return l
 
 # - Given the starting date and the number of days generate the shifts for all days in time-interval
 # - Given the starting date and the ending date    generate the shifts for all days in time-interval
 # If there were previous plans which are changed, the previous is removed
-#TODO controllare se salta il primo giorno e chiedere funzionamento funzione
-def plan_shifts(session, starting, n=1, ending=None):
+def plan_shifts(session, starting, n=1, ending=None, room_id=None, all_room=False):
+    print("planning for " + str(room_id))
     day = starting + timedelta(days=0)
     if ending is None:
         ending = day + timedelta(days=n)
     while(day <= ending):
+        print("AAA")
         day_name = calendar.day_name[day.weekday()]
         ws = get_week_setting(session, day_name=day_name)
-        if ws is not None and ws.changed is True:
-            session.query(Shift).where(Shift.date==day).delete()
-            l = generate_daily_shifts(session, datetime.date(year=day.year, month=day.month, day=day.day))
-            add_shift_from_list(session, l)
+        if ws is not None:
+            if room_id is not None:
+                shifts = get_shift(session, date=day, room_id=room_id)
+            elif all_room is True:
+                shifts = get_shift(session, date=day)
+            else:
+                shifts = []
+            for shift in shifts:
+                prenotations = shift.prenotations
+                for pr in prenotations:
+                    session.query(Prenotation).filter(Prenotation.shift_id==pr.shift_id, Prenotation.client_id==pr.client_id).delete()
+            session.query(Shift).where(Shift.date==day, Shift.room_id==room_id).delete()
+            if room_id is not None:
+                print("planning " + str(room_id))
+                l = generate_room_daily_shifts(session, datetime.date(year=day.year, month=day.month, day=day.day), room_id=room_id)
+                add_shift_from_list(session, l)
+            elif all_room is True:
+                for room in get_room(session, all=True):
+                    l = generate_room_daily_shifts(session, datetime.date(year=day.year, month=day.month, day=day.day), room_id=room.id)
+                    add_shift_from_list(session, l)
         day = day + timedelta(days=1)
 
     session.query(WeekSetting).update({WeekSetting.changed:False}, synchronize_session = False)

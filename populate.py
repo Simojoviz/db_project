@@ -107,7 +107,7 @@ add_global_setting(session, global_setting=GlobalSetting(name='MaxWeeklyEntry', 
 
 
 # Shifts
-plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=365)
+plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=365, all_room=True)
 
 # CourseProgram
 courses_program = [

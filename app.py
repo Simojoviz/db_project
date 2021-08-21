@@ -192,7 +192,7 @@ def shifts():
         shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
         if date == date.today():
             shifts = filter(lambda sh: sh.h_start >= datetime.datetime.now().time(), shifts)
-        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda x: (x.room_id, x.h_start)), date_string=date_string, rooms=r))
+        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda x: (x.h_start, x.room_id)), date_string=date_string, rooms=r))
         session.commit()
         return resp
     except:
@@ -777,7 +777,20 @@ def add_room_form():
         try:
             name = request.form['name']
             max_capacity = request.form['max_capacity']
+            date_str = request.form['date']
+            date_str = date_str.replace('-', '/')
+            date = datetime.datetime.strptime(date_str, '%Y/%m/%d')
+            date = date.date()
+            if date < datetime.date.today():
+                raise Exception("Could not plan shift in the past")
             add_room(session, name=name, max_capacity=max_capacity)
+            session.flush()
+            room = get_room(session, name=name)
+            if room is not None:
+                print(room.name + " " + str(room.id))
+                plan_shifts(session, starting=datetime.date.today(), ending=date, room_id=room.id)
+            else:
+                raise Exception("non trovo stanza appena aggiunta")
             session.commit()
             return redirect(url_for('room_settings'))
         except:
