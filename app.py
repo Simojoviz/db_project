@@ -822,7 +822,7 @@ def users_settings():
         if is_admin(current_user):
             users = get_user(session, all=True)
             users = filter(lambda us: us.email != 'admin@gmail.com', users)
-            return make_response(render_template("users_settings.html"))
+            return make_response(render_template("users_settings.html", users=users))
         else:
             return redirect(url_for('private'))
     except:
@@ -831,3 +831,53 @@ def users_settings():
     finally:
         session.close()
 
+@app.route('/admin/settings/user_settings', methods=['GET', 'POST'])
+def user_settings():
+    if request.method == 'POST':
+        session = Session()
+        try:
+            if is_admin(current_user):
+                user_id = request.form['user']
+                user = get_user(session, id=user_id)
+                return make_response(render_template("user_settings.html", user=user))
+            else:
+                return redirect(url_for('private'))
+            
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+@app.route('/admin/settings/reset_covid_state/<user_id>')
+def reset_covid_state(user_id):
+    session = Session()
+    try:
+        update_user_covid_state(session=session, user_id=user_id, value=0)
+        session.commit()
+        return redirect(url_for('users_settings'))            
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/admin/settings/new_deadline/<user_id>', methods=["POST"])
+def new_deadline(user_id):
+    if request.method == 'POST':
+        session = Session()
+        try:
+            for pr in request.form:
+                print("AAA")
+                print(pr)
+            date_str = request.form["date"]
+            date_str = date_str.replace('-', '/')
+            date = datetime.datetime.strptime(date_str, '%Y/%m/%d')
+            update_user_deadline(session, user_id=user_id, date=date)
+            session.commit()
+            return redirect(url_for('users_settings')) 
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
