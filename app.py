@@ -736,19 +736,18 @@ def global_settings_form():
         finally:
             session.close()
 
-@app.route('/admin/settings/room_settings_form', methods=['POST'])
+@app.route('/admin/settings/room_settings_form/<room_id>', methods=['POST'])
 @login_required
-def room_settings_form():
+def room_settings_form(room_id):
     if request.method == 'POST':
         session = Session()
         try:
-            rooms = get_room(session, all=True)
-            for room in rooms:
-                val = int(request.form[str(room.id)])
-                if val != room.max_capacity:
-                    update_room_max_capacity(session, name=room.name, mc=val)
+            room = get_room(session, id=room_id)
+            val = int(request.form[str(room_id)])
+            if val != room.max_capacity:
+                update_room_max_capacity(session, name=room.name, mc=val)
             session.commit()
-            return redirect(url_for('settings'))
+            return redirect(url_for('room_settings'))
         except:
             session.rollback()
             raise
