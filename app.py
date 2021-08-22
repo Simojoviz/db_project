@@ -855,7 +855,7 @@ def user_settings(user_id):
     try:
         if is_admin(current_user):
             user = get_user(session, id=user_id)
-            return make_response(render_template("user_settings.html", user=user))
+            return make_response(render_template("user_settings.html", user=user, isStaff=(get_role(session,name="Staff") in user.roles)))
         else:
             return redirect(url_for('private'))
     except:
@@ -896,3 +896,29 @@ def new_deadline(user_id):
             raise
         finally:
             session.close()
+
+@app.route('/admin/settings/user_settings/assign_trainer_role/<user_id>')
+def assign_trainer_role_(user_id):
+    session = Session()
+    try:
+        assign_trainer_role(session, user_id=user_id)
+        session.commit()
+        return redirect(url_for('user_settings', user_id=user_id))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/admin/settings/user_settings/revoke_trainer_role/<user_id>')
+def revoke_trainer_role_(user_id):
+    session = Session()
+    try:
+        revoke_trainer_role(session, user_id=user_id)
+        session.commit()
+        return redirect(url_for('user_settings', user_id=user_id))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
