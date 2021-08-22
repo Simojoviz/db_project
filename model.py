@@ -271,25 +271,25 @@ def get_shift(session, date=None, start=None, prenotation=None, id=None, course_
 
     # Four parameters
     if date is not None and start is not None and room_id is not None and course_id is not None:
-        return session.query(Shift).filter(Shift.date == date, Shift.h_start == start, Shift.room_id == room_id, Shift.course_id == course_id).one_or_none()
+        return session.query(Shift).filter(Shift.date == date, Shift.starting == start, Shift.room_id == room_id, Shift.course_id == course_id).one_or_none()
     
     # Three parameters
     elif start is not None and date is not None and course_id is not None:
-        return session.query(Shift).filter(Shift.h_start == start, Shift.date == date, Shift.course_id == Shift.course_id).one_or_none()
+        return session.query(Shift).filter(Shift.starting == start, Shift.date == date, Shift.course_id == Shift.course_id).one_or_none()
     elif start is not None and date is not None and room_id is not None:
-        return session.query(Shift).filter(Shift.h_start == start, Shift.date == date, Shift.room_id == room_id).one_or_none()
+        return session.query(Shift).filter(Shift.starting == start, Shift.date == date, Shift.room_id == room_id).one_or_none()
     elif start is not None and room_id is not None and course_id is not None:
-        return session.query(Shift).filter(Shift.h_start == start, Shift.room_id == room_id, Shift.course_id == Shift.course_id).all()
+        return session.query(Shift).filter(Shift.starting == start, Shift.room_id == room_id, Shift.course_id == Shift.course_id).all()
     elif room_id is not None and date is not None and course_id is not None:
         return session.query(Shift).filter(Shift.room_id == room_id, Shift.date == date, Shift.course_id == Shift.course_id).all()
     
     # Two parameters
     elif start is not None and date is not None:
-        return session.query(Shift).filter(Shift.h_start == start, Shift.date == date).all()
+        return session.query(Shift).filter(Shift.starting == start, Shift.date == date).all()
     elif start is not None and course_id is not None:
-        return session.query(Shift).filter(Shift.h_start == start, Shift.course_id == course_id).all()
+        return session.query(Shift).filter(Shift.starting == start, Shift.course_id == course_id).all()
     elif start is not None and room_id is not None:
-        return session.query(Shift).filter(Shift.h_start == start, Shift.room_id == room_id).all()
+        return session.query(Shift).filter(Shift.starting == start, Shift.room_id == room_id).all()
     elif course_id is not None and date is not None:
         return session.query(Shift).filter(Shift.course_id == course_id, Shift.date == date).all()
     elif room_id is not None and date is not None:
@@ -337,8 +337,8 @@ def generate_room_daily_shifts(session, date=None, room_id=None):
             l.append(
                     Shift(
                         date=date,
-                        h_start = datetime.time(hour=start.seconds//3600, minute=(start.seconds//60)%60),
-                        h_end =   datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
+                        starting = datetime.time(hour=start.seconds//3600, minute=(start.seconds//60)%60),
+                        ending =   datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
                         room_id = room.id,
                         course_id = None
                     )
@@ -369,10 +369,10 @@ def plan_shifts(session, starting, n=1, ending=None, room_id=None, all_room=Fals
                 prenotations = shift.prenotations
                 admin_id = get_user(session, email="admin@gmail.com").id
                 for pr in prenotations:
-                    add_message(session, sender_id=admin_id, addresser_id=pr.client_id,
-                    text = "Your prenotation on " + pr.shift.date.strftime('%d/%m/%Y') + " in " + pr.shift.room.name +  " from " + pr.shift.h_start.strftime('%H:%M') + " to " + pr.shift.h_end.strftime('%H:%M') +\
+                    add_message(session, sender_id=admin_id, addresser_id=pr.user_id,
+                    text = "Your prenotation on " + pr.shift.date.strftime('%d/%m/%Y') + " in " + pr.shift.room.name +  " from " + pr.shift.starting.strftime('%H:%M') + " to " + pr.shift.ending.strftime('%H:%M') +\
                            " has been deleted due to the replan of week setting")
-                    session.query(Prenotation).filter(Prenotation.shift_id==pr.shift_id, Prenotation.client_id==pr.client_id).delete()
+                    session.query(Prenotation).filter(Prenotation.shift_id==pr.shift_id, Prenotation.user_id==pr.user_id).delete()
             session.query(Shift).where(Shift.date==day, Shift.room_id==room_id).delete()
             if room_id is not None:
                 l = generate_room_daily_shifts(session, datetime.date(year=day.year, month=day.month, day=day.day), room_id=room_id)
@@ -391,7 +391,7 @@ def plan_shifts(session, starting, n=1, ending=None, room_id=None, all_room=Fals
 # Returns True if it was added correctly, False if the element was already contained
 def add_shift(session, date=None, start=None, end=None, room_id=None, course_id=None, shift=None):
     if shift is not None:
-        exist = get_shift(session, date=shift.date, start=shift.h_start, room_id=shift.room_id)
+        exist = get_shift(session, date=shift.date, start=shift.starting, room_id=shift.room_id)
         if exist is not None:
             return False
         else:
@@ -402,7 +402,7 @@ def add_shift(session, date=None, start=None, end=None, room_id=None, course_id=
          end       is not None and\
          room_id   is not None and\
          course_id is not None:
-        return add_shift(session, shift=Shift(date=date, h_start=start, h_end=end, room_id=room_id, course_id=course_id))
+        return add_shift(session, shift=Shift(date=date, starting=start, ending=end, room_id=room_id, course_id=course_id))
     else:
         return False
 
@@ -427,11 +427,11 @@ def add_shift_from_list(session, shift_list):
 # Returns None otherwise
 def get_prenotation(session, user_id=None, shift_id=None, date=None, all=False):
     if user_id is not None and shift_id is not None:
-        return session.query(Prenotation).filter(Prenotation.client_id == user_id, Prenotation.shift_id == shift_id).one_or_none()
+        return session.query(Prenotation).filter(Prenotation.user_id == user_id, Prenotation.shift_id == shift_id).one_or_none()
     elif user_id is not None:
-         return session.query(Prenotation).filter(Prenotation.client_id == user_id).all()
+         return session.query(Prenotation).filter(Prenotation.user_id == user_id).all()
     elif shift_id is not None:
-        return session.query(Prenotation.client_id).filter(Prenotation.shift_id == shift_id).all()
+        return session.query(Prenotation.user_id).filter(Prenotation.shift_id == shift_id).all()
     elif date is not None:
         return session.query(Prenotation).join(Shift).filter(Shift.date == date).all()
     elif all is True:
@@ -470,12 +470,12 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
         max_ = get_global_setting(session, name='MaxWeeklyEntry').value
         count = get_count_weekly_prenotations(session, user, shift.date)
         if (count < max_):
-            session.add(Prenotation(client_id=user.id, shift_id=shift.id))
+            session.add(Prenotation(user_id=user.id, shift_id=shift.id))
             return True
         else:
             raise Exception("Week prenotation peak reached")
     elif prenotation is not None:
-        user_  = get_user(session, id=prenotation.client_id)
+        user_  = get_user(session, id=prenotation.user_id)
         shift_ = get_shift(session, id=prenotation.shift_id)
         add_prenotation(session, user=user_, shift=shift_)
     else:
@@ -689,10 +689,10 @@ def update_room_max_capacity(session, name=None, mc=None):
                         admin_id = get_user(session, email='admin@gmail.com').id
                         for i in range(to_remove):
                             pr = prenotations[num-1-i]
-                            add_message(session, sender_id=admin_id, addresser_id=pr.client_id,
-                                text="Your prenotation on " + shift.date.strftime('%d/%m/%Y') + " in " + shift.room.name +  " from " + shift.h_start.strftime('%H:%M') + " to " + shift.h_end.strftime('%H:%M') +\
+                            add_message(session, sender_id=admin_id, addresser_id=pr.user_id,
+                                text="Your prenotation on " + shift.date.strftime('%d/%m/%Y') + " in " + shift.room.name +  " from " + shift.starting.strftime('%H:%M') + " to " + shift.ending.strftime('%H:%M') +\
                                      " has been deleted due to the decrease of room capacity from " + str(first) + " to " + str(mc))
-                            session.query(Prenotation).filter(Prenotation.client_id==pr.client_id, Prenotation.shift_id==pr.shift_id).delete()
+                            session.query(Prenotation).filter(Prenotation.user_id==pr.user_id, Prenotation.shift_id==pr.shift_id).delete()
             return True
         else:
             raise Exception("Room " + name + " doesn't exists")
@@ -723,10 +723,10 @@ def delete_room(session, room_id=None):
         for shift in shifts:
             prenotations = shift.prenotations
             for pr in prenotations:
-                add_message(session, sender_id=admin_id, addresser_id=pr.client_id,
-                                text="Your prenotation on " + shift.date.strftime('%d/%m/%Y') + " in " + shift.room.name +  " from " + shift.h_start.strftime('%H:%M') + " to " + shift.h_end.strftime('%H:%M') +\
+                add_message(session, sender_id=admin_id, addresser_id=pr.user_id,
+                                text="Your prenotation on " + shift.date.strftime('%d/%m/%Y') + " in " + shift.room.name +  " from " + shift.starting.strftime('%H:%M') + " to " + shift.ending.strftime('%H:%M') +\
                                      " has been deleted due to the deletion of " + room.name)
-                session.query(Prenotation).filter(Prenotation.client_id==pr.client_id, Prenotation.shift_id==pr.shift_id).delete()
+                session.query(Prenotation).filter(Prenotation.user_id==pr.user_id, Prenotation.shift_id==pr.shift_id).delete()
             session.query(Shift).filter(Shift.id==shift.id).delete()
         session.query(Room).filter(Room.id==room_id).delete()
 
@@ -789,8 +789,8 @@ def plan_course(session, name):
                 # Delete all Prenotation in that Shift
                 prenotations = session.query(Prenotation).where(Prenotation.shift_id==shift.id)
                 for prenotation in prenotations:
-                    add_message(session, sender_id=get_user(session, email='admin@gmail.com').id, addresser_id=prenotation.client_id,
-                    text='Your prenotation on ' + prenotation.shift.date.strftime('%d/%m/%Y') + " from " + shift.h_start.strftime('%H:%M') + " to " + shift.h_end.strftime('%H:%M') + " in " + prenotation.shift.room.name + " has been deleted due to the planning of " + course.name + " by the trainer " + course.trainer.user.fullname
+                    add_message(session, sender_id=get_user(session, email='admin@gmail.com').id, addresser_id=prenotation.user_id,
+                    text='Your prenotation on ' + prenotation.shift.date.strftime('%d/%m/%Y') + " from " + shift.starting.strftime('%H:%M') + " to " + shift.ending.strftime('%H:%M') + " in " + prenotation.shift.room.name + " has been deleted due to the planning of " + course.name + " by the trainer " + course.trainer.user.fullname
                     )
                 prenotations = session.query(Prenotation).where(Prenotation.shift_id==shift.id).delete()
         
@@ -1069,7 +1069,7 @@ def covid_report_messages(session, user_id):
                     sender_id=admin_id,
                     addresser_id=us.id,
                     text= "On " + shift.date.strftime('%d/%m/%Y') + " from " +\
-                        shift.h_start.strftime('%H:%M') + " to " + shift.h_end.strftime('%H:%M') + " in " + shift.room.name +\
+                        shift.starting.strftime('%H:%M') + " to " + shift.ending.strftime('%H:%M') + " in " + shift.room.name +\
                         " you came into contacts with a person affected from COVID19"
                 )
     # Course

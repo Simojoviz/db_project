@@ -50,7 +50,7 @@ conn.execute(
     "ALTER TABLE public.shifts\
     DROP CONSTRAINT IF EXISTS shift_start_end;\
     ALTER TABLE public.shifts\
-    ADD CONSTRAINT shift_start_end CHECK (h_start < h_end);\
+    ADD CONSTRAINT shift_start_end CHECK (starting < ending);\
     \
     COMMENT ON CONSTRAINT shift_start_end ON public.shifts\
         IS 'shift starting hour must be before the ending hour';"
@@ -58,23 +58,23 @@ conn.execute(
 
 #___________WEEK SETTING___________
 conn.execute(
-    "ALTER TABLE public.week_setting\
+    "ALTER TABLE public.week_settings\
     DROP CONSTRAINT IF EXISTS valid_dayname;\
-    ALTER TABLE public.week_setting\
+    ALTER TABLE public.week_settings\
     ADD CONSTRAINT valid_dayname CHECK (day_name::text = ANY (ARRAY['Monday'::character varying, 'Tuesday'::character varying, 'Wednesday'::character varying, 'Thursday'::character varying, 'Friday'::character varying, 'Saturday'::character varying, 'Sunday'::character varying]::text[]))\
     NOT VALID;\
     \
-    COMMENT ON CONSTRAINT valid_dayname ON public.week_setting\
+    COMMENT ON CONSTRAINT valid_dayname ON public.week_settings\
     IS 'dayname must be valid';"
 )
 
 conn.execute(
-    "ALTER TABLE public.week_setting\
+    "ALTER TABLE public.week_settings\
     DROP CONSTRAINT IF EXISTS week_setting_start_end;\
-    ALTER TABLE public.week_setting\
+    ALTER TABLE public.week_settings\
     ADD CONSTRAINT week_setting_start_end CHECK (starting < ending);\
     \
-    COMMENT ON CONSTRAINT week_setting_start_end ON public.week_setting\
+    COMMENT ON CONSTRAINT week_setting_start_end ON public.week_settings\
         IS 'the starting hour must be before the ending hour';"
 )
 
@@ -257,8 +257,8 @@ conn.execute(
     VOLATILE NOT LEAKPROOF\
     AS $BODY$\
     BEGIN\
-        IF NEW.client_id IN (\
-            SELECT client_id\
+        IF NEW.user_id IN (\
+            SELECT user_id\
             FROM prenotations\
             WHERE shift_id = NEW.shift_id\
         ) THEN\
@@ -285,7 +285,7 @@ conn.execute(
         ELSIF (\
             SELECT covid_state\
             FROM users\
-            WHERE id = NEW.client_id\
+            WHERE id = NEW.user_id\
         ) != 0 THEN\
             RAISE EXCEPTION 'Cannot prenote: Covid-State is not Safe. Please contact Gym''s admin';\
             RETURN NULL;\
@@ -296,7 +296,7 @@ conn.execute(
         ) > (\
             SELECT membership_deadline\
             FROM users\
-            WHERE id = NEW.client_id\
+            WHERE id = NEW.user_id\
         ) THEN\
             RAISE EXCEPTION 'Cannot prenote: Shift date is over your membership-deadline: please contact Gym''s admin';\
             RETURN NULL;\

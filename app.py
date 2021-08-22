@@ -96,8 +96,8 @@ def prenotations():
     try:
         email = current_user.email
         user = get_user(session, email=email)
-        shifts = filter(lambda sh: sh.date >= datetime.date.today(), user.prenotations_shifts)
-        past_shifts = filter(lambda sh: sh.date <= datetime.date.today() and datetime.datetime.now().time() >= sh.h_end, user.prenotations_shifts)
+        shifts = filter(lambda sh: sh.date >= datetime.date.today(), user.shifts)
+        past_shifts = filter(lambda sh: sh.date <= datetime.date.today() and datetime.datetime.now().time() >= sh.ending, user.shifts)
         resp = make_response(render_template("prenotations.html", shifts=shifts, past_shifts=past_shifts))
         session.commit()
         return resp
@@ -191,8 +191,8 @@ def shifts():
             shifts = get_shift(session, date=date, room_id=room_id)
         shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
         if date == date.today():
-            shifts = filter(lambda sh: sh.h_start >= datetime.datetime.now().time(), shifts)
-        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda x: (x.h_start, x.room_id)), date_string=date_string, rooms=r))
+            shifts = filter(lambda sh: sh.ending >= datetime.datetime.now().time(), shifts)
+        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda x: (x.ending, x.room_id)), date_string=date_string, rooms=r))
         session.commit()
         return resp
     except:
