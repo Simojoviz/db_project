@@ -26,26 +26,24 @@
       {% endif %}
     {%endfor%}
     <h3 class="display-5 text-center">Past Courses</h3>
-    {% for c in courses %}
-      {% if today > c.ending %}
-        <div class="mb-2 ">
-          <button type="button" class="collapsible">{{c.name}}</button>
-          <div class="content">
-
-            <table class="table table-borderless">
-              <tr>
-                <th>Starting</th>
-                <th>Ending</th>
-              </tr>
-              <tr>
-                <td>{{course.starting}}</td>
-                <td>{{course.ending}}</td>
-              </tr>
-            </table>
+    <div class="row">
+      {% for c in courses %}
+        {% if today > c.ending %}
+        <div class="col-xs-12 col-md-3 mb-4">
+          <div class="card bg-light shadow pb-2" style="width: 90%; border: hidden; margin: auto; ">
+            <div class="card-body pt-4">
+              <h3 class="card-title">{{c.name}}</h3>
+              <p class="card-text">
+                Start: {{c.starting}} 
+                <br> 
+                End: {{c.ending}} 
+              </p>
+            </div>
           </div>
         </div>
-      {% endif %}
-    {% endfor %}
+        {% endif %}
+      {% endfor %}
+    </div>
   </div>
 
   <div class="mt-4">

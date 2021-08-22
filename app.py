@@ -265,8 +265,8 @@ def courses():
     try:
         courses = get_course(session, all=True)
         if current_user.is_authenticated and "Staff" in current_user.roles:
-            return render_template("courses.html", courses = courses, isStaff=True)
-        return render_template("courses.html", courses = courses, isStaff=False)
+            return render_template("courses.html", courses = courses, isStaff=True, today=datetime.date.today())
+        return render_template("courses.html", courses = courses, isStaff=False, today=datetime.date.today())
     except:
         session.rollback()
         raise
