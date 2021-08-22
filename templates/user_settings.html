@@ -12,14 +12,13 @@
     <br>
 
     IsTrainer:
-      {% if isStaff %}
+      {% if "Staff" in user.roles %}
         Is Staff
-        <form action="{{url_for('revoke_trainer_role_', user_id=user.id)}}">
+        <form action="#">
           <input type="submit" value="Revoke Trainer Role">
         </form>
       {% else %}
-        Not Staff
-        <form action="{{url_for('assign_trainer_role_', user_id=user.id)}}">
+        <form action="#">
           <input type="submit" value="Give Trainer Role">
         </form>
       {% endif %}

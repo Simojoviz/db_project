@@ -4,54 +4,52 @@
 <div class="container">
   <h1 class="display-3 text-center">Profile of {{us.fullname}}</h1>
   <div class="card bg-light shadow p-3 mb-5 mt-4 mx-auto w-75" style="border: hidden;">
-
-    {% if "Admin" not in current_user.roles %}
-      <h3>User Informations</h3>
-      <table class="table table-borderless ml-3">
-        <tr>
-          <td><strong>Fullname</strong></td>
-          <td>{{us.fullname}}</td>
-        </tr>
-        <tr>
-          <td><strong>Email</strong></td>
-          <td>{{us.email}}</td>
-        </tr>
-        <tr>
-          <td><strong>Telephone</strong></td>
-          <td>{{us.telephone}}</td>
-        </tr>
-        <tr>
-          <td><strong>Address</strong></td>
-          <td>{{us.address}}</td>
-        </tr>
-        <tr>
-          <td><strong>Membership Deadline</strong></td>
-          <td>{{us.membership_deadline}}</td>
-        </tr>
-        <tr>
-          <td><strong>Covid State</strong></td>
-          {% if us.covid_state == 0 %}
-            <td>Free</td>
-          {% elif us.covid_state == 1 %}
-            <td>You came into contact with a Client affected form Covid-19</td>
-          {% else %}
-            <td>You signaled you are affected from Covid-19</td>
-          {% endif %}
-        </tr>
-      </table>
-      <div class="row">
-        <div class="col-2">
-          <form action="{{url_for('upd_user')}}">
-            <input type="submit" value="Update User" class="btn btn-warning text-white">
-          </form>
-        </div>
-        <div class="col-2">
-          <form action="{{url_for('logout')}}">
-            <input type="submit", value="Logout" class="btn btn-info text-light">
-          </form>
-        </div>
+    <h3>User Informations</h3>
+    <table class="table table-borderless ml-3">
+      <tr>
+        <td><strong>Fullname</strong></td>
+        <td>{{us.fullname}}</td>
+      </tr>
+      <tr>
+        <td><strong>Email</strong></td>
+        <td>{{us.email}}</td>
+      </tr>
+      <tr>
+        <td><strong>Telephone</strong></td>
+        <td>{{us.telephone}}</td>
+      </tr>
+      <tr>
+        <td><strong>Address</strong></td>
+        <td>{{us.address}}</td>
+      </tr>
+      <tr>
+        <td><strong>Membership Deadline</strong></td>
+        <td>{{us.membership_deadline}}</td>
+      </tr>
+      <tr>
+        <td><strong>Covid State</strong></td>
+        {% if us.covid_state == 0 %}
+          <td>Free</td>
+        {% elif us.covid_state == 1 %}
+          <td>You came into contact with a Client affected form Covid-19</td>
+        {% else %}
+          <td>You signaled you are affected from Covid-19</td>
+        {% endif %}
+      </tr>
+    </table>
+    <div class="row">
+      <div class="col-2">
+        <form action="{{url_for('upd_user')}}">
+          <input type="submit" value="Update User" class="btn btn-warning text-white">
+        </form>
+      </div>
+      <div class="col-2">
+        <form action="{{url_for('logout')}}">
+          <input type="submit", value="Logout" class="btn btn-info text-light">
+        </form>
       </div>
     </div>
+  </div>
 
   <div class="row w-75 mx-auto">
     <div class="col text-center">
@@ -61,64 +59,36 @@
     </div>
     {% if "Staff" not in current_user.roles and "Admin" not in current_user.roles %}
       <div class="col text-center">
-        <form action="{{url_for('prenotations')}}">
-          <input type="submit", value="Prenotations" class="btn btn-info text-white" style="width: 120px;">
+        
+          <form action="{{url_for('courses_sign_up')}}">
+            <input type="submit", value="Courses" class="btn btn-info text-white" style="width: 120px;">
+          </form>
+      </div>
+    {% endif %}
+    {% if new_mess==True %}
+      <div class="col text-center">
+        <form action="{{url_for('messages')}}">
+          <input type="submit", value="Messages" class="btn btn-warning text-white" style="width: 120px;">
         </form>
       </div>
-      {% if "Staff" not in current_user.roles %}
-        <div class="col text-center">
-          
-            <form action="{{url_for('courses_sign_up')}}">
-              <input type="submit", value="Courses" class="btn btn-info text-white" style="width: 120px;">
-            </form>
-        </div>
-      {% endif %}
-      {% if new_mess==True %}
-        <div class="col text-center">
-          <form action="{{url_for('messages')}}">
-            <input type="submit", value="Messages" class="btn btn-warning text-white" style="width: 120px;">
-          </form>
-        </div>
-      {% else %}
-        <div class="col text-center">
-          <form action="{{url_for('messages')}}">
-            <input type="submit", value="Messages" class="btn btn-info text-white" style="width: 120px;">
-          </form>
-        </div>
-      {% endif %}
-      <div class="col text-center">
-        <input type="submit", onclick="covid_report()" value="Covid Report" class="btn btn-info text-white" style="width: 120px;">
-      </div>
-
     {% else %}
       <div class="col text-center">
-        <form action="{{url_for('users_info')}}">
-          <input type="submit", value="Users Info" class="btn btn-info text-white" style="width: 120px;">
+        <form action="{{url_for('messages')}}">
+          <input type="submit", value="Messages" class="btn btn-info text-white" style="width: 120px;">
         </form>
       </div>
+    {% endif %}
+    
+    {% if "Admin" in current_user.roles %}
       <div class="col text-center">
-        <form action="{{url_for('deadlines')}}">
-          <input type="submit", value="Deadlines" class="btn btn-info text-white" style="width: 120px;">
-        </form>
-      </div>
-      <div class="col text-center">
-        <form action="{{url_for('covid_states')}}">
-          <input type="submit", value="Covid States" class="btn btn-info text-white" style="width: 120px;">
-        </form>
-      </div>
-      <div class="col text-center">
-        <form action="{{url_for('settings')}}">
+      <form action="{{url_for('settings')}}">
           <input type="submit", value="Settings" class="btn btn-info text-white" style="width: 120px;">
         </form>
       </div>
-
-      <div class="col-2">
-        <form action="{{url_for('logout')}}">
-          <input type="submit", value="Logout" class="btn btn-info text-light">
-        </form>
+    {% else %}
+      <div class="col text-center">
+        <input type="submit", onclick="covid_report()" value="Covid Report" class="btn btn-info text-white" style="width: 120px;">
       </div>
-
-      
     {% endif %}
   </div>
 </div>

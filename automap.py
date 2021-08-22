@@ -24,7 +24,6 @@ class User(Base):
     prenotations_shifts = relationship("Shift", secondary="prenotations", back_populates="users_prenotated")
     courses = relationship("Course", secondary="course_signs_up", back_populates="users")
     roles = relationship("Role", secondary="user_roles", back_populates="users")
-    course_signs_up = relationship("CourseSignUp", viewonly=True)
 
 
     def __repr__(self):
@@ -51,7 +50,7 @@ class UserRoles(Base):
 class Trainer(Base):
     __tablename__ = 'trainers'
 
-    id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True, nullable=False)
+    id = Column(Integer, ForeignKey('users.id'), primary_key=True, nullable=False)
 
     user = relationship("User")
 
@@ -70,7 +69,7 @@ class Shift(Base):
     date = Column(Date, nullable=False)
     h_start = Column(Time, nullable=False)
     h_end = Column(Time, nullable=False)
-    room_id = Column(Integer, ForeignKey('rooms.id', ondelete='CASCADE'), nullable=False)
+    room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
     course_id = Column(Integer, ForeignKey('courses.id'))
 
     __table_args__ = (UniqueConstraint('date', 'h_start', 'room_id'),)
@@ -102,8 +101,8 @@ class Shift(Base):
 class Prenotation(Base):
     __tablename__ = 'prenotations'
 
-    client_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
-    shift_id = Column(Integer, ForeignKey('shifts.id', ondelete='CASCADE'), primary_key=True)
+    client_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    shift_id = Column(Integer, ForeignKey('shifts.id'), primary_key=True)
 
     user = relationship("User", viewonly=True)
     shift = relationship("Shift", viewonly=True)
@@ -148,13 +147,12 @@ class Course(Base):
     starting = Column(Date, nullable=False)
     ending = Column(Date, nullable=False)
     max_partecipants = Column(Integer, nullable=False)
-    instructor_id = Column(Integer, ForeignKey('trainers.id', ondelete='CASCADE'), nullable=False)
+    instructor_id = Column(Integer, ForeignKey('trainers.id'), nullable=False)
 
     trainer = relationship("Trainer", back_populates="courses")
     shifts = relationship("Shift", back_populates="course")
     users = relationship("User", secondary="course_signs_up", back_populates="courses")
     course_programs = relationship("CourseProgram", back_populates="course")
-    course_signs_up = relationship("CourseSignUp", viewonly=True)
 
     def __repr__(self):
         return "<Course(name='%s', starting='%d/%d/%d', ending='%d/%d/%d', max_partecipants='%d', trainer='%s')>" % (
@@ -172,8 +170,8 @@ class CourseProgram(Base):
     id = Column(Integer, primary_key=True)
     week_day = Column(String, nullable=False)
     turn_number = Column(Integer, nullable=False)
-    room_id = Column(Integer, ForeignKey('rooms.id', ondelete='CASCADE'), nullable=False)
-    course_id = Column(Integer, ForeignKey('courses.id', ondelete='CASCADE'), nullable=True)
+    room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
+    course_id = Column(Integer, ForeignKey('courses.id'), nullable=False)
 
     __table_args__ = (UniqueConstraint('course_id', 'week_day', 'turn_number', ),)
     
@@ -207,11 +205,8 @@ class Room(Base):
 class CourseSignUp(Base):
     __tablename__ = 'course_signs_up'
 
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
-    course_id = Column(Integer, ForeignKey('courses.id', ondelete='CASCADE'), primary_key=True)
-
-    course = relationship("Course", viewonly=True)
-    user = relationship("User", viewonly=True)
+    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    course_id = Column(Integer, ForeignKey('courses.id'), primary_key=True)
 
 class Message(Base):
     __tablename__ = 'messages'
