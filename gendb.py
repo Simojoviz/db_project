@@ -189,7 +189,7 @@ conn.execute(
     VOLATILE NOT LEAKPROOF\
     AS $BODY$\
     BEGIN\
-        IF NEW.membership_deadline < (SELECT CURRENT_DATE) THEN\
+        IF NEW.subscription < (SELECT CURRENT_DATE) THEN\
             RAISE EXCEPTION 'Cannot insert user: deadline is in the past';\
             RETURN NULL;\
         END IF;\
@@ -222,7 +222,7 @@ conn.execute(
     VOLATILE NOT LEAKPROOF\
     AS $BODY$\
     BEGIN\
-        IF NEW.membership_deadline < OLD.membership_deadline THEN\
+        IF NEW.subscription < OLD.subscription THEN\
             RAISE EXCEPTION 'Cannot insert user: deadline is not delayed';\
             RETURN NULL;\
         END IF;\
@@ -257,14 +257,7 @@ conn.execute(
     VOLATILE NOT LEAKPROOF\
     AS $BODY$\
     BEGIN\
-        IF NEW.user_id IN (\
-            SELECT user_id\
-            FROM prenotations\
-            WHERE shift_id = NEW.shift_id\
-        ) THEN\
-            RAISE EXCEPTION 'Cannot prenote: User cannot prenote twice for the same Shift';\
-            RETURN NULL;\
-        ELSIF (\
+        IF (\
             SELECT count(*)\
             FROM prenotations\
             WHERE shift_id = NEW.shift_id\
@@ -294,11 +287,11 @@ conn.execute(
             FROM shifts\
             WHERE id = NEW.shift_id\
         ) > (\
-            SELECT membership_deadline\
+            SELECT subscription\
             FROM users\
             WHERE id = NEW.user_id\
         ) THEN\
-            RAISE EXCEPTION 'Cannot prenote: Shift date is over your membership-deadline: please contact Gym''s admin';\
+            RAISE EXCEPTION 'Cannot prenote: Shift date is over your subription';\
             RETURN NULL;\
         END IF;\
         RETURN NEW;\
@@ -309,7 +302,7 @@ conn.execute(
         OWNER TO postgres;\
     \
     COMMENT ON FUNCTION public.no_invalid_prenotation()\
-        IS 'Raise an exception if - User cannot prenote twice for the same Shift, The shift is full, The shift is occupied by a course, Covid state is not safe, Shift is over user deadline ';\
+        IS 'Raise an exception if - The shift is full, The shift is occupied by a course, Covid state is not safe, Shift is over user subscription-deadline ';\
         \
     CREATE TRIGGER NoInvalidPrenotation\
     BEFORE INSERT OR UPDATE\
@@ -318,7 +311,7 @@ conn.execute(
     EXECUTE PROCEDURE public.no_invalid_prenotation();\
     \
     COMMENT ON TRIGGER NoInvalidPrenotation ON public.prenotations\
-        IS 'Raise an exception if - User cannot prenote twice for the same Shift, The shift is full, The shift is occupied by a course, Covid state is not safe, Shift is over user deadline ';"
+        IS 'Raise an exception if - The shift is full, The shift is occupied by a course, Covid state is not safe, Shift is over user subscription-deadline ';"
 )
 
 #___________COURSE SIGN UP___________

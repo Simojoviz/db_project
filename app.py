@@ -264,7 +264,7 @@ def courses():
     session = Session()
     try:
         courses = get_course(session, all=True)
-        if current_user.is_authenticated and "Staff" in current_user.roles:
+        if current_user.is_authenticated and "Trainer" in current_user.roles:
             return render_template("courses.html", courses = courses, isStaff=True)
         return render_template("courses.html", courses = courses, isStaff=False)
     except:
@@ -285,7 +285,7 @@ def course(course_name):
         if current_user.is_authenticated:
             u = get_user(session, id = current_user.id)
             cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
-            if "Staff" in current_user.roles:
+            if "Trainer" in current_user.roles:
                 return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=True)
             return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=False)
         return render_template("course.html", course = c, course_program = cp, shift = sh, isStaff=False)
@@ -315,7 +315,7 @@ def new_course():
     session = Session()
     try:
         if current_user.is_authenticated:
-            if "Staff" in current_user.roles:
+            if "Trainer" in current_user.roles:
                 r = get_room(session, all=True)
                 return render_template('add_course.html', rooms=r)
             return redirect(url_for('courses'))
@@ -606,7 +606,7 @@ def update_user_form():
                 flash("Password Mismatch!", category='error')
                 return redirect(url_for('upd_user'))
                 
-            if update_user(session, user = user, fullname = fullname, telephone = telephone, address = address, pwd1 = pwd1, pwd2 = pwd2):
+            if update_user(session, user_id = user.id, fullname = fullname, telephone = telephone, address = address, pwd1 = pwd1, pwd2 = pwd2):
                 session.commit()
                 return redirect(url_for('private')) 
             else:
@@ -855,7 +855,7 @@ def user_settings(user_id):
     try:
         if is_admin(current_user):
             user = get_user(session, id=user_id)
-            return make_response(render_template("user_settings.html", user=user, isStaff=(get_role(session,name="Staff") in user.roles)))
+            return make_response(render_template("user_settings.html", user=user, isStaff=(get_role(session,name="Trainer") in user.roles)))
         else:
             return redirect(url_for('private'))
     except:
@@ -948,10 +948,10 @@ def deadlines():
         if is_admin(current_user):
             users = get_user(session, all=True)
             users = filter(lambda us: us.email != 'admin@gmail.com', users)
-            valid =     filter(lambda us: us.membership_deadline >= datetime.date.today(), users)
-            not_valid = filter(lambda us: us.membership_deadline <  datetime.date.today(), users)
-            valid =     sorted(valid,     key=lambda us: us.membership_deadline)
-            not_valid = sorted(not_valid, key=lambda us: us.membership_deadline)
+            valid =     filter(lambda us: us.subscription >= datetime.date.today(), users)
+            not_valid = filter(lambda us: us.subscription <  datetime.date.today(), users)
+            valid =     sorted(valid,     key=lambda us: us.subscription)
+            not_valid = sorted(not_valid, key=lambda us: us.subscription)
             return make_response(render_template("deadlines.html", valid=valid, not_valid=not_valid))
         else:
             return redirect(url_for('private'))

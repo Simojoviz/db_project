@@ -20,7 +20,7 @@ class User(Base):
     fullname            = Column(String,  nullable=False)
     pwd                 = Column(String,  nullable=False)
     address             = Column(String,  nullable=False)
-    membership_deadline = Column(Date,    nullable=False)
+    subscription = Column(Date,    nullable=False)
     covid_state         = Column(Integer, nullable=False)
 
     shifts          =  relationship("Shift",  secondary="prenotations",    back_populates="users_prenoted")
@@ -62,7 +62,7 @@ class Role(Base):
     users = relationship("User", secondary="user_roles", back_populates="roles")
 
 
-class UserRoles(Base):
+class UserRole(Base):
 
     __tablename__ = 'user_roles'
 

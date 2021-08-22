@@ -23,10 +23,10 @@ def clamp(x, a, b):
 # ________________________________________ USER ________________________________________ 
 
 
-# - Given the email,     returns the User who has got that email if exixsts
-# - Given the id,        returns the User who has got that id if exists
-# - If all flag is true, returns all Users
-# Otherwise return None
+# - Given the email,         returns the User who has got that email if exixsts
+# - Given the id,            returns the User who has got that id if exists
+# - If all flag is set True, returns all Users
+# Otherwise returns None
 def get_user(session, id=None, email=None, all=False):
     if id is not None:
         return session.query(User).filter(User.id == id).one_or_none()
@@ -40,7 +40,7 @@ def get_user(session, id=None, email=None, all=False):
 
 # - Given a User adds it to the database
 # - Given fullname, email, address, telephone and password of a User adds it to the database
-# Returns True if it was added correctly, False if the element was already contained
+# Returns True if it was added correctly, False otherwise
 def add_user(session, fullname=None, email=None, address=None, telephone=None, pwd=None, user=None):
     if user is not None:
         exist = get_user(session, email=user.email)
@@ -51,66 +51,124 @@ def add_user(session, fullname=None, email=None, address=None, telephone=None, p
             session.flush()
             add_user_roles(session, user=user, role=get_role(session, name='Client'))
             return True
-    elif fullname is not None and\
-         email    is not None and\
-         address    is not None and\
+    elif fullname     is not None and\
+         email        is not None and\
+         address      is not None and\
          telephone    is not None and\
-         pwd      is not None:
-        return add_user(session, user=User(fullname=fullname, email=email, address=address, telephone=telephone, pwd=pwd, covid_state=0, membership_deadline=datetime.date.today()))
+         pwd          is not None:
+        return add_user(session, user=User(fullname=fullname, email=email, address=address, telephone=telephone, pwd=pwd, covid_state=0, subscription=datetime.date.today()))
     else:
         return False
 
     
 # Adds all Users from the list given to the Database
-# Returns True if all elements were added, False if at least one was already contained
+# Returns True if all elements were added, False otherwise
 def add_user_from_list(session, user_list):
     b = True
     for user in user_list:
         b &= add_user(session, user=user)
     return b
 
-def update_user(session, user=None, fullname=None, telephone=None, address=None, pwd1=None, pwd2=None):
+
+# Given user_id and at least one parameter update the value if has changed
+# - If covid_state changes,         notifies with a message
+# - If subscription changes, notifies with a message
+def update_user(session, user_id=None, fullname=None, telephone=None, address=None, pwd=None, covid_state=None, subscription=None ):
+    user = get_user(session, id=user_id)
     if user is not None:
-        if fullname != user.fullname:
+        if fullname is not None and fullname != user.fullname:
             user.fullname = fullname
-        if telephone != user.telephone:
+        if telephone is not None and telephone != user.telephone:
             user.telephone = telephone
-        if address != user.address:
+        if address is not None and address != user.address:
             user.address = address
-        if pwd1 != user.pwd:
-            user.pwd = pwd1
-        session.commit()
-        return True
-    return False
+        if pwd is not None and pwd != user.pwd:
+            user.pwd = pwd
+        if covid_state is not None and covid_state != user.covid_state:
+            user.covid_state = covid_state
+            admin_id = get_admin_id(session)
+            if covid_state == 0:
+                text = "Your covid state is now Free! You can prenote"
+            elif covid_state == 1:
+                text = "You came into contacts with a person affected form Covid19! You can't prenote. Please contact Gym's Admin"
+            else:
+                text = "You signaled you're positive for Covid19! You can't prenote. Please contact Gym's Admin"
+            add_message(session, sender_id=admin_id, addresser_id=user_id, text=text)
+        if subscription is not None and subscription != user.subscription:
+            user.subscription = subscription
+            admin_id = get_admin_id(session)
+            add_message(session, sender_id=admin_id, addresser_id=user_id, text="Your membership-deadline is update to " + subscription.strftime('%d/%m/%Y'))
 
-# Update User Covid State with given user_id and value
-def update_user_covid_state(session, user_id=None, value=None):
-    if user_id is not None and value is not None:
-        session.query(User).filter(User.id == user_id).update({User.covid_state:value}, synchronize_session = False)
-    admin_id = get_user(session, email="admin@gmail.com").id
-    if value == 0:
-        text = "Your covid state is now free! You can prenote"
-    elif value == 1:
-        text = "Your covid state signaled you came into contact with a person affected form Covid19! You can't prenote"
+
+# ________________________________________ TRAINER ________________________________________ 
+
+
+# - Given the email,         returns the Trainer who has got that email if exixsts
+# - Given the id,            returns the Trainer who has got that id if exists
+# - If all flag is set True, returns all Trainers
+# Otherwise returns None
+def get_trainer(session, id=None, email=None, all=False):
+    if id is not None:
+        return session.query(Trainer).filter(Trainer.id == id).one_or_none()
+    elif email is not None:
+        user = get_user(session, email=email)
+        if user is not None:
+            return get_trainer(session, id=user.id)
+        else:
+            return None
+    elif all is True:
+        return session.query(Trainer).all()
     else:
-        text = "Your covid state signaled you're affected from Covid19! You can't prenote"
-    add_message(session, sender_id=admin_id, addresser_id=user_id, text=text)
+        return None
 
-def update_user_deadline(session, user_id=None, date=None):
-    if user_id is not None and date is not None:
-        session.query(User).filter(User.id == user_id).update({User.membership_deadline:date}, synchronize_session = False)
-        admin_id = get_user(session, email="admin@gmail.com").id
-        add_message(session, sender_id=admin_id, addresser_id=user_id, text="Your membership-deadline is now " + date.strftime('%d/%m/%Y'))
+
+# - Given a User, if it's neither a User nor a Trainer, adds it to the database both as User and Trainer; returns True
+#                 if it's a User yet, but not a Trainer, adds it to the database as a Trainer; return True
+#                 if it's both a User and Trainer yet, returns False
+# - Given fullname, email and password of a User does the same as above
+# Returns True if it was added correctly, False otherwise
+# PN! Trainer is added both in Trainer table as in UserRole table
+def add_trainer(session, fullname=None, email=None, pwd=None, telephone=None, address=None, user=None):
+    if user is not None:
+        if get_user(session, email=user.email) is None:
+            # a) Neither a User nor a Trainer
+            add_user(session,user=user)
+            session.flush()
+            session.add(Trainer(id=user.id))
+            add_user_roles(session, user=user, role=get_role(session, name='Staff'))
+            return True
+        elif get_trainer(session, email=user.email) is None:
+            # b) User yet, but not a Trainer
+            session.add(Trainer(id=user.id))
+            add_user_roles(session, user=user, role=get_role(session, name='Staff'))
+            return True
+        else:  
+            # c) Both a User and a Trainer
+            return False
+    elif fullname is not None and\
+         email    is not None and\
+         pwd      is not None: 
+        return add_trainer(session, user=User(fullname=fullname, email=email, pwd=pwd, telephone=telephone, address=address, covid_state=0, subscription=datetime.date.today()+timedelta(days=365)))
+    else:
+        return False
 
     
+# Adds all Trainers from the user_list given to the Database
+# Returns True if all elements were added, False if at least one was already contained
+def add_trainer_from_list(session, user_list):
+    b = True
+    for us in user_list:
+        b &= add_trainer(session, user=us)
+    return b
+
 
 # ________________________________________ ROLE ________________________________________ 
 
 
-# - Given the name,     returns the Role who has got that name if exixsts
-# - Given the id,       returns the Role who has got that id if exists
-# - If all flag is true, returns all Roles
-# Otherwise return None
+# - Given the name,          returns the Role who has got that name if exixsts
+# - Given the id,            returns the Role who has got that id if exists
+# - If all flag is set True, returns all Roles
+# Otherwise returns None
 def get_role(session, id=None, name=None, all=False):
     if id is not None:
         return session.query(Role).filter(Role.id == id).one_or_none()
@@ -124,7 +182,7 @@ def get_role(session, id=None, name=None, all=False):
 
 # - Given a Role adds it to the database
 # - Given the name of a a Role adds it to the databases
-# Returns True if it was added correctly, False if the element was already contained
+# Returns True if it was added correctly, False otherwise
 def add_role(session, name=None, role=None):
     if role is not None:
         exist = get_role(session, name=role.name)
@@ -147,16 +205,17 @@ def add_role_from_list(session, role_list):
         b &= add_role(session, role=role)
     return b
 
+
 # ________________________________________ USER-ROLES ________________________________________
 
-# - Given a user_id and a role_id returns the correponding UserRoles if exists
-# - If all flag is true, returns all UserRoles
+# - Given a user_id and a role_id returns the correponding UserRole if exists
+# - If all flag is set True, returns all UserRole
 # Returns None otherwise
 def get_user_roles(session, user_id=None, role_id=None):
     if user_id is not None and role_id is not None:
-        return session.query(Role).join(UserRoles).filter(UserRoles.user_id == user_id, UserRoles.role_id == role_id).one_or_none()
+        return session.query(Role).join(UserRole).filter(UserRole.user_id == user_id, UserRole.role_id == role_id).one_or_none()
     elif user_id is not None:
-        return session.query(Role).join(UserRoles).filter(UserRoles.user_id == user_id).all()
+        return session.query(Role).join(UserRole).filter(UserRole.user_id == user_id).all()
     else:
         return None   
 
@@ -164,99 +223,53 @@ def get_user_roles(session, user_id=None, role_id=None):
 # - Given a Roles adds it to the Database
 # Returns True if it was added correctly
 # Raise an Exception if
-# - The User already had that Role (base exception)
+# - The User already had that Role (BaseException, violated p_key contraint)
 def add_user_roles(session, user=None, role=None):
 
     if user is not None and role is not None:
-        session.add(UserRoles(user_id=user.id, role_id=role.id))
+        session.add(UserRole(user_id=user.id, role_id=role.id))
         return True
 
-# Revoke role
-def revoke_user_roles(session, user=None, role=None):
+# Deletes the UserRole form the given User and Role
+# Raise an Error if the User doesn't have the Role
+def delete_user_roles(session, user=None, role=None):
     if role in user.roles:
-        session.query(UserRoles).filter(UserRoles.user_id==user.id, UserRoles.role_id==role.id).delete()
+        user_role = get_user_roles(session=user.id, role_id=role.id)
+        session.delete(user_role)
     else:
         raise Exception("Cannot revoke role: User " + user.fullname + " doesn't have " + role.name + " role")
 
+
+# Returns Admin's id
+def get_admin_id(session):
+    return get_user(session, email="admin@gmail.com").id
+
+
+# Assigns Trainer-Role to the user with the given user_id
+# Notifies the user with a message
 def assign_trainer_role(session, user_id=None):
     if user_id is not None:
         user = get_user(session, id=user_id)
-        add_trainer(session, user=get_user(session, id=user_id))
-        admin_id = get_user(session, email="admin@gmail.com").id
-        add_message(session, sender_id=admin_id, addresser_id=user_id, text="You're a trainer now! You can create your own course")
+        add_trainer(session, user=user)
+        admin_id = get_admin_id(session)
+        add_message(session, sender_id=admin_id, addresser_id=user_id, text="You're a Trainer now! You can create your own course")
 
+
+# Revokes Trainer-Role from the user with the given user_id
+# Delete all his Courses (and CoursePrograms and CourseSignsUp ON CASCADE)
+# PN! The role is revoked both from UserRoles and Trainer table
 def revoke_trainer_role(session, user_id=None):
     if user_id is not None:
         user = get_user(session, id=user_id)
-        trainer_role = get_role(session, name="Staff")
+        trainer_role = get_role(session, name="Trainer")
         trainer = get_trainer(session, id=user_id)
         for course in  trainer.courses:
-            # TODO fare chiamata a funzione 
-            session.delete(course)
+            delete_course(session, course=course)
         session.delete(get_trainer(session, id=user_id))
-        revoke_user_roles(session, user=user, role=trainer_role)
-        admin_id = get_user(session, email="admin@gmail.com").id
-        add_message(session, sender_id=admin_id, addresser_id=user_id, text="You're trainer role is revoked. All your courses are deleted")
+        delete_user_roles(session, user=user, role=trainer_role)
+        admin_id = get_admin_id(session)
+        add_message(session, sender_id=admin_id, addresser_id=user_id, text="You're Trainer role has been revoked. All your Courses have been deleted")
 
-# ________________________________________ TRAINER ________________________________________ 
-
-
-# - Given the email,     returns the Trainer who has got that email if exixsts
-# - Given the id,        returns the Trainer who has got that id if exists
-# - If all flag is true, returns all Trainers
-# Otherwise return None
-def get_trainer(session, id=None, email=None, all=False):
-    if id is not None:
-        return session.query(Trainer).filter(Trainer.id == id).one_or_none()
-    elif email is not None:
-        user = get_user(session, email=email)
-        if user is not None:
-            return get_trainer(session, id=user.id)
-        else:
-            return None
-    elif all is True:
-        return session.query(Trainer).all()
-    else:
-        return None
-
-# - Given a User, if it's neither a User nor a Trainer, adds it to the database both as User and Trainer; returns True
-#                 if it's a User yet, but not a Trainer, adds it to the database as a Trainer; return True
-#                 if it's both a User and Trainer yet, returns False
-# - Given fullname, email and password of a User does the same as above
-# Returns True if it was added correctly, False if the element was already contained
-#TODO controllare con con utilizzo di autoflush 
-def add_trainer(session, fullname=None, email=None, pwd=None, telephone=None, address=None, user=None):
-    if user is not None:
-        if get_user(session, email=user.email) is None:
-            # a) Neither a User nor a Trainer
-            add_user(session,user=user)
-            session.flush()
-            session.add(Trainer(id=user.id))
-            add_user_roles(session, user=user, role=get_role(session, name='Staff'))
-            return True
-        elif get_trainer(session, email=user.email) is None:
-            # b) User yet, but not a Trainer
-            session.add(Trainer(id=user.id))
-            add_user_roles(session, user=user, role=get_role(session, name='Staff'))
-            return True
-        else:  
-            # c) Both a User and a Trainer
-            return False
-    elif fullname is not None and\
-         email    is not None and\
-         pwd      is not None: 
-        return add_trainer(session, user=User(fullname=fullname, email=email, pwd=pwd, telephone=telephone, address=address, covid_state=0, membership_deadline=datetime.date.today()+timedelta(days=365)))
-    else:
-        return False
-
-    
-# Adds all Trainers from the user_list given to the Database
-# Returns True if all elements were added, False if at least one was already contained
-def add_trainer_from_list(session, user_list):
-    b = True
-    for us in user_list:
-        b &= add_trainer(session, user=us)
-    return b
 
 
 # ________________________________________ SHIFT ________________________________________ 
@@ -264,8 +277,8 @@ def add_trainer_from_list(session, user_list):
 
 # - Given a combination of date, starting hour, course_id and room_id returns the corresponding Shift or Shifts
 # - Given a prenotation returns the corresponding Shift
-# - If all flag is True, returns all Shifts
-# Otherwise return None
+# - If all flag is set True, returns all Shifts
+# Otherwise returns None
 #TODO eliminare casi inutili e magari suddividere in più funzioni
 def get_shift(session, date=None, start=None, prenotation=None, id=None, course_id=None, room_id=None, all=False):
 
@@ -308,7 +321,6 @@ def get_shift(session, date=None, start=None, prenotation=None, id=None, course_
 
     elif id is not None:
         return session.query(Shift).filter(Shift.id == id).one_or_none()
-
     elif prenotation is not None:
         return prenotation.shift 
     elif all is True:
@@ -317,9 +329,10 @@ def get_shift(session, date=None, start=None, prenotation=None, id=None, course_
     else:
         return None
 
-# Generate a list of all shifts for a date given the date and the room
+# Generates a list of all shifts for the fibem date and room_id
 def generate_room_daily_shifts(session, date=None, room_id=None):
     if date is not None and room_id is not None:
+
         day_name = calendar.day_name[date.weekday()]
         weeksetting = get_week_setting(session, day_name)
         hour_start = weeksetting.starting
@@ -348,9 +361,11 @@ def generate_room_daily_shifts(session, date=None, room_id=None):
 
         return l
 
+
 # - Given the starting date and the number of days generate the shifts for all days in time-interval
 # - Given the starting date and the ending date    generate the shifts for all days in time-interval
-# If there were previous plans which are changed, the previous is removed
+# If there were previous plans which are changed, the previous shifts are removed
+# If a Shift is removed, noififies User who made a Prenotations for that shift (removed ON CASCADE) wiht a message
 def plan_shifts(session, starting, n=1, ending=None, room_id=None, all_room=False):
     day = starting + timedelta(days=0)
     if ending is None:
@@ -370,10 +385,10 @@ def plan_shifts(session, starting, n=1, ending=None, room_id=None, all_room=Fals
                 admin_id = get_user(session, email="admin@gmail.com").id
                 for pr in prenotations:
                     add_message(session, sender_id=admin_id, addresser_id=pr.user_id,
-                    text = "Your prenotation on " + pr.shift.date.strftime('%d/%m/%Y') + " in " + pr.shift.room.name +  " from " + pr.shift.starting.strftime('%H:%M') + " to " + pr.shift.ending.strftime('%H:%M') +\
-                           " has been deleted due to the replan of week setting")
-                    session.query(Prenotation).filter(Prenotation.shift_id==pr.shift_id, Prenotation.user_id==pr.user_id).delete()
-            session.query(Shift).where(Shift.date==day, Shift.room_id==room_id).delete()
+                    text = "Your prenotation on " + pr.shift.date.strftime('%d/%m/%Y') +\
+                           " in " + pr.shift.room.name +  " from " + pr.shift.starting.strftime('%H:%M') +\
+                           " to " + pr.shift.ending.strftime('%H:%M') + " has been deleted due to the replan of week setting")
+                session.delete(shift)
             if room_id is not None:
                 l = generate_room_daily_shifts(session, datetime.date(year=day.year, month=day.month, day=day.day), room_id=room_id)
                 add_shift_from_list(session, l)
@@ -383,12 +398,14 @@ def plan_shifts(session, starting, n=1, ending=None, room_id=None, all_room=Fals
                     add_shift_from_list(session, l)
         day = day + timedelta(days=1)
 
-    session.query(WeekSetting).update({WeekSetting.changed:False}, synchronize_session = False)
+    wss = get_week_setting(session, all=True)
+    for ws in wss:
+        ws.changed = False
 
 
 # - Given a Shift adds it to the database
 # - Given a date, starting and ending hour, the room's id and course's id of a Shift adds it to the database
-# Returns True if it was added correctly, False if the element was already contained
+# Returns True if it was added correctly, False otherwise
 def add_shift(session, date=None, start=None, end=None, room_id=None, course_id=None, shift=None):
     if shift is not None:
         exist = get_shift(session, date=shift.date, start=shift.starting, room_id=shift.room_id)
@@ -423,7 +440,7 @@ def add_shift_from_list(session, shift_list):
 # - Given a user_id                returns all his prenotations
 # - Given a shift_id               returns all prenotations for that Shift
 # - Given a date                   returns all prenotations for that day
-# - If all flag is true,           returns all Prenotations
+# - If all flag is set True,       returns all Prenotations
 # Returns None otherwise
 def get_prenotation(session, user_id=None, shift_id=None, date=None, all=False):
     if user_id is not None and shift_id is not None:
@@ -445,8 +462,10 @@ def get_prenotation(session, user_id=None, shift_id=None, date=None, all=False):
 # Raise an Exception if
 # - shift is occupied by a course (trigger)
 # - maximum capacity has already been reached (trigger)
-# - the user is already in that turn (trigger)
-# - the user has reached week-limit hours (app)
+# - User is already in that turn (BaseException, violated p_key contraint)
+# - User has reached week-limit hours (app)
+# - User has an unsafe covid-state (trigger)
+# - User subscription has expired (trigger)
 def add_prenotation(session, user=None, shift=None, prenotation=None):
 
     # Returns the number of own-training-week-prenotations for the  given the user and a date
@@ -490,6 +509,7 @@ def add_prenotation_from_list(session, prenotation_list):
         b &= add_prenotation(session, prenotation=prenotation)
     return b
 
+# Deletes the prenotation given the Shift, the User or both
 def delete_prenotation(session, shift=None, user=None):
     if shift is not None and user is not None:
         p = get_prenotation(session, user_id = user.id, shift_id = shift.id)
@@ -511,7 +531,7 @@ def delete_prenotation(session, shift=None, user=None):
 
 # Returns the WeekSetting with the corresponding day_name
 # Returns None if the day_name is not valid
-# If all flag is true, returns all WeekSettings
+# If all flag is set True, returns all WeekSettings
 
 def get_week_setting(session, day_name=None, all=False):
     if day_name is not None:
@@ -521,7 +541,7 @@ def get_week_setting(session, day_name=None, all=False):
     else:
         return None
 
-# Update the WeekSetting with the given parameters
+# Updates the WeekSetting with the given parameters
 def update_weekend_setting(session, day_name, starting=None, ending=None, length=None):
     
     any_change = False
@@ -556,7 +576,7 @@ def update_weekend_setting(session, day_name, starting=None, ending=None, length
 
 # - Given a WeekSetting add it to the Database
 # - Given WeekSetting's day_name, starting, ending and length  add it to the Database
-# Returns True if it was added correctly, False if the element was already contained
+# Returns True if it was added correctly, False otherwise
 def add_week_setting(session, day_name=None, starting=None, ending=None, length=None, week_setting=None):
     if week_setting is not None:
         exist = get_week_setting(session, day_name=week_setting.day_name)
@@ -579,7 +599,7 @@ def add_week_setting(session, day_name=None, starting=None, ending=None, length=
 # ________________________________________ GLOBAL SETTING ________________________________________
 
 # Returns the GlobalSetting with the corresponding name
-# If all flag is true, returns all GlobalSettings
+# If all flag is set True, returns all GlobalSettings
 # Raise an exception if the name is not valid
 
 def get_global_setting(session, name=None, all=False):
@@ -599,7 +619,7 @@ def get_global_setting(session, name=None, all=False):
 
 # - Given a GlobalSetting add it to the Database
 # - Given GlobalSetting's name and value add it to the Database
-# Returns True if it was added correctly, False if the element was already contained
+# Returns True if it was added correctly, False otherwise
 def add_global_setting(session, name=None, value=None,  global_setting=None):
     if global_setting is not None:
         try:
@@ -615,7 +635,7 @@ def add_global_setting(session, name=None, value=None,  global_setting=None):
         return False
 
 
-# Update the GlobalSetting name with the given parameters
+# Updates the GlobalSetting name with the given parameters
 # Return true if the changes are done, false otherwisw
 # Raise an exception if the name is not valid
 def update_global_setting(session, name=None, value=None):
@@ -630,7 +650,7 @@ def update_global_setting(session, name=None, value=None):
 
 # - Given the id,        returns the Room who has got that id if exixsts
 # - Given the name,      returns the Room who has got that name if exists
-# - If all flag is true, returns all Rooms
+# - If all flag is set True, returns all Rooms
 # Otherwise returns None
 def get_room(session, id=None, name=None, all=False):
     if id is not None:
@@ -645,7 +665,7 @@ def get_room(session, id=None, name=None, all=False):
 
 # - Given a Room adds it to the database
 # - Given name and max_capacity of a Room adds it to the database
-# Returns True if it was added correctly, False if the element was already contained
+# Returns True if it was added correctly, False otherwise
 def add_room(session, name=None, max_capacity=None, room=None):
     if room is not None:
         exist = get_room(session, name=room.name)
@@ -668,7 +688,7 @@ def add_room_from_list(session, rooms_list):
         b &= add_room(session, room=room)
     return b
 
-# Update Room Max Capacity with the given parameters
+# Updates Room Max Capacity with the given parameters
 # Return true if the changes are done, false otherwise
 # Raise an exception if the name is not valid
 def update_room_max_capacity(session, name=None, mc=None):
@@ -699,11 +719,11 @@ def update_room_max_capacity(session, name=None, mc=None):
     else:
         return False
 
-# Delete a room. Notify all users that had a course or a prenotation in that room
+# Deletes a room. Notifies all users that had a course or a prenotation in that room
 def delete_room(session, room_id=None):
     if room_id is not None:
         room = get_room(session, id=room_id)
-        # Notify for courses
+        # Notifies for courses
         courses = get_course(session, all=True)
         to_notify = []
         for course in courses:
@@ -718,7 +738,7 @@ def delete_room(session, room_id=None):
             for user in course.users:
                 add_message(session, sender_id=admin_id, addresser_id=user.id, text=room.name + " has been deleted: your " + course.name + " program could have changed, please check on course's page")
             add_message(session, sender_id=admin_id, addresser_id=course.instructor_id, text=room.name + " has been deleted: please ridefine " + course.name + " program")
-        # Notify for prenotations
+        # Notifies for prenotations
         shifts = get_shift(session, room_id=room_id)
         for shift in shifts:
             prenotations = shift.prenotations
@@ -735,8 +755,8 @@ def delete_room(session, room_id=None):
 
 # - Given the id,        returns the Course who has got that id if exixsts
 # - Given the name,      returns the Course who has got that name if exists
-# - If all flag is true, returns all Courses
-# Otherwise return None
+# - If all flag is set True, returns all Courses
+# Otherwise returns None
 def get_course(session, id=None, name=None, all=False):
     if id is not None:
         return session.query(Course).filter(Course.id == id).one_or_none()
@@ -786,7 +806,7 @@ def plan_course(session, name):
             if(shift.course_id != None):
                 raise Exception("Course cannot be planned: it overlaps with an other course!")
             else:
-                # Delete all Prenotation in that Shift
+                # Deletes all Prenotation in that Shift
                 prenotations = session.query(Prenotation).where(Prenotation.shift_id==shift.id)
                 for prenotation in prenotations:
                     add_message(session, sender_id=get_user(session, email='admin@gmail.com').id, addresser_id=prenotation.user_id,
@@ -802,7 +822,7 @@ def plan_course(session, name):
 
 # - Given a Course adds it to the database
 # - Given name, starting and ending date, max_partecipants and the instructor_id of a Course adds it to the database
-# Returns True if it was added correctly, False if the element was already contained
+# Returns True if it was added correctly, False otherwise
 def add_course(session, name=None, starting=None, ending=None, max_partecipants=None, instructor_id=None, course=None):
     if course is not None:
         exist = get_course(session, name=course.name)
@@ -828,7 +848,7 @@ def add_course_from_list(session, courses_list):
         b &= add_course(session, course=course)
     return b
 
-# Delete the specified course or delete all the courses
+# Deletes the specified course or delete all the courses
 # Returns True if all elements were deleted, False otherwise
 def delete_course(session, course=None, all=False):
     if course is not None:
@@ -853,8 +873,8 @@ def delete_course(session, course=None, all=False):
 
 # - Given the id,          returns the CourseProgram who has got that id if exixsts
 # - Given the course_id,   returns all his CoursePrograms
-# - If all flag is true,   returns all CoursePrograms
-# Otherwise return None
+# - If all flag is set True,   returns all CoursePrograms
+# Otherwise returns None
 def get_course_program(session, id=None, course_id=None, week_day=None, turn_number=None, all=False):
     if id is not None:
         return session.query(CourseProgram).filter(CourseProgram.id == id).one_or_none()
@@ -870,7 +890,7 @@ def get_course_program(session, id=None, course_id=None, week_day=None, turn_num
 
 # - Given a CourseProgram adds it to the database
 # - Given week_day, turn_number, room_id and cours_id of a CourseProgram adds it to the database
-# Returns True if it was added correctly, False if the element was already contained
+# Returns True if it was added correctly, False otherwise
 def add_course_program(session, week_day=None, turn_number=None, room_id=None, course_id=None, course_program=None,):
     if course_program is not None:
         exist = get_course_program(session, course_id=course_program.course_id, week_day=course_program.week_day, turn_number=course_program.turn_number)
@@ -895,7 +915,7 @@ def add_course_program_from_list(session, course_programs_list):
         b &= add_course_program(session, course_program=course_program)
     return b
 
-# Delete course programs of the given course or delete all the course programs
+# Deletes course programs of the given course or delete all the course programs
 # Returns True if all elements were deleted, False otherwise
 def delete_course_program(session, course=None, all=False):
     if course is not None:
@@ -915,7 +935,7 @@ def delete_course_program(session, course=None, all=False):
 
 # - Given a UserID       returns all his course signs up
 # - Given a CourseId     returns all his course signs up
-# - If all flag is true, returns all CourseSignsUp
+# - If all flag is set True, returns all CourseSignsUp
 # Returns None otherwise
 def get_course_sign_up(session, user_id=None, course_id=None, all=False):
     if user_id is not None and course_id is not None:
@@ -961,7 +981,7 @@ def add_course_sign_up_from_list(session, course_sign_up_list):
         b &= add_course_sign_up(session, course_sign_up=course_sign_up)
     return b
 
-# Delete course sign up of the given user or course, or all the course programs
+# Deletes course sign up of the given user or course, or all the course programs
 # Returns True if all elements were deleted, False otherwise
 def delete_course_sign_up(session, course=None, user=None, all=False):
     if course is not None and user is not None:
@@ -991,7 +1011,7 @@ def delete_course_sign_up(session, course=None, user=None, all=False):
 # - Given a UserID both of the sender and the addresser returns all his Messages if the user is the same
 # - Given a UserID of the sender returns all his Messages
 # - Given a UserID of the addresser returns all his Messages
-# - If all flag is true, returns all Messages
+# - If all flag is set True, returns all Messages
 # Returns None otherwise
 def get_message(session, sender=None, addresser=None, all=False):
     if sender is not None and addresser is not None:
@@ -1093,7 +1113,7 @@ def covid_report_messages(session, user_id):
                     text= "One person in your course " + course.name + " is affected from COVID19"
         )
     # Trainer
-    if(get_role(session, name="Staff")) in user.roles:
+    if(get_role(session, name="Trainer")) in user.roles:
         trainer = get_trainer(session, email=user.email)
         for course in trainer.courses:
             course_signs_up = get_course_sign_up(session, course_id=course.id)
