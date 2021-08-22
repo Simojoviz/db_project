@@ -1,6 +1,33 @@
 {% extends 'base.html' %}
 
 {% block pagebody %}
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+.collapsible {
+  background-color: rgb(13, 202, 240);
+  color: white;
+  cursor: pointer;
+  padding: 18px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 15px;
+}
+
+.active, .collapsible:hover {
+  background-color: rgb(13, 202, 240);
+}
+
+.content {
+  padding: 0 18px;
+  display: none;
+  overflow: hidden;
+  background-color: #f1f1f1;
+}
+</style>
+
 <div style="background-image: url('static/prenotations.jpg'); width: 100%; height: 400px; background-size: cover; background-repeat: no-repeat; background-position: center center;"></div>
 <div class="py-4 bg-info text-white text-center">
   <h1 class="display-3">Book a Shift</h1>
@@ -28,7 +55,6 @@
       </div>
     </form>
   </div>
-  
 
   <div class=" w-75 mx-auto mt-4">
     <table class="table table-hover">
@@ -37,6 +63,7 @@
         <th>Start</th>
         <th>End</th>
         <th>Room</th>
+        <th>Capcity</th>
         <th>Booking</th>
       </tr>
 
@@ -48,13 +75,23 @@
         <td>{{s.room.name}}</td>
         <td>{{s.room.max_capacity - s.prenotations|length}}/{{s.room.max_capacity}}</td>
         <td>
-          {% if s.room.max_capacity - s.prenotations|length > 0 %}
-            <form action= "{{ url_for('prenotation', shift = s.id) }}">
-              <input type="submit", value="Book" class="btn btn-success btn-sm">
-            </form>
+          {% if isAdmin %}
+            <button type="button" class="collapsible">Users</button>
+            <div class="content">
+              {% for u in s.users_prenotated %}
+                {{u.fullname}} <br>
+              {% endfor %}
+            </div>
           {% else %}
-            <input type="submit", value="Full" class="btn btn-success btn-sm">
+            {% if s.room.max_capacity - s.prenotations|length > 0 %}
+              <form action= "{{ url_for('prenotation', shift = s.id) }}">
+                <input type="submit", value="Book" class="btn btn-success btn-sm">
+              </form>
+            {% else %}
+              <input type="submit", value="Full" class="btn btn-success btn-sm">
+            {% endif %}
           {% endif %}
+          
         </td>
       </tr>
       {% endfor %}
@@ -63,4 +100,22 @@
 </div>
 </div>
 <div class="py-5 bg-info text-white text-center"></div>
+
+<script>
+  var coll = document.getElementsByClassName("collapsible");
+  var i;
+  
+  for (i = 0; i < coll.length; i++) {
+    coll[i].addEventListener("click", function() {
+      this.classList.toggle("active");
+      var content = this.nextElementSibling;
+      if (content.style.display === "block") {
+        content.style.display = "none";
+      } else {
+        content.style.display = "block";
+      }
+    });
+  }
+</script>
+
 {% endblock %}

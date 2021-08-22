@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block pagebody %}
+<div class="container">
+  <div class="col text-center">
+  
+    <h3> Free </h3>
+    {% for us in cs0 %}
+        {{us.fullname}} 
+        <form action="{{url_for('user_settings', user_id = us.id)}}">
+          <input type="submit" value="Update" class="btn btn-danger my-2">
+        </form>
+    {% endfor %}
+
+    <h3> Had Contacts </h3>
+    {% for us in cs1 %}
+        {{us.fullname}} 
+        <form action="{{url_for('user_settings', user_id = us.id)}}">
+          <input type="submit" value="Update" class="btn btn-danger my-2">
+        </form>
+    {% endfor %}
+
+    <h3> Positive </h3>
+    {% for us in cs2 %}
+        {{us.fullname}} 
+        <form action="{{url_for('user_settings', user_id = us.id)}}">
+          <input type="submit" value="Update" class="btn btn-danger my-2">
+        </form>
+    {% endfor %}
+    
+  </div>
+
+  <div class="mt-4">
+    <form action="{{url_for('private')}}">
+      <input type="submit", value="Back" class="btn btn-info text-light">
+    </form>
+  </div>
+   
+</div>
+{% endblock %}
