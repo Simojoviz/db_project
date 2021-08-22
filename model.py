@@ -147,6 +147,7 @@ def add_role_from_list(session, role_list):
         b &= add_role(session, role=role)
     return b
 
+
 # ________________________________________ USER-ROLES ________________________________________
 
 # - Given a user_id and a role_id returns the correponding UserRoles if exists
@@ -163,13 +164,40 @@ def get_user_roles(session, user_id=None, role_id=None):
 # - Given a User and a Role adds the corresponding User-Roles to the Database
 # - Given a Roles adds it to the Database
 # Returns True if it was added correctly
-# Raise an Exception if
-# - The User already had that Role (trigger)
+# (Base exception if already has: privary key contraint)
 def add_user_roles(session, user=None, role=None):
-
     if user is not None and role is not None:
         session.add(UserRoles(user_id=user.id, role_id=role.id))
         return True
+
+# Revoke role
+def revoke_user_roles(session, user=None, role=None):
+    if role in user.roles:
+        session.query(UserRoles).filter(UserRoles.user_id==user.id, UserRoles.role_id==role.id).delete()
+    else:
+        raise Exception("Cannot revoke role: User " + user.fullname + " doesn't have " + role.name + " role")
+
+def assign_trainer_role(session, user_id=None):
+    if user_id is not None:
+        user = get_user(session, id=user_id)
+        add_trainer(session, user=get_user(session, id=user_id))
+        admin_id = get_user(session, email="admin@gmail.com").id
+        add_message(session, sender_id=admin_id, addresser_id=user_id, text="You're a trainer now! You can create your own course")
+
+def revoke_trainer_role(session, user_id=None):
+    if user_id is not None:
+        user = get_user(session, id=user_id)
+        trainer_role = get_role(session, name="Staff")
+        trainer = get_trainer(session, id=user_id)
+        for course in  trainer.courses:
+            # TODO fare chiamata a funzione 
+            session.delete(course)
+        session.delete(get_trainer(session, id=user_id))
+        revoke_user_roles(session, user=user, role=trainer_role)
+        admin_id = get_user(session, email="admin@gmail.com").id
+        add_message(session, sender_id=admin_id, addresser_id=user_id, text="You're trainer role is revoked. All your courses are deleted")
+    
+
 
 # ________________________________________ TRAINER ________________________________________ 
 
@@ -810,8 +838,8 @@ def delete_course(session, course=None, all=False):
         admin_id = get_user(session, email='admin@gmail.com').id
         for user in users:
             add_message(session, sender_id=admin_id, addresser_id=user.id, text= "The course " + c.name + " you signed-up has been deleted from " +  c.trainer.user.fullname)
+        #delete_course_sign_up(session, course = c)
         delete_course_program(session, course = c)
-        delete_course_sign_up(session, course = c)
         session.delete(c)
         return True
     elif all == True:
@@ -872,7 +900,7 @@ def add_course_program_from_list(session, course_programs_list):
 # Returns True if all elements were deleted, False otherwise
 def delete_course_program(session, course=None, all=False):
     if course is not None:
-        cp = get_course_program(session, course_id=course.id)
+        cp = course.course_programs
         for i in cp:
             session.delete(i)
         return True
@@ -941,9 +969,13 @@ def delete_course_sign_up(session, course=None, user=None, all=False):
         cs = get_course_sign_up(session, user_id = user.id, course_id = course.id)
         session.delete(cs)
     elif course is not None:
+        """
         cs = get_course_sign_up(session, course_id=course.id)
         for i in cs:
-            session.delete(i)
+            session.delete(i)"""
+        for i in session.query(CourseSignUp).filter(CourseSignUp.course_id==course.id).all():
+            print("AAAA")
+        session.query(CourseSignUp).filter(CourseSignUp.course_id==course.id).delete()
         return True
     elif user is not None:
         cs = get_course_sign_up(session, user_id=user.id)

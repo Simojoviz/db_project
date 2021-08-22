@@ -1,4 +1,6 @@
 from flask import *
+from sqlalchemy.sql.base import SchemaVisitor
+from sqlalchemy.sql.functions import user
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -831,15 +833,14 @@ def users_settings():
     finally:
         session.close()
 
-@app.route('/admin/settings/user_settings', methods=['GET', 'POST'])
-def user_settings():
+@app.route('/admin/settings/users_settings_form', methods=['GET', 'POST'])
+def users_settings_form():
     if request.method == 'POST':
         session = Session()
         try:
             if is_admin(current_user):
                 user_id = request.form['user']
-                user = get_user(session, id=user_id)
-                return make_response(render_template("user_settings.html", user=user))
+                return redirect(url_for('user_settings', user_id=user_id))
             else:
                 return redirect(url_for('private'))
             
@@ -849,20 +850,36 @@ def user_settings():
         finally:
             session.close()
 
-@app.route('/admin/settings/reset_covid_state/<user_id>')
+@app.route('/admin/settings/user_settings/<user_id>')
+def user_settings(user_id):
+    session = Session()
+    try:
+        if is_admin(current_user):
+            user = get_user(session, id=user_id)      
+            return make_response(render_template("user_settings.html", user=user, isStaff=(get_role(session, name='Staff') in user.roles)))
+        else:
+            return redirect(url_for('private'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+        
+
+@app.route('/admin/settings/user_settings/reset_covid_state/<user_id>')
 def reset_covid_state(user_id):
     session = Session()
     try:
         update_user_covid_state(session=session, user_id=user_id, value=0)
         session.commit()
-        return redirect(url_for('users_settings'))            
+        return redirect(url_for('user_settings', user_id=user_id))         
     except:
         session.rollback()
         raise
     finally:
         session.close()
 
-@app.route('/admin/settings/new_deadline/<user_id>', methods=["POST"])
+@app.route('/admin/settings/user_settings/new_deadline/<user_id>', methods=["POST"])
 def new_deadline(user_id):
     if request.method == 'POST':
         session = Session()
@@ -875,9 +892,35 @@ def new_deadline(user_id):
             date = datetime.datetime.strptime(date_str, '%Y/%m/%d')
             update_user_deadline(session, user_id=user_id, date=date)
             session.commit()
-            return redirect(url_for('users_settings')) 
+            return redirect(url_for('user_settings', user_id=user_id))
         except:
             session.rollback()
             raise
         finally:
             session.close()
+
+@app.route('/admin/settings/user_settings/assign_trainer_role/<user_id>')
+def assign_trainer_role_(user_id):
+    session = Session()
+    try:
+        assign_trainer_role(session, user_id=user_id)
+        session.commit()
+        return redirect(url_for('user_settings', user_id=user_id))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/admin/settings/user_settings/revoke_trainer_role/<user_id>')
+def revoke_trainer_role_(user_id):
+    session = Session()
+    try:
+        revoke_trainer_role(session, user_id=user_id)
+        session.commit()
+        return redirect(url_for('user_settings', user_id=user_id))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
