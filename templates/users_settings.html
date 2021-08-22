@@ -2,26 +2,28 @@
 
 {% block pagebody %}
 <div class="container">
-  <div class="col text-center">
-  
-
-  <div>
-    <form action="{{url_for('user_settings')}}" method="POST">
-      <div class="row w-75 mx-auto mt-4">
-        <div class="col text-center">
-          <strong>Select User</strong>
-          <select id="user" name="user">
-          {% for u in users %}
-            <option value="{{ u.id }}"> {{ u.fullname }} </option>
-          {% endfor %}
-          </select>
-        </div>
-        <div class="col text-center">
-          <input type="submit", value="Next" class="btn btn-info text-light" >
+  <h1 class="display-3 text-center">Users</h1>
+  <div class="row">
+    {% for i in users %}
+      <div class="col-xs-12 col-md-3 my-4">
+        <div class="card bg-light shadow" style="width: 90%; border: hidden; margin: auto;">
+          <div class="card-body pt-4">
+            <h3 class="card-title">{{ i.fullname }}</h3>
+            <form action="{{url_for('user_settings')}}" method="POST">
+              <input type="hidden" value="{{ i.id }}" name="user">
+              <input type="submit", value="See User" class="btn btn-info text-light" >
+            </form>
+          </div>
         </div>
       </div>
+    {% endfor %}
+  </div>
+
+  <div class="my-4">
+    <form action= "{{ url_for('private')}}">
+      <input type="submit" value="Back" class="btn btn-info text-white">
     </form>
   </div>
-   
+
 </div>
 {% endblock %}
