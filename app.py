@@ -194,7 +194,7 @@ def shifts():
         shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
         if date == date.today():
             shifts = filter(lambda sh: sh.h_start >= datetime.datetime.now().time(), shifts)
-        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda x: (x.h_start, x.room_id)), date_string=date_string, rooms=r))
+        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda x: (x.h_start, x.room_id)), date_string=date_string, rooms=r, isAdmin=is_admin(current_user)))
         session.commit()
         return resp
     except:
