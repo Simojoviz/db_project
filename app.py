@@ -924,3 +924,59 @@ def revoke_trainer_role_(user_id):
         raise
     finally:
         session.close()
+
+@app.route('/admin/users_info')
+@login_required
+def users_info():
+    session = Session()
+    try:
+        if is_admin(current_user):
+            users = get_user(session, all=True)
+            users = filter(lambda us: us.email != 'admin@gmail.com', users)
+            return make_response(render_template("users_info.html", users=users))
+        else:
+            return redirect(url_for('private'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/admin/deadlines')
+@login_required
+def deadlines():
+    session = Session()
+    try:
+        if is_admin(current_user):
+            users = get_user(session, all=True)
+            users = filter(lambda us: us.email != 'admin@gmail.com', users)
+            valid =     filter(lambda us: us.membership_deadline >= datetime.date.today(), users)
+            not_valid = filter(lambda us: us.membership_deadline <  datetime.date.today(), users)
+            valid =     sorted(valid,     key=lambda us: us.membership_deadline)
+            not_valid = sorted(not_valid, key=lambda us: us.membership_deadline)
+            return make_response(render_template("deadlines.html", valid=valid, not_valid=not_valid))
+        else:
+            return redirect(url_for('private'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/admin/covid_states')
+@login_required
+def covid_states():
+    session = Session()
+    try:
+        if is_admin(current_user):
+            cs0 = filter(lambda us: us.covid_state == 0, filter(lambda us: us.email != 'admin@gmail.com',  get_user(session, all=True)))
+            cs1 = filter(lambda us: us.covid_state == 1, filter(lambda us: us.email != 'admin@gmail.com',  get_user(session, all=True)))
+            cs2 = filter(lambda us: us.covid_state == 2, filter(lambda us: us.email != 'admin@gmail.com',  get_user(session, all=True)))
+            return make_response(render_template("covid_states.html", cs0=cs0, cs1=cs1, cs2=cs2))
+        else:
+            return redirect(url_for('private'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
