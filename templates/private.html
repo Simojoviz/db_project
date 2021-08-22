@@ -2,7 +2,7 @@
 
 {% block pagebody %}
 <div class="container">
-  <h1 class="text-center">Profile of {{us.fullname}}</h1>
+  <h1 class="display-3 text-center">Profile of {{us.fullname}}</h1>
   <div class="card bg-light shadow p-3 mb-5 mt-4 mx-auto w-75" style="border: hidden;">
     <h3>User Informations</h3>
     <table class="table table-borderless ml-3">
@@ -21,6 +21,20 @@
       <tr>
         <td><strong>Address</strong></td>
         <td>{{us.address}}</td>
+      </tr>
+      <tr>
+        <td><strong>Membership Deadline</strong></td>
+        <td>{{us.membership_deadline}}</td>
+      </tr>
+      <tr>
+        <td><strong>Covid State</strong></td>
+        {% if us.covid_state == 0 %}
+          <td>Free</td>
+        {% elif us.covid_state == 1 %}
+          <td>You came into contact with a Client affected form Covid-19</td>
+        {% else %}
+          <td>You signaled you are affected from Covid-19</td>
+        {% endif %}
       </tr>
     </table>
     <div class="row">
@@ -43,7 +57,7 @@
         <input type="submit", value="Prenotations" class="btn btn-info text-white" style="width: 120px;">
       </form>
     </div>
-    {% if "Staff" not in current_user.roles %}
+    {% if "Staff" not in current_user.roles and "Admin" not in current_user.roles %}
       <div class="col text-center">
         
           <form action="{{url_for('courses_sign_up')}}">

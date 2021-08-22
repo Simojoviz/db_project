@@ -4,6 +4,8 @@ import datetime
 from datetime import timedelta
 import calendar
 
+from sqlalchemy.sql.expression import text
+
 from automap import *
 
 # ________________________________________ UTILITIES ________________________________________ 
@@ -54,7 +56,7 @@ def add_user(session, fullname=None, email=None, address=None, telephone=None, p
          address    is not None and\
          telephone    is not None and\
          pwd      is not None:
-        return add_user(session, user=User(fullname=fullname, email=email, address=address, telephone=telephone, pwd=pwd))
+        return add_user(session, user=User(fullname=fullname, email=email, address=address, telephone=telephone, pwd=pwd, covid_state=0, membership_deadline=datetime.date.today()))
     else:
         return False
 
@@ -80,6 +82,27 @@ def update_user(session, user=None, fullname=None, telephone=None, address=None,
         session.commit()
         return True
     return False
+
+# Update User Covid State with given user_id and value
+def update_user_covid_state(session, user_id=None, value=None):
+    if user_id is not None and value is not None:
+        session.query(User).filter(User.id == user_id).update({User.covid_state:value}, synchronize_session = False)
+    admin_id = get_user(session, email="admin@gmail.com").id
+    if value == 0:
+        text = "Your covid state is now free! You can prenote"
+    elif value == 1:
+        text = "Your covid state signaled you came into contact with a person affected form Covid19! You can't prenote"
+    else:
+        text = "Your covid state signaled you're affected from Covid19! You can't prenote"
+    add_message(session, sender_id=admin_id, addresser_id=user_id, text=text)
+
+def update_user_deadline(session, user_id=None, date=None):
+    if user_id is not None and date is not None:
+        session.query(User).filter(User.id == user_id).update({User.membership_deadline:date}, synchronize_session = False)
+        admin_id = get_user(session, email="admin@gmail.com").id
+        add_message(session, sender_id=admin_id, addresser_id=user_id, text="Your membership-deadline is now " + date.strftime('%d/%m/%Y'))
+
+    
 
 # ________________________________________ ROLE ________________________________________ 
 
@@ -195,7 +218,7 @@ def add_trainer(session, fullname=None, email=None, pwd=None, telephone=None, ad
     elif fullname is not None and\
          email    is not None and\
          pwd      is not None: 
-        return add_trainer(session, user=User(fullname=fullname, email=email, pwd=pwd, telephone=telephone, address=address))
+        return add_trainer(session, user=User(fullname=fullname, email=email, pwd=pwd, telephone=telephone, address=address, covid_state=0, membership_deadline=datetime.date.today()+timedelta(days=365)))
     else:
         return False
 
@@ -267,52 +290,70 @@ def get_shift(session, date=None, start=None, prenotation=None, id=None, course_
     else:
         return None
 
-# Generate a list of all shifts for a date given the date
-def generate_daily_shifts(session, date):
-    day_name = calendar.day_name[date.weekday()]
-    weeksetting = get_week_setting(session, day_name)
-    hour_start = weeksetting.starting
-    hour_end = weeksetting.ending
-    shift_length = weeksetting.length
-    rooms = get_room(session, all=True)
-    
-    l = []
-    start =     timedelta(hours=hour_start.hour,   minutes=hour_start.minute)
-    length =    timedelta(hours=shift_length.hour, minutes=shift_length.minute)
-    end_ =      timedelta(hours=hour_end.hour,     minutes=hour_end.minute)
-    end = start + length
-
-    while(end <= end_):
-        for room in rooms:
-            l.append(
-                Shift(
-                    date=date,
-                    h_start = datetime.time(hour=start.seconds//3600, minute=(start.seconds//60)%60),
-                    h_end =   datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
-                    room_id = room.id,
-                    course_id = None
-                )
-            )
-        start = end
+# Generate a list of all shifts for a date given the date and the room
+def generate_room_daily_shifts(session, date=None, room_id=None):
+    if date is not None and room_id is not None:
+        day_name = calendar.day_name[date.weekday()]
+        weeksetting = get_week_setting(session, day_name)
+        hour_start = weeksetting.starting
+        hour_end = weeksetting.ending
+        shift_length = weeksetting.length
+        room = get_room(session, id=room_id)
+        
+        l = []
+        start =     timedelta(hours=hour_start.hour,   minutes=hour_start.minute)
+        length =    timedelta(hours=shift_length.hour, minutes=shift_length.minute)
+        end_ =      timedelta(hours=hour_end.hour,     minutes=hour_end.minute)
         end = start + length
 
-    return l
+        while(end <= end_):
+            l.append(
+                    Shift(
+                        date=date,
+                        h_start = datetime.time(hour=start.seconds//3600, minute=(start.seconds//60)%60),
+                        h_end =   datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
+                        room_id = room.id,
+                        course_id = None
+                    )
+                )
+            start = end
+            end = start + length
+
+        return l
 
 # - Given the starting date and the number of days generate the shifts for all days in time-interval
 # - Given the starting date and the ending date    generate the shifts for all days in time-interval
 # If there were previous plans which are changed, the previous is removed
-#TODO controllare se salta il primo giorno e chiedere funzionamento funzione
-def plan_shifts(session, starting, n=1, ending=None):
+def plan_shifts(session, starting, n=1, ending=None, room_id=None, all_room=False):
     day = starting + timedelta(days=0)
     if ending is None:
         ending = day + timedelta(days=n)
     while(day <= ending):
         day_name = calendar.day_name[day.weekday()]
         ws = get_week_setting(session, day_name=day_name)
-        if ws is not None and ws.changed is True:
-            session.query(Shift).where(Shift.date==day).delete()
-            l = generate_daily_shifts(session, datetime.date(year=day.year, month=day.month, day=day.day))
-            add_shift_from_list(session, l)
+        if ws is not None:
+            if room_id is not None:
+                shifts = get_shift(session, date=day, room_id=room_id)
+            elif all_room is True:
+                shifts = get_shift(session, date=day)
+            else:
+                shifts = []
+            for shift in shifts:
+                prenotations = shift.prenotations
+                admin_id = get_user(session, email="admin@gmail.com").id
+                for pr in prenotations:
+                    add_message(session, sender_id=admin_id, addresser_id=pr.client_id,
+                    text = "Your prenotation on " + pr.shift.date.strftime('%d/%m/%Y') + " in " + pr.shift.room.name +  " from " + pr.shift.h_start.strftime('%H:%M') + " to " + pr.shift.h_end.strftime('%H:%M') +\
+                           " has been deleted due to the replan of week setting")
+                    session.query(Prenotation).filter(Prenotation.shift_id==pr.shift_id, Prenotation.client_id==pr.client_id).delete()
+            session.query(Shift).where(Shift.date==day, Shift.room_id==room_id).delete()
+            if room_id is not None:
+                l = generate_room_daily_shifts(session, datetime.date(year=day.year, month=day.month, day=day.day), room_id=room_id)
+                add_shift_from_list(session, l)
+            elif all_room is True:
+                for room in get_room(session, all=True):
+                    l = generate_room_daily_shifts(session, datetime.date(year=day.year, month=day.month, day=day.day), room_id=room.id)
+                    add_shift_from_list(session, l)
         day = day + timedelta(days=1)
 
     session.query(WeekSetting).update({WeekSetting.changed:False}, synchronize_session = False)
@@ -553,7 +594,6 @@ def add_global_setting(session, name=None, value=None,  global_setting=None):
 def update_global_setting(session, name=None, value=None):
     if name is not None and value is not None:
         get_global_setting(session, name=name) # raise an exeption if doesn't exixsts
-        print("Metto come nuovo valore " + str(value))
         session.query(GlobalSetting).filter(GlobalSetting.name == name).update({GlobalSetting.value:value}, synchronize_session = False)
         return True
     else:
@@ -612,7 +652,7 @@ def update_room_max_capacity(session, name=None, mc=None):
             session.query(Room).filter(Room.name == name).update({Room.max_capacity:mc}, synchronize_session = False)
             # It is possible to remove some prenotation because the capacity has decreased
             if first > mc:
-                room = get_room(session, name=name)
+                room = exixst
                 shifts = get_shift(session, room_id=room.id)
                 for shift in shifts:
                     prenotations = shift.prenotations
@@ -620,16 +660,48 @@ def update_room_max_capacity(session, name=None, mc=None):
                     if num > mc:
                         to_remove = num-mc
                         admin_id = get_user(session, email='admin@gmail.com').id
-                        for i in range(to_remove-1):
-                            pr = prenotations[num-i]
+                        for i in range(to_remove):
+                            pr = prenotations[num-1-i]
                             add_message(session, sender_id=admin_id, addresser_id=pr.client_id,
-                                text="Your prenotation on " + shift.date + " in " + shift.room + " from " + shift.starting + " to " + shift.ending + " has been deleted due to the decrease of room_capacity")
+                                text="Your prenotation on " + shift.date.strftime('%d/%m/%Y') + " in " + shift.room.name +  " from " + shift.h_start.strftime('%H:%M') + " to " + shift.h_end.strftime('%H:%M') +\
+                                     " has been deleted due to the decrease of room capacity from " + str(first) + " to " + str(mc))
                             session.query(Prenotation).filter(Prenotation.client_id==pr.client_id, Prenotation.shift_id==pr.shift_id).delete()
             return True
         else:
             raise Exception("Room " + name + " doesn't exists")
     else:
         return False
+
+# Delete a room. Notify all users that had a course or a prenotation in that room
+def delete_room(session, room_id=None):
+    if room_id is not None:
+        room = get_room(session, id=room_id)
+        # Notify for courses
+        courses = get_course(session, all=True)
+        to_notify = []
+        for course in courses:
+            course_programs = course.course_programs
+            for course_program in course_programs:
+                if int(room_id) == course_program.room_id:
+                    to_notify.append(course.id)
+                    session.query(CourseProgram).filter(CourseProgram.id==course_program.id).delete()
+        admin_id = get_user(session, email='admin@gmail.com').id
+        for course_id in to_notify:
+            course = get_course(session, id=course_id)
+            for user in course.users:
+                add_message(session, sender_id=admin_id, addresser_id=user.id, text=room.name + " has been deleted: your " + course.name + " program could have changed, please check on course's page")
+            add_message(session, sender_id=admin_id, addresser_id=course.instructor_id, text=room.name + " has been deleted: please ridefine " + course.name + " program")
+        # Notify for prenotations
+        shifts = get_shift(session, room_id=room_id)
+        for shift in shifts:
+            prenotations = shift.prenotations
+            for pr in prenotations:
+                add_message(session, sender_id=admin_id, addresser_id=pr.client_id,
+                                text="Your prenotation on " + shift.date.strftime('%d/%m/%Y') + " in " + shift.room.name +  " from " + shift.h_start.strftime('%H:%M') + " to " + shift.h_end.strftime('%H:%M') +\
+                                     " has been deleted due to the deletion of " + room.name)
+                session.query(Prenotation).filter(Prenotation.client_id==pr.client_id, Prenotation.shift_id==pr.shift_id).delete()
+            session.query(Shift).filter(Shift.id==shift.id).delete()
+        session.query(Room).filter(Room.id==room_id).delete()
 
 
 # ________________________________________ COURSE ________________________________________
@@ -691,7 +763,7 @@ def plan_course(session, name):
                 prenotations = session.query(Prenotation).where(Prenotation.shift_id==shift.id)
                 for prenotation in prenotations:
                     add_message(session, sender_id=get_user(session, email='admin@gmail.com').id, addresser_id=prenotation.client_id,
-                    text='Your prenotation on ' + prenotation.shift.date.strftime('%d/%m/%Y') + " in " + prenotation.shift.room.name + " has been deleted due to the planning of " + course.name + " by the trainer " + course.trainer.user.fullname
+                    text='Your prenotation on ' + prenotation.shift.date.strftime('%d/%m/%Y') + " from " + shift.h_start.strftime('%H:%M') + " to " + shift.h_end.strftime('%H:%M') + " in " + prenotation.shift.room.name + " has been deleted due to the planning of " + course.name + " by the trainer " + course.trainer.user.fullname
                     )
                 prenotations = session.query(Prenotation).where(Prenotation.shift_id==shift.id).delete()
         
@@ -953,6 +1025,7 @@ def add_messagge_from_list(session, message_list):
 # - all users who have a course in common (and also to the trainer)
 def covid_report_messages(session, user_id):
     user = get_user(session, id = user_id)
+    update_user_covid_state(session, user_id=user_id, value=2)
     today = datetime.date.today()
     prev = today - timedelta(days=14)
     admin_id = get_user(session, email='admin@gmail.com').id
@@ -963,6 +1036,7 @@ def covid_report_messages(session, user_id):
         users = shift.users_prenotated
         for us in users:
             if us.id != user.id:
+                update_user_covid_state(session, user_id=us.id, value=1)
                 add_message(
                     session,
                     sender_id=admin_id,
@@ -977,12 +1051,14 @@ def covid_report_messages(session, user_id):
         course_signs_up = get_course_sign_up(session, course_id=course.id)
         for csu in course_signs_up:
             if csu.user_id != user.id:
+                update_user_covid_state(session, user_id=csu.user_id, value=1)
                 add_message(
                     session,
                     sender_id=admin_id,
                     addresser_id=csu.user_id,
                     text= "One person in course " + course.name + " you signed-up for is affected from COVID19"
                 )
+        update_user_covid_state(session, user_id=course.instructor_id, value=1)
         add_message(
                     session,
                     sender_id=admin_id,
@@ -995,6 +1071,7 @@ def covid_report_messages(session, user_id):
         for course in trainer.courses:
             course_signs_up = get_course_sign_up(session, course_id=course.id)
             for csu in course_signs_up:
+                update_user_covid_state(session, user_id=csu.user_id, value=1)
                 add_message(
                     session,
                     sender_id=admin_id,

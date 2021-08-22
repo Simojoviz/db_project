@@ -96,9 +96,9 @@ def prenotations():
     try:
         email = current_user.email
         user = get_user(session, email=email)
-        shifts = user.prenotations_shifts
         shifts = filter(lambda sh: sh.date >= datetime.date.today(), user.prenotations_shifts)
-        resp = make_response(render_template("prenotations.html", shifts=shifts))
+        past_shifts = filter(lambda sh: sh.date <= datetime.date.today() and datetime.datetime.now().time() >= sh.h_end, user.prenotations_shifts)
+        resp = make_response(render_template("prenotations.html", shifts=shifts, past_shifts=past_shifts))
         session.commit()
         return resp
     except:
@@ -133,7 +133,7 @@ def trainer_courses():
         if trainer is not None:
             courses = trainer.courses
             session.commit()
-            return render_template("trainer_courses.html", courses = courses, trainer = trainer)
+            return render_template("trainer_courses.html", courses = courses, trainer = trainer, today= datetime.date.today())
         else:
             session.commit()
             abort(401)
@@ -280,8 +280,8 @@ def courses():
     try:
         courses = get_course(session, all=True)
         if current_user.is_authenticated and "Staff" in current_user.roles:
-            return render_template("courses.html", courses = courses, isStaff=True)
-        return render_template("courses.html", courses = courses, isStaff=False)
+            return render_template("courses.html", courses = courses, isStaff=True, today=datetime.date.today())
+        return render_template("courses.html", courses = courses, isStaff=False, today=datetime.date.today())
     except:
         session.rollback()
         raise
@@ -696,7 +696,7 @@ def settings():
     except:
         raise
 
-@app.route('/admin/global_settings')
+@app.route('/admin/settings/global_settings')
 @login_required
 def global_settings():
     session = Session()
@@ -713,13 +713,14 @@ def global_settings():
     finally:
         session.close()
 
-@app.route('/admin/room_settings')
+@app.route('/admin/settings/room_settings')
 @login_required
 def room_settings():
     session = Session()
     try:
         if is_admin(current_user):
             rooms = get_room(session, all=True)
+            rooms = sorted(rooms, key=lambda x: x.id)
             resp= make_response(render_template("update_room_settings.html", rooms=rooms))
             return resp
         else:
@@ -731,7 +732,7 @@ def room_settings():
         session.close()
 
 
-@app.route('/admin/global_settings_form', methods=['POST'])
+@app.route('/admin/settings/global_settings_form', methods=['POST'])
 @login_required
 def global_settings_form():
     if request.method == 'POST':
@@ -750,19 +751,146 @@ def global_settings_form():
         finally:
             session.close()
 
-@app.route('/admin/room_settings_form', methods=['POST'])
+@app.route('/admin/settings/room_settings_form/<room_id>', methods=['POST'])
 @login_required
-def room_settings_form():
+def room_settings_form(room_id):
     if request.method == 'POST':
         session = Session()
         try:
-            rooms = get_room(session, all=True)
-            for room in rooms:
-                val = int(request.form[str(room.id)])
-                if val != room.max_capacity:
-                    update_room_max_capacity(session, name=room.name, mc=val)
+            room = get_room(session, id=room_id)
+            val = int(request.form[str(room_id)])
+            if val != room.max_capacity:
+                update_room_max_capacity(session, name=room.name, mc=val)
             session.commit()
-            return redirect(url_for('settings'))
+            return redirect(url_for('room_settings'))
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+@app.route('/admin/settings/room_settings/add_room')
+@login_required
+def add_room_():
+    session = Session()
+    try:
+        if is_admin(current_user):
+            return make_response(render_template("add_room.html"))
+        else:
+            return redirect(url_for('private'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/admin/settings/room_settings/add_room_form', methods=['POST'])
+@login_required
+def add_room_form():
+    if request.method == 'POST':
+        session = Session()
+        try:
+            name = request.form['name']
+            max_capacity = request.form['max_capacity']
+            date_str = request.form['date']
+            date_str = date_str.replace('-', '/')
+            date = datetime.datetime.strptime(date_str, '%Y/%m/%d')
+            date = date.date()
+            if date < datetime.date.today():
+                raise Exception("Could not plan shift in the past")
+            add_room(session, name=name, max_capacity=max_capacity)
+            session.flush()
+            room = get_room(session, name=name)
+            if room is not None:
+                print(room.name + " " + str(room.id))
+                plan_shifts(session, starting=datetime.date.today(), ending=date, room_id=room.id)
+            else:
+                raise Exception("non trovo stanza appena aggiunta")
+            session.commit()
+            return redirect(url_for('room_settings'))
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+@app.route('/admin/settings/room_settings/delete_room/<room_id>', methods=['POST'])
+@login_required
+def del_room(room_id):
+    if request.method == 'POST':
+        session = Session()
+        try:
+            delete_room(session, room_id=room_id)
+            session.commit()
+            return redirect(url_for('room_settings'))
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+@app.route('/admin/settings/users_settings')
+@login_required
+def users_settings():
+    session = Session()
+    try:
+        if is_admin(current_user):
+            users = get_user(session, all=True)
+            users = filter(lambda us: us.email != 'admin@gmail.com', users)
+            return make_response(render_template("users_settings.html", users=users))
+        else:
+            return redirect(url_for('private'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/admin/settings/user_settings', methods=['GET', 'POST'])
+def user_settings():
+    if request.method == 'POST':
+        session = Session()
+        try:
+            if is_admin(current_user):
+                user_id = request.form['user']
+                user = get_user(session, id=user_id)
+                return make_response(render_template("user_settings.html", user=user))
+            else:
+                return redirect(url_for('private'))
+            
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+@app.route('/admin/settings/reset_covid_state/<user_id>')
+def reset_covid_state(user_id):
+    session = Session()
+    try:
+        update_user_covid_state(session=session, user_id=user_id, value=0)
+        session.commit()
+        return redirect(url_for('users_settings'))            
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/admin/settings/new_deadline/<user_id>', methods=["POST"])
+def new_deadline(user_id):
+    if request.method == 'POST':
+        session = Session()
+        try:
+            for pr in request.form:
+                print("AAA")
+                print(pr)
+            date_str = request.form["date"]
+            date_str = date_str.replace('-', '/')
+            date = datetime.datetime.strptime(date_str, '%Y/%m/%d')
+            update_user_deadline(session, user_id=user_id, date=date)
+            session.commit()
+            return redirect(url_for('users_settings')) 
         except:
             session.rollback()
             raise

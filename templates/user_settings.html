@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block pagebody %}
+<div class="container">
+  <div class="col text-center">
+  
+
+  <div>
+    <h2><strong>Profile of {{user.fullname}}</strong></h2>
+    <br>
+    Email : {{user.email}}
+    <br>
+
+    IsTrainer:
+      {% if "Staff" in user.roles %}
+        Is Staff
+        <form action="#">
+          <input type="submit" value="Revoke Trainer Role">
+        </form>
+      {% else %}
+        <form action="#">
+          <input type="submit" value="Give Trainer Role">
+        </form>
+      {% endif %}
+    </form>
+    <br>
+
+    Covid State:
+      {% if user.covid_state == 0 %}
+        Free<br>
+      {% else %}
+        Affected or Had contacts
+        <form action="{{url_for('reset_covid_state', user_id=user.id)}}">
+          <input type="submit" value="Set Free">
+        </form>
+      {% endif %}
+
+    Membership Deadline:
+    {{user.membership_deadline}}
+    Insert new Deadline:
+    <form action="{{url_for('new_deadline', user_id=user.id)}}", method="POST">
+      <input name="date" type="date", value={{ user.membership_deadline }}>
+      <input type="submit", value="Postpone" class="btn btn-info text-light" >
+    </form>
+
+  </div>
+   
+
+  <div class="mt-4">
+    <form action="{{url_for('users_settings')}}">
+      <input type="submit", value="Back" class="btn btn-info text-light">
+    </form>
+  </div>
+
+</div>
+{% endblock %}

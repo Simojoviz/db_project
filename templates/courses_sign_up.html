@@ -29,7 +29,7 @@
 </style>
 
 <div class="container">
-  <h1>Sign ups</h1>
+  <h1 class="display-3 text-center">Sign ups</h1>
   {% for c in courses %}
     {% if c.ending >= today %}
       <div class="mb-2 ">
@@ -53,7 +53,7 @@
             </tr>
           </table>
 
-          <h3> Shifts </h3>
+          <h3>Remaining Shifts</h3>
           <table class="table table-borderless">
             <tr>
               <th>Date</th>
@@ -78,26 +78,26 @@
       </div>
     {% endif %}
   {% endfor %}
-  <h3>Past sign ups</h3>
+  <h3 class="display-5 text-center">Past sign ups</h3>
   {% for c in courses %}
-      {% if today > c.ending %}
-      <div class="mb-2 ">
-        <button type="button" class="collapsible">{{c.name}}</button>
-        <div class="content">
+    {% if today > c.ending %}
+    <div class="mb-2 ">
+      <button type="button" class="collapsible">{{c.name}}</button>
+      <div class="content">
 
-          <table class="table table-borderless">
-            <tr>
-              <th>Starting</th>
-              <th>Ending</th>
-            </tr>
-            <tr>
-              <td>{{c.starting}}</td>
-              <td>{{c.ending}}</td>
-            </tr>
-          </table>
-        </div>
+        <table class="table table-borderless">
+          <tr>
+            <th>Starting</th>
+            <th>Ending</th>
+          </tr>
+          <tr>
+            <td>{{c.starting}}</td>
+            <td>{{c.ending}}</td>
+          </tr>
+        </table>
       </div>
-      {% endif %}
+    </div>
+    {% endif %}
   {% endfor %}
   <div class="mt-4">
     <form action="{{url_for('private')}}">

@@ -1,3 +1,4 @@
+from app import shifts
 from sqlalchemy import create_engine
 
 from automap import *
@@ -32,6 +33,16 @@ conn.execute(
     \
     COMMENT ON CONSTRAINT password_length ON public.users\
         IS 'password must be longer than 6 characters';"
+)
+
+conn.execute(
+    "ALTER TABLE public.users\
+    DROP CONSTRAINT IF EXISTS covid_state_range;\
+    ALTER TABLE public.users\
+    ADD CONSTRAINT covid_state CHECK (covid_state = 0 OR covid_state = 1 OR covid_state = 2);\
+    \
+    COMMENT ON CONSTRAINT password_length ON public.users\
+        IS 'covid state must be 0, 1 or 2';"
 )
 
 #___________SHIFT___________
@@ -124,6 +135,16 @@ conn.execute(
 #___________ROOM___________
 conn.execute(
     "ALTER TABLE public.rooms\
+    DROP CONSTRAINT IF EXISTS not_empty_name;\
+    ALTER TABLE public.rooms\
+    ADD CONSTRAINT not_empty_name CHECK (name != '');\
+    \
+    COMMENT ON CONSTRAINT not_empty_name ON public.rooms\
+        IS 'name cannot be empty';"
+)
+
+conn.execute(
+    "ALTER TABLE public.rooms\
     DROP CONSTRAINT IF EXISTS positive_max_capacity;\
     ALTER TABLE public.rooms\
     ADD CONSTRAINT positive_max_capacity CHECK (max_capacity > 0);\
@@ -156,6 +177,74 @@ conn.execute(
 
 
 #_________________________________________________TRIGGER_________________________________________________
+
+#___________USER___________
+
+conn.execute(
+    "DROP FUNCTION IF EXISTS public.no_past_deadline() CASCADE;\
+    CREATE FUNCTION public.no_past_deadline()\
+    RETURNS trigger\
+    LANGUAGE 'plpgsql'\
+    COST 100\
+    VOLATILE NOT LEAKPROOF\
+    AS $BODY$\
+    BEGIN\
+        IF NEW.membership_deadline < (SELECT CURRENT_DATE) THEN\
+            RAISE EXCEPTION 'Cannot insert user: deadline is in the past';\
+            RETURN NULL;\
+        END IF;\
+        RETURN NEW;\
+    END\
+    $BODY$;\
+    \
+    ALTER FUNCTION public.no_past_deadline()\
+        OWNER TO postgres;\
+    \
+    COMMENT ON FUNCTION public.no_past_deadline()\
+        IS 'Raise an exception if deadline-membership in set in the past';\
+        \
+    CREATE TRIGGER NoPastDeadline\
+    BEFORE INSERT\
+    ON public.users\
+    FOR EACH ROW\
+    EXECUTE PROCEDURE public.no_past_deadline();\
+    \
+    COMMENT ON TRIGGER NoPastDeadline ON public.users\
+        IS 'Raise an exception if deadline-membership in set in the past';"
+)
+
+conn.execute(
+    "DROP FUNCTION IF EXISTS public.no_delay_deadline() CASCADE;\
+    CREATE FUNCTION public.no_delay_deadline()\
+    RETURNS trigger\
+    LANGUAGE 'plpgsql'\
+    COST 100\
+    VOLATILE NOT LEAKPROOF\
+    AS $BODY$\
+    BEGIN\
+        IF NEW.membership_deadline < OLD.membership_deadline THEN\
+            RAISE EXCEPTION 'Cannot insert user: deadline is not delayed';\
+            RETURN NULL;\
+        END IF;\
+        RETURN NEW;\
+    END\
+    $BODY$;\
+    \
+    ALTER FUNCTION public.no_delay_deadline()\
+        OWNER TO postgres;\
+    \
+    COMMENT ON FUNCTION public.no_delay_deadline()\
+        IS 'Raise an exception if deadline-membership in not delayed';\
+        \
+    CREATE TRIGGER NoDelayDeadline\
+    BEFORE UPDATE\
+    ON public.users\
+    FOR EACH ROW\
+    EXECUTE PROCEDURE public.no_delay_deadline();\
+    \
+    COMMENT ON TRIGGER NoDelayDeadline ON public.users\
+        IS 'Raise an exception if deadline-membership in not delayed';"
+)
 
 #___________PRENOTATION___________
 
@@ -193,6 +282,24 @@ conn.execute(
         ) IS NOT NULL THEN\
             RAISE EXCEPTION 'Cannot prenote: Shift occupied by a course';\
             RETURN NULL;\
+        ELSIF (\
+            SELECT covid_state\
+            FROM users\
+            WHERE id = NEW.client_id\
+        ) != 0 THEN\
+            RAISE EXCEPTION 'Cannot prenote: Covid-State is not Safe. Please contact Gym''s admin';\
+            RETURN NULL;\
+        ELSIF (\
+            SELECT date\
+            FROM shifts\
+            WHERE id = NEW.shift_id\
+        ) > (\
+            SELECT membership_deadline\
+            FROM users\
+            WHERE id = NEW.client_id\
+        ) THEN\
+            RAISE EXCEPTION 'Cannot prenote: Shift date is over your membership-deadline: please contact Gym''s admin';\
+            RETURN NULL;\
         END IF;\
         RETURN NEW;\
     END\
@@ -202,7 +309,7 @@ conn.execute(
         OWNER TO postgres;\
     \
     COMMENT ON FUNCTION public.no_invalid_prenotation()\
-        IS 'Raise an exception if - User cannot prenote twice for the same Shift, The shift is full, The shift is occupied by a course ';\
+        IS 'Raise an exception if - User cannot prenote twice for the same Shift, The shift is full, The shift is occupied by a course, Covid state is not safe, Shift is over user deadline ';\
         \
     CREATE TRIGGER NoInvalidPrenotation\
     BEFORE INSERT OR UPDATE\
@@ -211,7 +318,7 @@ conn.execute(
     EXECUTE PROCEDURE public.no_invalid_prenotation();\
     \
     COMMENT ON TRIGGER NoInvalidPrenotation ON public.prenotations\
-        IS 'Raise an exception if - User cannot prenote twice for the same Shift, The shift is full, The shift is occupied by a course ';"
+        IS 'Raise an exception if - User cannot prenote twice for the same Shift, The shift is full, The shift is occupied by a course, Covid state is not safe, Shift is over user deadline ';"
 )
 
 #___________COURSE SIGN UP___________

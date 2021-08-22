@@ -25,7 +25,6 @@ rooms = [
 
 add_room_from_list(session, rooms)
 
-
 # Roles
 roles = [
     Role(name = 'Client'),
@@ -35,15 +34,14 @@ roles = [
 
 add_role_from_list(session, roles)
 
-
 # Users
 users = [
-    User(fullname = "Admin",                  email='admin@gmail.com',      pwd='admin1',       telephone='1234567890',     address='Via Ciao 2'),
-    User(fullname = "Stefano Calzavara",      email='stefano@gmail.com',    pwd='stefano1',     telephone='0123456789',     address='Via Falsa 23'),
-    User(fullname = "Alessandra Raffaetà",    email='alessandra@gmail.com', pwd='alessandra1',  telephone='2873018453',     address='Via Vai 7'),
-    User(fullname = "Simone Jovon",           email='simone@gmail.com',     pwd='simone1',      telephone='3019837283',     address='Via Cesare 12'),
-    User(fullname = "Andrea Rosa",            email='andrea@gmail.com',     pwd='andrea1',      telephone='3254173433',     address='Castello 2534/A'),
-    User(fullname = "Sebastiano Quintavalle", email='sebastiano@gmail.com', pwd='sebastiano1',  telephone='5272735383',     address='Castello 13')
+    User(fullname = "Admin",                  email='admin@gmail.com',      pwd='admin1',       telephone='1234567890',     address='Via Ciao 2',      covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=3000)),
+    User(fullname = "Stefano Calzavara",      email='stefano@gmail.com',    pwd='stefano1',     telephone='0123456789',     address='Via Falsa 23',    covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=365)),
+    User(fullname = "Alessandra Raffaetà",    email='alessandra@gmail.com', pwd='alessandra1',  telephone='2873018453',     address='Via Vai 7',       covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=365)),
+    User(fullname = "Simone Jovon",           email='simone@gmail.com',     pwd='simone1',      telephone='3019837283',     address='Via Cesare 12',   covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=90)),
+    User(fullname = "Andrea Rosa",            email='andrea@gmail.com',     pwd='andrea1',      telephone='3254173433',     address='Castello 2534/A', covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=90)),
+    User(fullname = "Sebastiano Quintavalle", email='sebastiano@gmail.com', pwd='sebastiano1',  telephone='5272735383',     address='Castello 13',     covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=90))
 ]
 
 add_user_from_list(session, users)
@@ -54,7 +52,7 @@ trainers = [
 ]
 
 add_trainer_from_list(session, trainers)
-add_trainer(session, fullname='Riccardo Focardi', email='riccardo@gmail.com', pwd='riccardo1',  telephone='8302837481',     address='Via Ciao 2')
+add_trainer(session, fullname='Riccardo Focardi', email='riccardo@gmail.com', pwd='riccardo1',  telephone='8302837481', address='Via Ciao 2')
 
 add_user_roles(
     session,
@@ -109,7 +107,7 @@ add_global_setting(session, global_setting=GlobalSetting(name='MaxWeeklyEntry', 
 
 
 # Shifts
-plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=365)
+plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=365, all_room=True)
 
 # CourseProgram
 courses_program = [
@@ -190,6 +188,6 @@ add_course_sign_up(
     course=get_course(session, name='Zumba'),
 )
 
-covid_report_messages(session, get_user(session, email='andrea@gmail.com').id)
+#covid_report_messages(session, get_user(session, email='andrea@gmail.com').id)
 
 session.commit()
