@@ -1,4 +1,6 @@
 from flask import *
+from sqlalchemy.sql.base import SchemaVisitor
+from sqlalchemy.sql.functions import user
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -192,7 +194,7 @@ def shifts():
         shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
         if date == date.today():
             shifts = filter(lambda sh: sh.h_start >= datetime.datetime.now().time(), shifts)
-        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda x: (x.h_start, x.room_id)), date_string=date_string, rooms=r))
+        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda x: (x.h_start, x.room_id)), date_string=date_string, rooms=r, isAdmin=is_admin(current_user)))
         session.commit()
         return resp
     except:
@@ -831,15 +833,14 @@ def users_settings():
     finally:
         session.close()
 
-@app.route('/admin/settings/user_settings', methods=['GET', 'POST'])
-def user_settings():
+@app.route('/admin/settings/users_settings_form', methods=['GET', 'POST'])
+def users_settings_form():
     if request.method == 'POST':
         session = Session()
         try:
             if is_admin(current_user):
                 user_id = request.form['user']
-                user = get_user(session, id=user_id)
-                return make_response(render_template("user_settings.html", user=user))
+                return redirect(url_for('user_settings', user_id=user_id))
             else:
                 return redirect(url_for('private'))
             
@@ -849,20 +850,36 @@ def user_settings():
         finally:
             session.close()
 
-@app.route('/admin/settings/reset_covid_state/<user_id>')
+@app.route('/admin/settings/user_settings/<user_id>')
+def user_settings(user_id):
+    session = Session()
+    try:
+        if is_admin(current_user):
+            user = get_user(session, id=user_id)      
+            return make_response(render_template("user_settings.html", user=user, isStaff=(get_role(session, name='Staff') in user.roles)))
+        else:
+            return redirect(url_for('private'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+        
+
+@app.route('/admin/settings/user_settings/reset_covid_state/<user_id>')
 def reset_covid_state(user_id):
     session = Session()
     try:
         update_user_covid_state(session=session, user_id=user_id, value=0)
         session.commit()
-        return redirect(url_for('users_settings'))            
+        return redirect(url_for('user_settings', user_id=user_id))         
     except:
         session.rollback()
         raise
     finally:
         session.close()
 
-@app.route('/admin/settings/new_deadline/<user_id>', methods=["POST"])
+@app.route('/admin/settings/user_settings/new_deadline/<user_id>', methods=["POST"])
 def new_deadline(user_id):
     if request.method == 'POST':
         session = Session()
@@ -875,9 +892,91 @@ def new_deadline(user_id):
             date = datetime.datetime.strptime(date_str, '%Y/%m/%d')
             update_user_deadline(session, user_id=user_id, date=date)
             session.commit()
-            return redirect(url_for('users_settings')) 
+            return redirect(url_for('user_settings', user_id=user_id))
         except:
             session.rollback()
             raise
         finally:
             session.close()
+
+@app.route('/admin/settings/user_settings/assign_trainer_role/<user_id>')
+def assign_trainer_role_(user_id):
+    session = Session()
+    try:
+        assign_trainer_role(session, user_id=user_id)
+        session.commit()
+        return redirect(url_for('user_settings', user_id=user_id))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/admin/settings/user_settings/revoke_trainer_role/<user_id>')
+def revoke_trainer_role_(user_id):
+    session = Session()
+    try:
+        revoke_trainer_role(session, user_id=user_id)
+        session.commit()
+        return redirect(url_for('user_settings', user_id=user_id))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/admin/users_info')
+@login_required
+def users_info():
+    session = Session()
+    try:
+        if is_admin(current_user):
+            users = get_user(session, all=True)
+            users = filter(lambda us: us.email != 'admin@gmail.com', users)
+            return make_response(render_template("users_info.html", users=users))
+        else:
+            return redirect(url_for('private'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/admin/deadlines')
+@login_required
+def deadlines():
+    session = Session()
+    try:
+        if is_admin(current_user):
+            users = get_user(session, all=True)
+            users = filter(lambda us: us.email != 'admin@gmail.com', users)
+            valid =     filter(lambda us: us.membership_deadline >= datetime.date.today(), users)
+            not_valid = filter(lambda us: us.membership_deadline <  datetime.date.today(), users)
+            valid =     sorted(valid,     key=lambda us: us.membership_deadline)
+            not_valid = sorted(not_valid, key=lambda us: us.membership_deadline)
+            return make_response(render_template("deadlines.html", valid=valid, not_valid=not_valid))
+        else:
+            return redirect(url_for('private'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+@app.route('/admin/covid_states')
+@login_required
+def covid_states():
+    session = Session()
+    try:
+        if is_admin(current_user):
+            cs0 = filter(lambda us: us.covid_state == 0, filter(lambda us: us.email != 'admin@gmail.com',  get_user(session, all=True)))
+            cs1 = filter(lambda us: us.covid_state == 1, filter(lambda us: us.email != 'admin@gmail.com',  get_user(session, all=True)))
+            cs2 = filter(lambda us: us.covid_state == 2, filter(lambda us: us.email != 'admin@gmail.com',  get_user(session, all=True)))
+            return make_response(render_template("covid_states.html", cs0=cs0, cs1=cs1, cs2=cs2))
+        else:
+            return redirect(url_for('private'))
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
