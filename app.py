@@ -62,7 +62,8 @@ def is_admin(us):
 def is_trainer(us):
     return us.is_authenticated and "Trainer" in us.roles
 
-#__________________________________________ LOGIN-SIGIN-LOGOUT ________________________________________
+
+#__________________________________________ LOGIN ________________________________________
 
 
 @app.route('/login')
@@ -105,6 +106,9 @@ def login_form():
             return redirect(url_for('login'))
         finally:
             session.close()
+
+
+#__________________________________________ SIGIN ________________________________________
 
 
 @app.route('/signin')
@@ -160,6 +164,9 @@ def signin_form():
             return redirect(url_for('signin'))
         finally:
             session.close()
+
+
+#__________________________________________ LOGOUT ________________________________________
 
 
 @app.route('/logout')
@@ -245,6 +252,215 @@ def courses_sign_up():
     finally:
         session.close()
 
+
+# ________________________________________________________ UPDATE USER ________________________________________________________
+
+
+@app.route('/private/update_user')
+@login_required
+def upd_user():
+    session = Session()
+    try:
+        user = get_user(session, id = current_user.id)
+        return render_template("update_user.html", user = user)
+    except Exception as exc:
+        flash(repr(exc), category='error')
+        session.rollback()
+        session.close()
+        return redirect(url_for('upd_user'))
+    finally:
+        session.close()
+
+
+@app.route('private/update_user_form', methods=['POST'])
+@login_required
+def update_user_form():
+    if request.method == 'POST':
+        session = Session()
+        try:
+            user = get_user(session, email= current_user.email)
+            fullname = request.form['fullname']
+            if fullname == "":
+                flash("Empty Field!", category='error')
+                return redirect(url_for('upd_user'))
+            telephone = request.form['telephone']
+            if telephone == "":
+                flash("Empty Field!", category='error')
+                return redirect(url_for('upd_user'))
+            address = request.form['address']
+            if address == "":
+                flash("Empty Field!", category='error')
+                return redirect(url_for('upd_user'))
+            pwd1 = request.form['pwd1']
+            if pwd1 == "":
+                flash("Empty Field!", category='error')
+                return redirect(url_for('upd_user'))
+            pwd2 = request.form['pwd2']
+            if pwd1 == "":
+                flash("Empty Field!", category='error')
+                return redirect(url_for('upd_user'))
+
+            if pwd1 != pwd2:
+                flash("Password Mismatch!", category='error')
+                return redirect(url_for('upd_user'))
+                
+            update_user(session, user_id = user.id, fullname = fullname, telephone = telephone, address = address, pwd = pwd1)
+            session.commit()
+            return redirect(url_for('upd_user'))
+        except Exception as exc:
+            flash(repr(exc), category='error')
+            session.rollback()
+            session.close()
+            return redirect(url_for('upd_user'))
+        finally:
+            session.close()
+
+
+# ________________________________________________________ SHIFT, PRENOTATION ________________________________________________________
+
+#@app.route('/shifts/<year>/<month>/<day>/<room>')
+@app.route('/shifts')
+def shifts():
+    session = Session()
+    try:
+        year = request.args.get('year')
+        month = request.args.get('month')
+        day = request.args.get('day')
+        room = request.args.get('room')
+        date = datetime.date(year=int(year), month=int(month), day=int(day))
+        if date < datetime.date.today():
+            date = datetime.date.today()
+        date_string = date.strftime("%Y-%m-%d")
+        r = get_room(session, all=True)
+        if room == 'All':
+            shifts = get_shift(session, date=date)
+        else:
+            room_id = get_room(session, name=room).id
+            shifts = get_shift(session, date=date, room_id=room_id)
+        shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
+        if date == date.today():
+            shifts = filter(lambda sh: sh.ending >= datetime.datetime.now().time(), shifts)
+        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda x: (x.ending, x.room_id)), date_string=date_string, rooms=r, user=get_user(session, email=current_user.email)))
+        session.commit()
+        return resp
+    except Exception as exc:
+        flash(repr(exc), category='error')
+        session.rollback()
+        session.close()
+        return redirect(url_for('shifts_first'))
+    finally:
+        session.close()
+
+
+@app.route('/shifts/shifts_first')
+def shifts_first():
+    curr = datetime.date.today()
+    return redirect('/shifts?year=%s&month=%s&day=%s&room=All' % (curr.year, curr.month, curr.day))
+
+
+@app.route('/shifts/load_date', methods=['GET', 'POST'])
+def shifts_load_state():
+    if request.method == 'POST':
+        session = Session()
+        try:
+            date_str = request.form['date']
+            room = request.form['room']
+            date_str = date_str.replace('-', '/')
+            date = datetime.datetime.strptime(date_str, '%Y/%m/%d')
+            session.commit()
+            return redirect('/shifts?year=%s&month=%s&day=%s&room=%s' % (date.year, date.month, date.day, room))
+        except Exception as exc:
+            flash(repr(exc), category='error')
+            session.rollback()
+            session.close()
+            return redirect(url_for('shifts_first'))
+        finally:
+            session.close()
+
+
+@app.route('/prenotation/<shift>')
+@login_required
+def prenotation(shift):
+    session = Session()
+    try:
+        if current_user.is_authenticated:
+            us = get_user(session, id = current_user.id)
+            s = get_shift(session, id = shift)
+            add_prenotation(session, user = us, shift = s)
+            session.commit()
+            return redirect(url_for('prenotations'))
+        return redirect(url_for('login'))
+    except Exception as exc:
+        print(repr(exc))
+        flash(repr(exc), category='error')
+        session.rollback()
+        session.close()
+        if current_user.is_authenticated:
+            return redirect(url_for('shifts_first'))
+        return redirect(url_for('login'))
+    finally:
+        session.close()
+    
+
+@app.route('/del_prenotation/<shift>')
+@login_required
+def del_prenotation(shift):
+    session = Session()
+    try:
+        us = get_user(session,id = current_user.id)
+        s = get_shift(session, id = shift)
+        delete_prenotation(session, shift=s, user=us)
+        session.commit()
+        return redirect(url_for('prenotations'))
+    except Exception as exc:
+        print(repr(exc))
+        flash(repr(exc), category='error')
+        session.rollback()
+        session.close()
+        return redirect(url_for('prenotations'))
+    finally:
+        session.close()
+
+# ________________________________________________________COURSES________________________________________________________
+
+
+@app.route('/courses')
+def courses():
+    session = Session()
+    try:
+        courses = get_course(session, all=True)
+        if current_user.is_authenticated and "Trainer" in current_user.roles:
+            return render_template("courses.html", courses = courses, isStaff=True, today= datetime.date.today())
+        return render_template("courses.html", courses = courses, isStaff=False, today= datetime.date.today())
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+@app.route('/courses/<course_name>')
+def course(course_name):
+    session = Session()
+    try:
+        c = get_course(session,name = course_name)
+        cp = get_course_program(session,course_id = c.id)
+        sh = []
+        for i in cp:
+            sh.append(get_shift(session, id=i.turn_number))
+        if current_user.is_authenticated:
+            u = get_user(session, id = current_user.id)
+            cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
+            if "Trainer" in current_user.roles:
+                return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=True)
+            return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=False)
+        return render_template("course.html", course = c, course_program = cp, shift = sh, isStaff=False)
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
 @app.route('/trainer_courses')
 @login_required
 def trainer_courses():
@@ -281,134 +497,6 @@ def trainer_course(course_name):
         else:
             session.commit()
             abort(401)
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-
-
-# ________________________________________________________PRENOTATION________________________________________________________
-
-#@app.route('/shifts/<year>/<month>/<day>/<room>')
-@app.route('/shifts')
-def shifts():
-    session = Session()
-    try:
-        year = request.args.get('year')
-        month = request.args.get('month')
-        day = request.args.get('day')
-        room = request.args.get('room')
-        date = datetime.date(year=int(year), month=int(month), day=int(day))
-        if date < datetime.date.today():
-            date = datetime.date.today()
-        date_string = date.strftime("%Y-%m-%d")
-        r = get_room(session, all=True)
-        if room == 'All':
-            shifts = get_shift(session, date=date)
-        else:
-            room_id = get_room(session, name=room).id
-            shifts = get_shift(session, date=date, room_id=room_id)
-        shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
-        if date == date.today():
-            shifts = filter(lambda sh: sh.ending >= datetime.datetime.now().time(), shifts)
-        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda x: (x.ending, x.room_id)), date_string=date_string, rooms=r))
-        session.commit()
-        return resp
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-
-@app.route('/shifts/first')
-def shifts_first():
-    curr = datetime.date.today()
-    return redirect('/shifts?year=%s&month=%s&day=%s&room=All' % (curr.year, curr.month, curr.day))
-
-@app.route('/shifts/load_date', methods=['GET', 'POST'])
-def shifts_load_state():
-    if request.method == 'POST':
-        session = Session()
-        try:
-            date_str = request.form['date']
-            room = request.form['room']
-            date_str = date_str.replace('-', '/')
-            date = datetime.datetime.strptime(date_str, '%Y/%m/%d')
-            session.commit()
-            return redirect('/shifts?year=%s&month=%s&day=%s&room=%s' % (date.year, date.month, date.day, room))
-        except:
-            session.rollback()
-            raise
-        finally:
-            session.close()
-
-@app.route('/prenotation/<shift>')
-def prenotation(shift):
-    session = Session()
-    try:
-        if current_user.is_authenticated:
-            us = get_user(session, id = current_user.id)
-            s = get_shift(session, id = shift)
-            add_prenotation(session, user = us, shift = s)
-            session.commit()
-            return redirect(url_for('prenotations'))
-        return redirect(url_for('login'))
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-    
-
-@app.route('/del_prenotation/<shift>')
-@login_required
-def del_prenotation(shift):
-    session = Session()
-    try:
-        us = get_user(session,id = current_user.id)
-        s = get_shift(session, id = shift)
-        delete_prenotation(session, shift=s, user=us)
-        session.commit()
-        return redirect(url_for('prenotations'))
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-
-# ________________________________________________________COURSES________________________________________________________
-
-@app.route('/courses')
-def courses():
-    session = Session()
-    try:
-        courses = get_course(session, all=True)
-        if current_user.is_authenticated and "Trainer" in current_user.roles:
-            return render_template("courses.html", courses = courses, isStaff=True, today= datetime.date.today())
-        return render_template("courses.html", courses = courses, isStaff=False, today= datetime.date.today())
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-
-@app.route('/courses/<course_name>')
-def course(course_name):
-    session = Session()
-    try:
-        c = get_course(session,name = course_name)
-        cp = get_course_program(session,course_id = c.id)
-        sh = []
-        for i in cp:
-            sh.append(get_shift(session, id=i.turn_number))
-        if current_user.is_authenticated:
-            u = get_user(session, id = current_user.id)
-            cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
-            if "Trainer" in current_user.roles:
-                return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=True)
-            return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=False)
-        return render_template("course.html", course = c, course_program = cp, shift = sh, isStaff=False)
     except:
         session.rollback()
         raise
@@ -594,62 +682,7 @@ def delete_sign_up(course_name):
         session.close()
 
 
-# ________________________________________________________LOGIN - SIGNIN________________________________________________________
 
-
-@app.route('/private/update_user')
-@login_required
-def upd_user():
-    session = Session()
-    try:
-        user = get_user(session, id = current_user.id)
-        return render_template("update_user.html", user = user)
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-
-@app.route('/update_user_form', methods=['POST'])
-@login_required
-def update_user_form():
-    if request.method == 'POST':
-        session = Session()
-        try:
-            user = get_user(session, email= current_user.email)
-            fullname = request.form['fullname']
-            if fullname == "":
-                flash("Empty Field!", category='error')
-                return redirect(url_for('upd_user'))
-            telephone = request.form['telephone']
-            if telephone == "":
-                flash("Empty Field!", category='error')
-                return redirect(url_for('upd_user'))
-            address = request.form['address']
-            if address == "":
-                flash("Empty Field!", category='error')
-                return redirect(url_for('upd_user'))
-            pwd1 = request.form['pwd1']
-            if pwd1 == "":
-                flash("Empty Field!", category='error')
-                return redirect(url_for('upd_user'))
-            pwd2 = request.form['pwd2']
-            if pwd1 == "":
-                flash("Empty Field!", category='error')
-                return redirect(url_for('upd_user'))
-
-            if pwd1 != pwd2:
-                flash("Password Mismatch!", category='error')
-                return redirect(url_for('upd_user'))
-                
-            update_user(session, user_id = user.id, fullname = fullname, telephone = telephone, address = address, pwd = pwd1)
-            session.commit()
-            return redirect(url_for('upd_user'))
-        except:
-            session.rollback()
-            raise
-        finally:
-            session.close()
     
 
 # ________________________________________________________MESSAGES________________________________________________________
