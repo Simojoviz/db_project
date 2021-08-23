@@ -136,12 +136,12 @@ def add_trainer(session, fullname=None, email=None, pwd=None, telephone=None, ad
             add_user(session,user=user)
             session.flush()
             session.add(Trainer(id=user.id))
-            add_user_roles(session, user=user, role=get_role(session, name='Staff'))
+            add_user_roles(session, user=user, role=get_role(session, name='Trainer'))
             return True
         elif get_trainer(session, email=user.email) is None:
             # b) User yet, but not a Trainer
             session.add(Trainer(id=user.id))
-            add_user_roles(session, user=user, role=get_role(session, name='Staff'))
+            add_user_roles(session, user=user, role=get_role(session, name='Trainer'))
             return True
         else:  
             # c) Both a User and a Trainer
@@ -235,7 +235,7 @@ def add_user_roles(session, user=None, role=None):
 # Raises an Error if the User doesn't have the Role
 def delete_user_roles(session, user=None, role=None):
     if role in user.roles:
-        user_role = get_user_roles(session=user.id, role_id=role.id)
+        user_role = get_user_roles(session, user_id=user.id, role_id=role.id)
         session.delete(user_role)
     else:
         raise Exception("Cannot revoke role: User " + user.fullname + " doesn't have " + role.name + " role")
@@ -264,8 +264,8 @@ def revoke_trainer_role(session, user_id=None):
         user = get_user(session, id=user_id)
         trainer_role = get_role(session, name="Trainer")
         trainer = get_trainer(session, id=user_id)
-        for course in  trainer.courses:
-            delete_course(session, course=course)
+        for course in  trainer.courses: # could be also done from ON DELETE CASCADE, but we need to notify users
+            delete_course(session, course_id=course.id)
         session.delete(get_trainer(session, id=user_id))
         delete_user_roles(session, user=user, role=trainer_role)
         admin_id = get_admin_id(session)
@@ -1007,7 +1007,7 @@ def delete_course_sign_up(session, course=None, user=None):
 # Returns None otherwise
 def get_message(session, id=None, sender=None, addresser=None, all=False):
     if id is not None:
-        return session.query(Message).filter(Message.id == id).all()
+        return session.query(Message).filter(Message.id == id).one_or_none()
     if sender is not None and addresser is not None:
         if sender == addresser:
             return session.query(Message).filter(Message.sender == sender).union.\
@@ -1076,9 +1076,9 @@ def mark_read(session, messages=None):
 # - all users who have a course in common (and also to the trainer)
 def user_covid_report(session, user_id):
 
-    user = get_user(session, id = user_id)
+    user = get_user(session, id=user_id)
     admin_id = get_admin_id(session)
-    update_user(user, user_id=user_id, covid_state=2)
+    update_user(session, user_id=user_id, covid_state=2)
     add_message(session, sender_id=admin_id, addresser_id=user_id,
                     text= "You signaled you're positive to Covid19. For any problem please contact Gym's admin. Get well soon! "
                 )
@@ -1087,7 +1087,7 @@ def user_covid_report(session, user_id):
 
     # Shift
     prev = today - timedelta(days=14)
-    shifts = user.prenotations_shifts
+    shifts = user.shifts
     shifts = filter(lambda sh: prev <= sh.date <= today, shifts) # Remove the shifts that are not in the previous two weeks
     for shift in shifts:
         users = shift.users_prenoted

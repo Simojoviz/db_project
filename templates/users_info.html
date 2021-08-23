@@ -14,7 +14,7 @@
             Telephone : {{user.telephone}} <br>
             Roles : 
             {% for role in user.roles %} {{role.name }} <br> {% endfor %}
-            Membership Deadline : {{user.membership_deadline}} <br>
+            Subscription to : {{user.subscription}} <br>
             Covid State :
               {% if user.covid_state == 0 %}
                 Free <br>
@@ -32,6 +32,12 @@
         </div>
       </div>
     {% endfor %}
+  </div>
+
+  <div class="mt-4">
+    <form action="{{url_for('private')}}">
+      <input type="submit", value="Back" class="btn btn-info text-light">
+    </form>
   </div>
 
 {% endblock %}

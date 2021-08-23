@@ -29,7 +29,7 @@ add_room_from_list(session, rooms)
 # Roles
 roles = [
     Role(name = 'Client'),
-    Role(name = 'Staff'),
+    Role(name = 'Trainer'),
     Role(name = 'Admin')
 ]
 add_role_from_list(session, roles)
@@ -85,7 +85,7 @@ add_week_setting_from_list(session, week_setting_list=week_settings)
 
 # Shifts
 plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=365, all_room=True)
-
+""" Da correggere
 update_weekend_setting(
     session, day_name='Saturday',
     starting = datetime.time(hour=10, minute=00),
@@ -93,6 +93,8 @@ update_weekend_setting(
     length   = datetime.time(hour=1,  minute=00)
 )
 plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=365, all_room=True)
+"""
+
 
 # Courses
 courses = [
@@ -192,6 +194,6 @@ add_course_sign_up(
     course=get_course(session, name='Judo')
 )
 
-# covid_report_messages(session, get_user(session, email='andrea@gmail.com').id)
+# user_covid_report(session, get_user(session, email='andrea@gmail.com').id)
 
 session.commit()

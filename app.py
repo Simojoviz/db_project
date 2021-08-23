@@ -606,11 +606,9 @@ def update_user_form():
                 flash("Password Mismatch!", category='error')
                 return redirect(url_for('upd_user'))
                 
-            if update_user(session, user_id = user.id, fullname = fullname, telephone = telephone, address = address, pwd1 = pwd1, pwd2 = pwd2):
-                session.commit()
-                return redirect(url_for('private')) 
-            else:
-                return redirect(url_for('upd_user'))
+            update_user(session, user_id = user.id, fullname = fullname, telephone = telephone, address = address, pwd = pwd1)
+            session.commit()
+            return redirect(url_for('upd_user'))
         except:
             session.rollback()
             raise
@@ -624,7 +622,8 @@ def update_user_form():
 def covid_report():
     session = Session() 
     try:
-        covid_report_messages(session, current_user.id)
+        user = get_user(session, id=current_user.id)
+        user_covid_report(session, user_id=user.id)
         session.commit()
         return redirect(url_for('private'))
     except:
@@ -639,8 +638,6 @@ def messages():
     session = Session() 
     try:
         messages = get_message(session, addresser=current_user.id)
-        for message in messages:
-            print(message.text)
         resp = make_response(render_template("messages.html", messages=reversed(messages)))
         mark_read(session, messages)
         session.commit()
@@ -688,6 +685,7 @@ def global_settings():
     try:
         if is_admin(current_user):
             global_settings = get_global_setting(session, all=True)
+            global_settings = sorted(global_settings, key=lambda x: x.name)
             resp= make_response(render_template("update_global_settings.html", global_settings=global_settings))
             return resp
         else:
@@ -787,7 +785,6 @@ def add_room_form():
             session.flush()
             room = get_room(session, name=name)
             if room is not None:
-                print(room.name + " " + str(room.id))
                 plan_shifts(session, starting=datetime.date.today(), ending=date, room_id=room.id)
             else:
                 raise Exception("non trovo stanza appena aggiunta")
@@ -855,6 +852,9 @@ def user_settings(user_id):
     try:
         if is_admin(current_user):
             user = get_user(session, id=user_id)
+            #print(get_role(session, name="Trainer").name)
+            for role in user.roles:
+                print(role.name)
             return make_response(render_template("user_settings.html", user=user, isStaff=(get_role(session,name="Trainer") in user.roles)))
         else:
             return redirect(url_for('private'))
@@ -868,7 +868,7 @@ def user_settings(user_id):
 def reset_covid_state(user_id):
     session = Session()
     try:
-        update_user_covid_state(session=session, user_id=user_id, value=0)
+        update_user(session=session, user_id=user_id, covid_state=0)
         session.commit()
         return redirect(url_for('user_settings', user_id=user_id))         
     except:
@@ -888,7 +888,7 @@ def new_deadline(user_id):
             date_str = request.form["date"]
             date_str = date_str.replace('-', '/')
             date = datetime.datetime.strptime(date_str, '%Y/%m/%d')
-            update_user_deadline(session, user_id=user_id, date=date)
+            update_user(session, user_id=user_id, subscription=date)
             session.commit()
             return redirect(url_for('user_settings', user_id=user_id))
         except:

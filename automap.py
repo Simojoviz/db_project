@@ -37,7 +37,7 @@ class Trainer(Base):
     
     __tablename__ = 'trainers'
 
-    id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True, nullable=False)
+    id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
 
     user = relationship("User")
 
@@ -81,7 +81,7 @@ class Shift(Base):
     date      = Column(Date, nullable=False)
     starting  = Column(Time, nullable=False)
     ending    = Column(Time, nullable=False)
-    room_id   = Column(Integer, ForeignKey('rooms.id',   ondelete='CASCADE'), nullable=False)
+    room_id   = Column(Integer, ForeignKey('rooms.id',   ondelete='CASCADE'))
     course_id = Column(Integer, ForeignKey('courses.id', ondelete='SET NULL'))
 
     __table_args__ = (UniqueConstraint('date', 'starting', 'room_id'),)
@@ -191,7 +191,7 @@ class Course(Base):
     starting         = Column(Date,    nullable=False)
     ending           = Column(Date,    nullable=False)
     max_partecipants = Column(Integer, nullable=False)
-    instructor_id    = Column(Integer, ForeignKey('trainers.id', ondelete='CASCADE'), nullable=False)
+    instructor_id    = Column(Integer, ForeignKey('trainers.id', ondelete='CASCADE'))
 
     trainer         = relationship("Trainer",       back_populates="courses")
     shifts          = relationship("Shift",         back_populates="course")
@@ -216,7 +216,7 @@ class CourseProgram(Base):
     id          = Column(Integer, primary_key=True)
     week_day    = Column(String,  nullable=False)
     turn_number = Column(Integer, nullable=False)
-    room_id     = Column(Integer, ForeignKey('rooms.id',   ondelete='CASCADE'), nullable=False)
+    room_id     = Column(Integer, ForeignKey('rooms.id',   ondelete='CASCADE'))
     course_id   = Column(Integer, ForeignKey('courses.id', ondelete='CASCADE'))
 
     __table_args__ = (UniqueConstraint('course_id', 'week_day', 'turn_number', ),)
