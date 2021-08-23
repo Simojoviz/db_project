@@ -187,27 +187,39 @@ def shifts():
         length = timedelta(hours=settings.length.hour,   minutes=settings.length.minute)
         start = timedelta(hours=settings.starting.hour,   minutes=settings.starting.minute)
         end_ = timedelta(hours=settings.ending.hour,   minutes=settings.ending.minute)
-        end = start + length 
         shifts = []
         if room == 'All':
             for r in get_room(session, all=True):
+                end = start + length 
                 while (end <= end_):
-                    l.append(datetime.time(hour=start.seconds//3600, minute=(start.seconds//60)%60), 
+                    shifts.append(
+                        [date,
+                        datetime.time(hour=(end-length).seconds//3600, minute=((end-length).seconds//60)%60), 
                         datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
-                        r.id
+                        r,
+                        r.max_capacity]
                     )
+                    end += length
         else:
-            room_id = get_room(session, name=room).id
+            r = get_room(session, name=room)
+            end = start + length 
             while (end <= end_):
-                l.append(
-                    (datetime.time(hour=start.seconds//3600, minute=(start.seconds//60)%60), 
+                shifts.append(
+                    [date,
+                    datetime.time(hour=(end-length).seconds//3600, minute=((end-length).seconds//60)%60), 
                     datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
-                    room.id)
+                    r,
+                    r.max_capacity]
                 )
-        shifts = filter(lambda t: get_shift(session, date=date, start=t[0], room_id=t[2]) is None or get_shift(session, date=date, start=t[0], room_id=t[2]).course_id is None, shifts) # Remove the shifts occupied from a course
+                end += length
+        shifts = [s for s in filter(lambda s: get_shift(session, date=date, start=s[1], room_id=s[3].id) is None or get_shift(session, date=date, start=s[1], room_id=s[3].id).course_id is None, shifts)] # Remove the shifts occupied from a course
         if date == date.today():
-            shifts = filter(lambda t: t[0] >= datetime.datetime.now().time(), shifts)
-        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda t: (t[2], t[0])), date_string=date_string, rooms=r))
+            shifts = [s for s in filter(lambda s: s[1] >= datetime.datetime.now().time(), shifts)]
+        for s in shifts:
+            mem_shift = get_shift(session, date=date, start=s[1], room_id=s[3].id)
+            if mem_shift is not None:
+                s[4] = s[4] - len(mem_shift.prenotations)
+        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda t: (t[3].id, t[1])), date_string=date_string, rooms=get_room(session, all=True)))
         session.commit()
         return resp
     except:

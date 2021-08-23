@@ -70,13 +70,13 @@
 
       {% for s in shifts %}
       <tr>
-        <td>{{s.date}}</td>
-        <td>{{s.h_start}}</td>
-        <td>{{s.h_end}}</td>
-        <td>{{s.room.name}}</td>
-        <td>{{s.room.max_capacity - s.prenotations|length}}/{{s.room.max_capacity}}</td>
+        <td>{{ s[0] }}</td>
+        <td>{{ s[1] }}</td>
+        <td>{{ s[2] }}</td>
+        <td>{{ s[3].name }}</td>
+        <td>{{ s[4] }} / {{ s[3].max_capacity }}</td>
         <td>
-          {% if "Admin" in current_user.roles %}
+          {% if current_user.is_authenticated and "Admin" in current_user.roles %}
             <button type="button" class="collapsible">Users</button>
             <div class="content">
               {% for u in s.users_prenotated %}
@@ -84,7 +84,7 @@
               {% endfor %}
             </div>
           {% else %}
-            {% if s.room.max_capacity - s.prenotations|length > 0 %}
+            {% if s[4] > 0 %}
               <form action= "{{ url_for('prenotation', shift = s.id) }}">
                 <input type="submit", value="Book" class="btn btn-success btn-sm">
               </form>
