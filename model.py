@@ -50,7 +50,7 @@ def add_user(session, fullname=None, email=None, address=None, telephone=None, p
         else:
             session.add(user)
             session.flush()
-            add_user_roles(session, user=user, role=get_role(session, name='Client'))
+            add_user_role(session, user=user, role=get_role(session, name='Client'))
             return True
     elif fullname     is not None and\
          email        is not None and\
@@ -136,12 +136,12 @@ def add_trainer(session, fullname=None, email=None, pwd=None, telephone=None, ad
             add_user(session,user=user)
             session.flush()
             session.add(Trainer(id=user.id))
-            add_user_roles(session, user=user, role=get_role(session, name='Trainer'))
+            add_user_role(session, user=user, role=get_role(session, name='Trainer'))
             return True
         elif get_trainer(session, email=user.email) is None:
             # b) User yet, but not a Trainer
             session.add(Trainer(id=user.id))
-            add_user_roles(session, user=user, role=get_role(session, name='Trainer'))
+            add_user_role(session, user=user, role=get_role(session, name='Trainer'))
             return True
         else:  
             # c) Both a User and a Trainer
@@ -209,14 +209,15 @@ def add_role_from_list(session, role_list):
 
 # ________________________________________ USER-ROLES ________________________________________
 
+
 # - Given a user_id and a role_id returns the correponding UserRole if exists
 # - If all flag is set True, returns all UserRole
 # Returns None otherwise
-def get_user_roles(session, user_id=None, role_id=None):
+def get_user_role(session, user_id=None, role_id=None):
     if user_id is not None and role_id is not None:
-        return session.query(Role).join(UserRole).filter(UserRole.user_id == user_id, UserRole.role_id == role_id).one_or_none()
+        return session.query(UserRole).filter(UserRole.user_id == user_id, UserRole.role_id == role_id).one_or_none()
     elif user_id is not None:
-        return session.query(Role).join(UserRole).filter(UserRole.user_id == user_id).all()
+        return session.query(UserRole).filter(UserRole.user_id == user_id).all()
     else:
         return None   
 
@@ -225,7 +226,7 @@ def get_user_roles(session, user_id=None, role_id=None):
 # Returns True if it was added correctly
 # Raises an Exception if
 # - The User already had that Role (BaseException, violated p_key contraint)
-def add_user_roles(session, user=None, role=None):
+def add_user_role(session, user=None, role=None):
 
     if user is not None and role is not None:
         session.add(UserRole(user_id=user.id, role_id=role.id))
@@ -233,9 +234,11 @@ def add_user_roles(session, user=None, role=None):
 
 # Deletes the UserRole form the given User and Role
 # Raises an Error if the User doesn't have the Role
-def delete_user_roles(session, user=None, role=None):
+def delete_user_role(session, user_id=None, role_id=None):
+    role = get_role(session, id=role_id)
+    user = get_user(session, id=user_id)
     if role in user.roles:
-        user_role = get_user_roles(session, user_id=user.id, role_id=role.id)
+        user_role = get_user_role(session, user_id=user_id, role_id=role_id)
         session.delete(user_role)
     else:
         raise Exception("Cannot revoke role: User " + user.fullname + " doesn't have " + role.name + " role")
@@ -261,13 +264,12 @@ def assign_trainer_role(session, user_id=None):
 # PN! The role is revoked both from UserRoles and Trainer table
 def revoke_trainer_role(session, user_id=None):
     if user_id is not None:
-        user = get_user(session, id=user_id)
         trainer_role = get_role(session, name="Trainer")
         trainer = get_trainer(session, id=user_id)
         for course in  trainer.courses: # could be also done from ON DELETE CASCADE, but we need to notify users
             delete_course(session, course_id=course.id)
-        session.delete(get_trainer(session, id=user_id))
-        delete_user_roles(session, user=user, role=trainer_role)
+        session.delete(trainer)
+        delete_user_role(session, user_id=user_id, role_id=trainer_role.id)
         admin_id = get_admin_id(session)
         add_message(session, sender_id=admin_id, addresser_id=user_id, text="You're Trainer role has been revoked. All your Courses have been deleted")
 

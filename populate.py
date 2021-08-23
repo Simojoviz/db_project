@@ -47,7 +47,7 @@ users = [
 add_user_from_list(session, users)
 
 # User-Roles
-add_user_roles(
+add_user_role(
     session,
     user = get_user(session, email='admin@gmail.com'),
     role = get_role(session, name="Admin")
@@ -84,7 +84,7 @@ week_settings = [
 add_week_setting_from_list(session, week_setting_list=week_settings)
 
 # Shifts
-plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=365, all_room=True)
+plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=90, all_room=True)
 """ Da correggere
 update_weekend_setting(
     session, day_name='Saturday',
