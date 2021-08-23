@@ -17,11 +17,13 @@ engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', e
 
 app.config ['SECRET_KEY'] = 'ubersecret'
 
-
 Session = sessionmaker(bind=engine, autoflush=True)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+#__________________________________________ SESSION-USER ________________________________________
+
 
 class SessionUser(UserMixin):
     # costruttore di classe
@@ -54,15 +56,133 @@ def load_user(user_id):
     finally:
         session.close()
 
-#__________________________________________HOME________________________________________
+def is_admin(us):
+    return us.is_authenticated and "Admin" in us.roles
+
+def is_trainer(us):
+    return us.is_authenticated and "Trainer" in us.roles
+
+#__________________________________________ LOGIN-SIGIN-LOGOUT ________________________________________
+
+
+@app.route('/login')
+def login():
+    try:
+        if current_user.is_authenticated:
+            return redirect(url_for('private'))
+        return render_template("login.html")
+    except Exception as exc:
+        flash(repr(exc), category='error')
+        return redirect(url_for('login'))
+
+
+@app.route('/login_form', methods=['GET', 'POST'])
+def login_form():
+    if request.method == 'POST':
+        session = Session()
+        try:
+            userReq = request.form['user']
+            passReq = request.form['pass']
+            userIn = get_user(session, email = userReq)
+            if(userIn is not None):
+                if (passReq == userIn.pwd):
+                    user = get_SessionUser_by_email(session, userReq)
+                    login_user(user)
+                    session.commit()
+                    return redirect(url_for('login'))
+                else:
+                    flash("Incorrect username or password.", category='error')
+                    session.commit()
+                    return redirect(url_for('login'))
+            else:
+                flash("Incorrect username or password.", category='error')
+                session.commit()
+                return redirect(url_for('login'))
+        except Exception as exc:
+            flash(repr(exc), category='error')
+            session.rollback()
+            session.close()
+            return redirect(url_for('login'))
+        finally:
+            session.close()
+
+
+@app.route('/signin')
+def signin():
+    try:
+        if current_user.is_authenticated:
+            return redirect(url_for('private'))
+        return render_template("signin.html")
+    except Exception as exc:
+            flash(repr(exc), category='error')
+            if current_user.is_authenticated:
+                return redirect(url_for('private'))
+            return redirect(url_for('home'))
+
+@app.route('/signin_form', methods=['GET', 'POST'])
+def signin_form():
+    if request.method == 'POST':
+        session = Session()
+        try:
+            fullname = request.form['name']
+            email = request.form['email']
+            address = request.form['address']
+            telephone = request.form['telephone']
+            pwd1 = request.form['pwd1']
+            pwd2 = request.form['pwd2']
+            us = get_user(session, email=email)
+            if fullname and email and address and telephone and pwd1 and pwd1 == pwd2 and us is None:
+                flash("Signed in successfully.", category='success')
+                add_user(session, fullname=fullname, email=email, address=address, telephone=telephone, pwd=pwd1)
+                session.commit()
+                return redirect(url_for('login'))
+            if not fullname:
+                flash("Please enter a fullname.", category='error')
+            elif not email:
+                flash("Please enter an email.", category='error')
+            elif not telephone:
+                flash("Please enter telephone", category='error')
+            elif not address:
+                flash("Please enter address", category='error')
+            elif us is not None:
+                flash("User already exist.", category='error')
+            elif us is not None:
+                flash("User already exist.", category='error')
+            elif not pwd1:
+                flash("Please enter a password.", category='error')
+            else:    
+                flash("Passwords do not match.", category='error')
+            return redirect(url_for('signin'))
+        except Exception as exc:
+            flash(repr(exc), category='error')
+            session.rollback()
+            session.close()
+            return redirect(url_for('signin'))
+        finally:
+            session.close()
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('home'))
+
+
+#__________________________________________ HOME ________________________________________
+
+
 @app.route('/')
 def home():
     try:
         return render_template("home.html")
-    except:
-        raise
+    except Exception as exc:
+            flash(repr(exc), category='error')
+            return redirect(url_for('home'))
 
-# ________________________________________________________PRIVATE________________________________________________________
+
+# ________________________________________________________ PRIVATE ________________________________________________________
+
 
 @app.route('/private')
 @login_required
@@ -78,49 +198,50 @@ def private():
         return new
 
     try:
-        email = current_user.email
-        user = get_user(session, email=email)
+        user = get_user(session, email=current_user.email)
         resp = make_response(render_template("private.html", us = user, new_mess=new_messages()))
         session.commit()
         return resp
-    except:
-        session.rollback()
-        raise
+    except Exception as exc:
+            flash(repr(exc), category='error')
+            session.rollback()
+            session.close()
+            return redirect(url_for('private'))
     finally:
         session.close()
+
 
 @app.route('/private/prenotations')
 @login_required
 def prenotations():
     session = Session() 
     try:
-        email = current_user.email
-        user = get_user(session, email=email)
+        user = get_user(session, email=current_user.email)
         shifts = filter(lambda sh: sh.date >= datetime.date.today(), user.shifts)
         past_shifts = filter(lambda sh: sh.date <= datetime.date.today() and datetime.datetime.now().time() >= sh.ending, user.shifts)
-        resp = make_response(render_template("prenotations.html", shifts=shifts, past_shifts=past_shifts))
-        session.commit()
-        return resp
-    except:
-        session.rollback()
-        raise
+        return make_response(render_template("prenotations.html", shifts=shifts, past_shifts=past_shifts))
+    except Exception as exc:
+            flash(repr(exc), category='error')
+            session.rollback()
+            session.close()
+            return redirect(url_for('prenotations'))
     finally:
         session.close()
+
 
 @app.route('/private/courses_sign_up')
 @login_required
 def courses_sign_up():
     session = Session() 
     try:
-        email = current_user.email
-        user = get_user(session, email=email)
+        user = get_user(session, email=current_user.email)
         courses = user.courses
-        resp = make_response(render_template("courses_sign_up.html", courses=courses, today=datetime.date.today()))
-        session.commit()
-        return resp
-    except:
+        return make_response(render_template("courses_sign_up.html", courses=courses, today=datetime.date.today()))
+    except Exception as exc:
+        flash(repr(exc), category='error')
         session.rollback()
-        raise
+        session.close()
+        return redirect(url_for('courses_sign_up'))
     finally:
         session.close()
 
@@ -129,11 +250,10 @@ def courses_sign_up():
 def trainer_courses():
     session = Session()
     try:
-        trainer = get_trainer(session, id = current_user.id)
-        if trainer is not None:
-            courses = trainer.courses
-            session.commit()
-            return render_template("trainer_courses.html", courses = courses, trainer = trainer, today= datetime.date.today())
+        user = get_user(session, email=current_user.email)
+        if is_trainer(user):
+            courses = user.trainer.courses
+            return render_template("trainer_courses.html", courses = courses, trainer = user.trainer, today= datetime.date.today())
         else:
             session.commit()
             abort(401)
@@ -475,91 +595,7 @@ def delete_sign_up(course_name):
 
 
 # ________________________________________________________LOGIN - SIGNIN________________________________________________________
-@app.route('/signin')
-def signin():
-    if current_user.is_authenticated:
-        return redirect(url_for('private'))
-    return render_template("signin.html")
 
-@app.route('/signin_form', methods=['GET', 'POST'])
-def signin_form():
-    if request.method == 'POST':
-        session = Session()
-        try:
-            fullname = request.form['name']
-            email = request.form['email']
-            address = request.form['address']
-            telephone = request.form['telephone']
-            pwd1 = request.form['pwd1']
-            pwd2 = request.form['pwd2']
-            us = get_user(session, email=email)
-            if fullname and email and address and telephone and pwd1 and pwd1 == pwd2 and us is None:
-                flash("Signed in successfully.", category='success')
-                add_user(session, fullname=fullname, email=email, address=address, telephone=telephone, pwd=pwd1)
-                session.commit()
-                return redirect(url_for('login'))
-            if not fullname:
-                flash("Please enter a fullname.", category='error')
-            elif not email:
-                flash("Please enter an email.", category='error')
-            elif not telephone:
-                flash("Please enter telephone", category='error')
-            elif not address:
-                flash("Please enter address", category='error')
-            elif us is not None:
-                flash("User already exist.", category='error')
-            elif us is not None:
-                flash("User already exist.", category='error')
-            elif not pwd1:
-                flash("Please enter a password.", category='error')
-            else:    
-                flash("Passwords do not match.", category='error')
-            return redirect(url_for('signin'))
-        except:
-            session.rollback()
-            raise
-        finally:
-            session.close()
-                
-@app.route('/login')
-def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('private'))
-    return render_template("login.html")
-
-@app.route('/login_form', methods=['GET', 'POST'])
-def login_form():
-    if request.method == 'POST':
-        session = Session()
-        try:
-            userReq = request.form['user']
-            passReq = request.form['pass']
-            userIn = get_user(session, email = userReq)
-            if(userIn is not None):
-                if (passReq == userIn.pwd):
-                    user = get_SessionUser_by_email(session, userReq)
-                    login_user(user)
-                    session.commit()
-                    return redirect(url_for('login'))
-                else:
-                    flash("Incorrect username or password.", category='error')
-                    session.commit()
-                    return redirect(url_for('login'))
-            else:
-                flash("Incorrect username or password.", category='error')
-                session.commit()
-                return redirect(url_for('login'))
-        except:
-            session.rollback()
-            raise
-        finally:
-            session.close()
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('home'))
 
 @app.route('/private/update_user')
 @login_required
@@ -664,9 +700,6 @@ def delete_message(mess_id):
             session.close()
 
 # ________________________________________________________ADMIN SETTINGS________________________________________________________
-def is_admin(us):
-    return us.is_authenticated and "Admin" in us.roles
-
 @app.route('/admin/settings')
 @login_required
 def settings():
