@@ -272,7 +272,7 @@ def upd_user():
         session.close()
 
 
-@app.route('private/update_user_form', methods=['POST'])
+@app.route('/private/update_user_form', methods=['POST'])
 @login_required
 def update_user_form():
     if request.method == 'POST':
