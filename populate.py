@@ -89,11 +89,9 @@ week_settings = [
     WeekSetting(day_name='Saturday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=15, minute=00), length=datetime.time(hour=1, minute=30), changed = True) # 4
 ]
 
-for ws in week_settings:
-    add_week_setting(session, week_setting=ws)
+add_week_setting_from_list(session, week_setting_list=week_settings)
 
 # GlobalSettings
-"""
 global_settings = [
     GlobalSetting(name='MaxWeeklyEntry',       value =   3),   # max-week entry
     GlobalSetting(name='MaximumShiftLength',   value = 180),   # maximum shift's length
@@ -101,10 +99,9 @@ global_settings = [
     GlobalSetting(name='HourOpening',          value =   8),   # gym opening hour
     GlobalSetting(name='HourClosing',          value =  22),   # gym closing hour
 ]
-for gs in global_settings:
-    add_global_setting(session, global_setting=gs)"""
 
-add_global_setting(session, global_setting=GlobalSetting(name='MaxWeeklyEntry', value=3))
+add_global_setting_from_list()
+
 
 
 # Shifts

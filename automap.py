@@ -14,14 +14,14 @@ class User(Base):
 
     __tablename__ = 'users'
 
-    id                  = Column(Integer, primary_key=True)
-    email               = Column(String,  nullable=False, unique=True)
-    telephone           = Column(String,  nullable=False, unique=True)
-    fullname            = Column(String,  nullable=False)
-    pwd                 = Column(String,  nullable=False)
-    address             = Column(String,  nullable=False)
+    id           = Column(Integer, primary_key=True)
+    email        = Column(String,  nullable=False, unique=True)
+    telephone    = Column(String,  nullable=False, unique=True)
+    fullname     = Column(String,  nullable=False)
+    pwd          = Column(String,  nullable=False)
+    address      = Column(String,  nullable=False)
     subscription = Column(Date,    nullable=False)
-    covid_state         = Column(Integer, nullable=False)
+    covid_state  = Column(Integer, nullable=False)
 
     shifts          =  relationship("Shift",  secondary="prenotations",    back_populates="users_prenoted")
     courses         = relationship("Course", secondary="course_signs_up", back_populates="users")

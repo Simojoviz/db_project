@@ -332,13 +332,6 @@ conn.execute(
         ) THEN\
             RAISE EXCEPTION 'Cannot Sign-Up: Trainer cannot sign-up for his course';\
             RETURN NULL;\
-        ELSIF NEW.user_id IN (\
-            SELECT user_id\
-            FROM course_signs_up\
-            WHERE course_id=NEW.course_id\
-        ) THEN\
-            RAISE EXCEPTION 'Cannot Sign-Up: User cannot sign-up twice for the same course';\
-            RETURN NULL;\
         ELSIF (\
             ( SELECT max_partecipants FROM courses WHERE id = NEW.course_id ) = \
             ( SELECT COUNT(*) FROM course_signs_up WHERE course_id = NEW.course_id) \
@@ -354,7 +347,7 @@ conn.execute(
         OWNER TO postgres;\
     \
     COMMENT ON FUNCTION public.no_invalid_sign_up()\
-        IS 'Raise an exception if - Trainer sign-up for his own course, User  sign-up twice for the same course, The course is full ';\
+        IS 'Raise an exception if - Trainer sign-up for his own course, The course is full ';\
     \
     CREATE TRIGGER NoInvalidSignUp\
     BEFORE INSERT OR UPDATE\
@@ -363,5 +356,5 @@ conn.execute(
     EXECUTE PROCEDURE public.no_invalid_sign_up();\
     \
     COMMENT ON TRIGGER NoInvalidSignUp ON public.course_signs_up\
-    IS 'Raise an exception if - Trainer sign-up for his own course, User  sign-up twice for the same course, The course is full ';"
+    IS 'Raise an exception if - Trainer sign-up for his own course, The course is full ';"
 )

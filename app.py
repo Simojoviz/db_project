@@ -301,7 +301,7 @@ def del_course(course_name):
     try:
         c = get_course(session, name = course_name)
         if current_user.is_authenticated :
-            delete_course(session, course = c)
+            delete_course(session, course_id = c.id)
             session.commit()
             return redirect(url_for('courses'))
     except:
@@ -367,7 +367,7 @@ def undo_course(course_name):
         starting = c.starting
         ending = c.ending
         max_partecipants = c.max_partecipants
-        delete_course(session, course=c)
+        delete_course(session, course_id=c.id)
         session.commit()
         return render_template('add_course.html', rooms=get_room(session, all=True), course_name=course_name, starting=starting, ending=ending, max_partecipants=max_partecipants)
     except:
@@ -418,7 +418,7 @@ def add_program_form(course_name):
 def del_program(program_id, course_name):
     session = Session()
     try:
-        session.query(CourseProgram).where(CourseProgram.id==program_id).delete()
+        delete_course_program(session, cp_id=int(program_id))
         session.commit()
         return redirect(url_for('new_program', course_name = course_name))
     except:
@@ -805,7 +805,7 @@ def del_room(room_id):
     if request.method == 'POST':
         session = Session()
         try:
-            delete_room(session, room_id=room_id)
+            delete_room(session, room_id=int(room_id))
             session.commit()
             return redirect(url_for('room_settings'))
         except:
