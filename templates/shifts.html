@@ -76,7 +76,7 @@
         <td>{{s.room.name}}</td>
         <td>{{s.room.max_capacity - s.prenotations|length}}/{{s.room.max_capacity}}</td>
         <td>
-          {% if "Admin" in current_user.roles %}
+          {% if current_user.is_authenticated and "Admin" in current_user.roles %}
             <button type="button" class="collapsible">Users</button>
             <div class="content">
               {% for u in s.users_prenotated %}
