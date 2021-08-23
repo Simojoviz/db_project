@@ -23,8 +23,8 @@
         <td>{{us.address}}</td>
       </tr>
       <tr>
-        <td><strong>Membership Deadline</strong></td>
-        <td>{{us.membership_deadline}}</td>
+        <td><strong>Subscription to</strong></td>
+        <td>{{us.subscription}}</td>
       </tr>
       <tr>
         <td><strong>Covid State</strong></td>
@@ -57,9 +57,8 @@
         <input type="submit", value="Prenotations" class="btn btn-info text-white" style="width: 120px;">
       </form>
     </div>
-    {% if "Staff" not in current_user.roles %}
+    {% if "Trainer" not in current_user.roles and "Admin" not in current_user.roles %}
       <div class="col text-center">
-        
           <form action="{{url_for('courses_sign_up')}}">
             <input type="submit", value="Courses" class="btn btn-info text-white" style="width: 120px;">
           </form>

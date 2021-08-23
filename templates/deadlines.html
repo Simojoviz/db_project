@@ -4,16 +4,16 @@
 <div class="container">
   <div class="col text-center">
   
-    <h3> Valid </h3>
+    <h3> Current Member </h3>
       {% for us in valid %}
-        {{us.fullname}} : {{us.membership_deadline}} - 
+        {{us.fullname}} : {{us.subscription}} - 
           <form action="{{url_for('user_settings', user_id = us.id)}}">
             <input type="submit" value="Update" class="btn btn-danger my-2">
           </form>
       {% endfor %}
-    <h3> Not Valid </h3>
+    <h3> Expired </h3>
       {% for us in not_valid %}
-        {{us.fullname}} : {{us.membership_deadline}} - 
+        {{us.fullname}} : {{us.subscription}} - 
           <form action="{{url_for('user_settings', user_id = us.id)}}">
             <input type="submit" value="Update" class="btn btn-danger my-2">
           </form>

@@ -50,7 +50,7 @@ conn.execute(
     "ALTER TABLE public.shifts\
     DROP CONSTRAINT IF EXISTS shift_start_end;\
     ALTER TABLE public.shifts\
-    ADD CONSTRAINT shift_start_end CHECK (h_start < h_end);\
+    ADD CONSTRAINT shift_start_end CHECK (starting < ending);\
     \
     COMMENT ON CONSTRAINT shift_start_end ON public.shifts\
         IS 'shift starting hour must be before the ending hour';"
@@ -58,23 +58,23 @@ conn.execute(
 
 #___________WEEK SETTING___________
 conn.execute(
-    "ALTER TABLE public.week_setting\
+    "ALTER TABLE public.week_settings\
     DROP CONSTRAINT IF EXISTS valid_dayname;\
-    ALTER TABLE public.week_setting\
+    ALTER TABLE public.week_settings\
     ADD CONSTRAINT valid_dayname CHECK (day_name::text = ANY (ARRAY['Monday'::character varying, 'Tuesday'::character varying, 'Wednesday'::character varying, 'Thursday'::character varying, 'Friday'::character varying, 'Saturday'::character varying, 'Sunday'::character varying]::text[]))\
     NOT VALID;\
     \
-    COMMENT ON CONSTRAINT valid_dayname ON public.week_setting\
+    COMMENT ON CONSTRAINT valid_dayname ON public.week_settings\
     IS 'dayname must be valid';"
 )
 
 conn.execute(
-    "ALTER TABLE public.week_setting\
+    "ALTER TABLE public.week_settings\
     DROP CONSTRAINT IF EXISTS week_setting_start_end;\
-    ALTER TABLE public.week_setting\
+    ALTER TABLE public.week_settings\
     ADD CONSTRAINT week_setting_start_end CHECK (starting < ending);\
     \
-    COMMENT ON CONSTRAINT week_setting_start_end ON public.week_setting\
+    COMMENT ON CONSTRAINT week_setting_start_end ON public.week_settings\
         IS 'the starting hour must be before the ending hour';"
 )
 
@@ -189,7 +189,7 @@ conn.execute(
     VOLATILE NOT LEAKPROOF\
     AS $BODY$\
     BEGIN\
-        IF NEW.membership_deadline < (SELECT CURRENT_DATE) THEN\
+        IF NEW.subscription < (SELECT CURRENT_DATE) THEN\
             RAISE EXCEPTION 'Cannot insert user: deadline is in the past';\
             RETURN NULL;\
         END IF;\
@@ -222,7 +222,7 @@ conn.execute(
     VOLATILE NOT LEAKPROOF\
     AS $BODY$\
     BEGIN\
-        IF NEW.membership_deadline < OLD.membership_deadline THEN\
+        IF NEW.subscription < OLD.subscription THEN\
             RAISE EXCEPTION 'Cannot insert user: deadline is not delayed';\
             RETURN NULL;\
         END IF;\
@@ -257,14 +257,7 @@ conn.execute(
     VOLATILE NOT LEAKPROOF\
     AS $BODY$\
     BEGIN\
-        IF NEW.client_id IN (\
-            SELECT client_id\
-            FROM prenotations\
-            WHERE shift_id = NEW.shift_id\
-        ) THEN\
-            RAISE EXCEPTION 'Cannot prenote: User cannot prenote twice for the same Shift';\
-            RETURN NULL;\
-        ELSIF (\
+        IF (\
             SELECT count(*)\
             FROM prenotations\
             WHERE shift_id = NEW.shift_id\
@@ -285,7 +278,7 @@ conn.execute(
         ELSIF (\
             SELECT covid_state\
             FROM users\
-            WHERE id = NEW.client_id\
+            WHERE id = NEW.user_id\
         ) != 0 THEN\
             RAISE EXCEPTION 'Cannot prenote: Covid-State is not Safe. Please contact Gym''s admin';\
             RETURN NULL;\
@@ -294,11 +287,11 @@ conn.execute(
             FROM shifts\
             WHERE id = NEW.shift_id\
         ) > (\
-            SELECT membership_deadline\
+            SELECT subscription\
             FROM users\
-            WHERE id = NEW.client_id\
+            WHERE id = NEW.user_id\
         ) THEN\
-            RAISE EXCEPTION 'Cannot prenote: Shift date is over your membership-deadline: please contact Gym''s admin';\
+            RAISE EXCEPTION 'Cannot prenote: Shift date is over your subription';\
             RETURN NULL;\
         END IF;\
         RETURN NEW;\
@@ -309,7 +302,7 @@ conn.execute(
         OWNER TO postgres;\
     \
     COMMENT ON FUNCTION public.no_invalid_prenotation()\
-        IS 'Raise an exception if - User cannot prenote twice for the same Shift, The shift is full, The shift is occupied by a course, Covid state is not safe, Shift is over user deadline ';\
+        IS 'Raise an exception if - The shift is full, The shift is occupied by a course, Covid state is not safe, Shift is over user subscription-deadline ';\
         \
     CREATE TRIGGER NoInvalidPrenotation\
     BEFORE INSERT OR UPDATE\
@@ -318,7 +311,7 @@ conn.execute(
     EXECUTE PROCEDURE public.no_invalid_prenotation();\
     \
     COMMENT ON TRIGGER NoInvalidPrenotation ON public.prenotations\
-        IS 'Raise an exception if - User cannot prenote twice for the same Shift, The shift is full, The shift is occupied by a course, Covid state is not safe, Shift is over user deadline ';"
+        IS 'Raise an exception if - The shift is full, The shift is occupied by a course, Covid state is not safe, Shift is over user subscription-deadline ';"
 )
 
 #___________COURSE SIGN UP___________
@@ -339,13 +332,6 @@ conn.execute(
         ) THEN\
             RAISE EXCEPTION 'Cannot Sign-Up: Trainer cannot sign-up for his course';\
             RETURN NULL;\
-        ELSIF NEW.user_id IN (\
-            SELECT user_id\
-            FROM course_signs_up\
-            WHERE course_id=NEW.course_id\
-        ) THEN\
-            RAISE EXCEPTION 'Cannot Sign-Up: User cannot sign-up twice for the same course';\
-            RETURN NULL;\
         ELSIF (\
             ( SELECT max_partecipants FROM courses WHERE id = NEW.course_id ) = \
             ( SELECT COUNT(*) FROM course_signs_up WHERE course_id = NEW.course_id) \
@@ -361,7 +347,7 @@ conn.execute(
         OWNER TO postgres;\
     \
     COMMENT ON FUNCTION public.no_invalid_sign_up()\
-        IS 'Raise an exception if - Trainer sign-up for his own course, User  sign-up twice for the same course, The course is full ';\
+        IS 'Raise an exception if - Trainer sign-up for his own course, The course is full ';\
     \
     CREATE TRIGGER NoInvalidSignUp\
     BEFORE INSERT OR UPDATE\
@@ -370,5 +356,5 @@ conn.execute(
     EXECUTE PROCEDURE public.no_invalid_sign_up();\
     \
     COMMENT ON TRIGGER NoInvalidSignUp ON public.course_signs_up\
-    IS 'Raise an exception if - Trainer sign-up for his own course, User  sign-up twice for the same course, The course is full ';"
+    IS 'Raise an exception if - Trainer sign-up for his own course, The course is full ';"
 )

@@ -35,10 +35,10 @@
       {% endif %}
 
     Membership Deadline:
-    {{user.membership_deadline}}
+    {{user.subscription}}
     Insert new Deadline:
     <form action="{{url_for('new_deadline', user_id=user.id)}}", method="POST">
-      <input name="date" type="date", value={{ user.membership_deadline }}>
+      <input name="date" type="date", value={{ user.subscription }}>
       <input type="submit", value="Postpone" class="btn btn-info text-light" >
     </form>
 
