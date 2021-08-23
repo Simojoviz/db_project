@@ -245,7 +245,7 @@ def courses_sign_up():
     finally:
         session.close()
 
-@app.route('/private/trainer_courses')
+@app.route('/trainer_courses')
 @login_required
 def trainer_courses():
     session = Session()
@@ -264,7 +264,7 @@ def trainer_courses():
         session.close()
 
 
-@app.route('/private/trainer_courses/<course_name>')
+@app.route('/trainer_courses/<course_name>')
 @login_required
 def trainer_course(course_name):
     session = Session()
@@ -385,8 +385,8 @@ def courses():
     try:
         courses = get_course(session, all=True)
         if current_user.is_authenticated and "Trainer" in current_user.roles:
-            return render_template("courses.html", courses = courses, isStaff=True)
-        return render_template("courses.html", courses = courses, isStaff=False)
+            return render_template("courses.html", courses = courses, isStaff=True, today= datetime.date.today())
+        return render_template("courses.html", courses = courses, isStaff=False, today= datetime.date.today())
     except:
         session.rollback()
         raise
@@ -423,7 +423,7 @@ def del_course(course_name):
         if current_user.is_authenticated :
             delete_course(session, course_id = c.id)
             session.commit()
-            return redirect(url_for('courses'))
+            return redirect(url_for('trainer_courses'))
     except:
         session.rollback()
         raise
