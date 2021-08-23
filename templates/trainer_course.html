@@ -27,7 +27,7 @@
         <td><strong>Shifts</strong></td>
         <td>
           {% for i in shifts %}
-            {{i.h_start}} - {{i.h_end}} 
+            {{i.starting}} - {{i.ending}} 
             <br>
           {% endfor %}
         </td>
@@ -58,7 +58,7 @@
     </div>
   </div>
   
-  <div class="mt-4">
+  <div class="my-4">
     <form action="{{url_for('trainer_courses')}}">
       <input type="submit", value="Back" class="btn btn-info text-light">
     </form>
