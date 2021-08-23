@@ -2,20 +2,20 @@
 
 {% block pagebody %}
 <div class="container">
-  <h1 class="display-3 text-center">Change Settings</h1>
+  <h1 class="text-center">Change Settings</h1>
 
-  <div class="row w-50 mx-auto mt-4">
-    <div class="col-md-4 text-center">
+  <div class="row w-50 mx-auto">
+    <div class="col-md-6 text-center">
       <form action="{{url_for('global_settings')}}">
         <input type="submit", value="Global Settings" class="btn btn-info text-white" >
       </form>
     </div>
-    <div class="col-md-4 text-center">
+    <div class="col-md-6 text-center">
       <form action="{{url_for('room_settings')}}">
         <input type="submit", value="Room Settings" class="btn btn-info text-white">
       </form>
     </div>
-    <div class="col-md-4 text-center">
+    <div class="col-md-6 text-center">
       <form action="{{url_for('users_settings')}}">
         <input type="submit", value="User Settings" class="btn btn-info text-white">
       </form>

@@ -36,12 +36,13 @@ add_role_from_list(session, roles)
 
 # Users
 users = [
-    User(fullname = "Admin",                  email='admin@gmail.com',      pwd='admin1',       telephone='1234567890',     address='Via Ciao 2',      covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=3000)),
-    User(fullname = "Stefano Calzavara",      email='stefano@gmail.com',    pwd='stefano1',     telephone='0123456789',     address='Via Falsa 23',    covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=365)),
-    User(fullname = "Alessandra Raffaetà",    email='alessandra@gmail.com', pwd='alessandra1',  telephone='2873018453',     address='Via Vai 7',       covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=365)),
-    User(fullname = "Simone Jovon",           email='simone@gmail.com',     pwd='simone1',      telephone='3019837283',     address='Via Cesare 12',   covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=90)),
-    User(fullname = "Andrea Rosa",            email='andrea@gmail.com',     pwd='andrea1',      telephone='3254173433',     address='Castello 2534/A', covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=90)),
-    User(fullname = "Sebastiano Quintavalle", email='sebastiano@gmail.com', pwd='sebastiano1',  telephone='5272735383',     address='Castello 13',     covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=90))
+    User(fullname = "Admin",                  email='admin@gmail.com',        pwd='admin1',        telephone='1234567890', address='Via Ciao 2',      covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=3000)),
+    User(fullname = "Stefano Calzavara",      email='stefano@gmail.com',      pwd='stefano1',      telephone='0123456789', address='Via Falsa 23',    covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=365)),
+    User(fullname = "Alessandra Raffaetà",    email='alessandra@gmail.com',   pwd='alessandra1',   telephone='2873018453', address='Via Vai 7',       covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=365)),
+    User(fullname = "Simone Jovon",           email='simone@gmail.com',       pwd='simone1',       telephone='3019837283', address='Via Cesare 12',   covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=90)),
+    User(fullname = "Andrea Rosa",            email='andrea@gmail.com',       pwd='andrea1',       telephone='3254173433', address='Castello 2534/A', covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=90)),
+    User(fullname = "Sebastiano Quintavalle", email='sebastiano@gmail.com',   pwd='sebastiano1',   telephone='5272735383', address='Castello 13',     covid_state=0, membership_deadline=datetime.date.today() + timedelta(days=90)),
+    User(fullname = "Massimiliano Fardo",     email='massimiliano@gmail.com', pwd='massimiliano1', telephone='5272735382', address='A Zattere',       covid_state=2, membership_deadline=datetime.date.today())
 ]
 
 add_user_from_list(session, users)

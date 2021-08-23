@@ -164,12 +164,39 @@ def get_user_roles(session, user_id=None, role_id=None):
 # - Given a Roles adds it to the Database
 # Returns True if it was added correctly
 # Raise an Exception if
-# - The User already had that Role (trigger)
+# - The User already had that Role (base exception)
 def add_user_roles(session, user=None, role=None):
 
     if user is not None and role is not None:
         session.add(UserRoles(user_id=user.id, role_id=role.id))
         return True
+
+# Revoke role
+def revoke_user_roles(session, user=None, role=None):
+    if role in user.roles:
+        session.query(UserRoles).filter(UserRoles.user_id==user.id, UserRoles.role_id==role.id).delete()
+    else:
+        raise Exception("Cannot revoke role: User " + user.fullname + " doesn't have " + role.name + " role")
+
+def assign_trainer_role(session, user_id=None):
+    if user_id is not None:
+        user = get_user(session, id=user_id)
+        add_trainer(session, user=get_user(session, id=user_id))
+        admin_id = get_user(session, email="admin@gmail.com").id
+        add_message(session, sender_id=admin_id, addresser_id=user_id, text="You're a trainer now! You can create your own course")
+
+def revoke_trainer_role(session, user_id=None):
+    if user_id is not None:
+        user = get_user(session, id=user_id)
+        trainer_role = get_role(session, name="Staff")
+        trainer = get_trainer(session, id=user_id)
+        for course in  trainer.courses:
+            # TODO fare chiamata a funzione 
+            session.delete(course)
+        session.delete(get_trainer(session, id=user_id))
+        revoke_user_roles(session, user=user, role=trainer_role)
+        admin_id = get_user(session, email="admin@gmail.com").id
+        add_message(session, sender_id=admin_id, addresser_id=user_id, text="You're trainer role is revoked. All your courses are deleted")
 
 # ________________________________________ TRAINER ________________________________________ 
 
