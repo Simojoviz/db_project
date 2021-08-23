@@ -638,7 +638,7 @@ def delete_room(session, room_id=None):
                             text="Your prenotation on " + shift.date.strftime('%d/%m/%Y') + " in " + shift.room.name +\
                                  " from " + shift.starting.strftime('%H:%M') + " to " + shift.ending.strftime('%H:%M') +\
                                  " has been deleted due to the deletion of " + room.name)
-        session.query(Room).filter(Room.id==room_id).delete() # deletes on cascade shifts, prenotations and course_programs
+        session.delete(room) # deletes on cascade shifts, prenotations and course_programs
 
 
 # ________________________________________ GLOBAL SETTING ________________________________________
