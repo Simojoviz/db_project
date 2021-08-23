@@ -18,11 +18,11 @@ session = Session()
 
 # Rooms
 rooms = [
-    Room(name = "Main Room", max_capacity = 5),
-    Room(name = "Weight Room", max_capacity = 30),
-    Room(name = "Fitness Room", max_capacity = 25),
-    Room(name = "Swimming Pool", max_capacity = 40),
-    Room(name = "Boxing Room", max_capacity = 25)
+    Room(name = "Main Room",     max_capacity =  5, new=True),
+    Room(name = "Weight Room",   max_capacity = 30, new=True),
+    Room(name = "Fitness Room",  max_capacity = 25, new=True),
+    Room(name = "Swimming Pool", max_capacity = 40, new=True),
+    Room(name = "Boxing Room",   max_capacity = 25, new=True)
 ]
 add_room_from_list(session, rooms)
 
@@ -67,9 +67,10 @@ global_settings = [
     GlobalSetting(name='MaximumShiftLength',   value = 180),   # maximum shift's length
     GlobalSetting(name='MinimumShiftLength',   value =  30),   # minimum shift's length
     GlobalSetting(name='HourOpening',          value =   8),   # gym opening hour
-    GlobalSetting(name='HourClosing',          value =  22),   # gym closing hour
+    GlobalSetting(name='HourClosing',          value =  22)    # gym closing hour
 ]
-add_global_setting_from_list()
+
+add_global_setting_from_list(session, global_setting_list=global_settings)
 
 # WeekSetting
 week_settings = [
@@ -84,7 +85,13 @@ add_week_setting_from_list(session, week_setting_list=week_settings)
 
 # Shifts
 plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=365, all_room=True)
-update_weekend_setting(session, day_name='Saturday', starting=10, ending=18, length=90)
+
+update_weekend_setting(
+    session, day_name='Saturday',
+    starting = datetime.time(hour=10, minute=00),
+    ending   = datetime.time(hour=15, minute=00),
+    length   = datetime.time(hour=1,  minute=00)
+)
 plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=365, all_room=True)
 
 # Courses
@@ -152,12 +159,12 @@ def add_prenotation_aux_nostart(session, email, day, month, year, room):
 add_prenotation_aux_nostart(session, "andrea@gmail.com",     20,  8, 2021, 'Main Room')
 add_prenotation_aux_nostart(session, "andrea@gmail.com",     21,  8, 2021, 'Swimming Pool')
 add_prenotation_aux_nostart(session, "andrea@gmail.com",     2,   9, 2021, 'Main Room')
-add_prenotation_aux_nostart(session, "andrea@gmail.com",     12,  9, 2021, 'Fitness Room')
+add_prenotation_aux_nostart(session, "andrea@gmail.com",     13,  9, 2021, 'Fitness Room')
 add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 20,  8, 2021, 'Main Room')
 add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 23,  9, 2021, 'Weight Room')
 add_prenotation_aux_nostart(session, "sebastiano@gmail.com",  2,  9, 2021, 'Main Room')
 add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 12, 10, 2021, 'Swimming Pool')
-add_prenotation_aux_nostart(session, "simone@gmail.com",      2,  9, 2021, 'Fitness Room')
+add_prenotation_aux_nostart(session, "simone@gmail.com",      3,  9, 2021, 'Fitness Room')
 add_prenotation_aux_nostart(session, "simone@gmail.com",      4,  9, 2021, 'Fitness Room')
 add_prenotation_aux_nostart(session, "simone@gmail.com",      6,  9, 2021, 'Fitness Room')
 

@@ -130,6 +130,7 @@ class Room(Base):
     id           = Column(Integer, primary_key=True)
     name         = Column(String,  nullable=False, unique=True)
     max_capacity = Column(Integer, nullable=False)
+    new          = Column(Boolean, nullable=False)
 
     shifts          = relationship("Shift",         back_populates="room")
     course_programs = relationship("CourseProgram", back_populates="room")
@@ -220,7 +221,7 @@ class CourseProgram(Base):
 
     __table_args__ = (UniqueConstraint('course_id', 'week_day', 'turn_number', ),)
     
-    room   = relationship("Room", back_populates="course_programs" """, cascade="all,delete" """ )
+    room   = relationship("Room", back_populates="course_programs") #cascade="all,delete"
     course = relationship("Course", back_populates="course_programs")
 
     def __repr__(self):
