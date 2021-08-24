@@ -26,6 +26,7 @@ class User(Base):
     shifts          =  relationship("Shift",  secondary="prenotations",    back_populates="users_prenoted")
     courses         = relationship("Course", secondary="course_signs_up", back_populates="users")
     roles           = relationship("Role",   secondary="user_roles",      back_populates="users")
+    trainer         = relationship("Trainer", back_populates="user")
     prenotations    = relationship("Prenotation",  viewonly=True)
     course_signs_up = relationship("CourseSignUp", viewonly=True)
 
@@ -39,9 +40,7 @@ class Trainer(Base):
 
     id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
 
-    user = relationship("User")
-
-
+    user = relationship("User", back_populates="trainer")
     courses = relationship("Course", back_populates="trainer")
 
     def __repr__(self):

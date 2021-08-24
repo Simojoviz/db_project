@@ -210,6 +210,7 @@ def private():
         session.commit()
         return resp
     except Exception as exc:
+            raise
             flash(repr(exc), category='error')
             session.rollback()
             session.close()
@@ -413,7 +414,6 @@ def del_prenotation(shift):
         session.commit()
         return redirect(url_for('prenotations'))
     except Exception as exc:
-        print(repr(exc))
         flash(repr(exc), category='error')
         session.rollback()
         session.close()
@@ -428,18 +428,21 @@ def del_prenotation(shift):
 def courses():
     session = Session()
     try:
+        user = get_user(session, email=current_user.email)
         courses = get_course(session, all=True)
-        if current_user.is_authenticated and "Trainer" in current_user.roles:
-            return render_template("courses.html", courses = courses, isStaff=True, today= datetime.date.today())
-        return render_template("courses.html", courses = courses, isStaff=False, today= datetime.date.today())
-    except:
+        if is_trainer(current_user):
+            courses = filter(lambda course: course not in user.trainer[0].courses, courses)
+        return render_template("courses.html", courses = courses, today= datetime.date.today())
+    except Exception as exc:
+        flash(repr(exc), category='error')
         session.rollback()
-        raise
+        session.close()
+        return redirect(url_for('courses'))
     finally:
         session.close()
 
 
-@app.route('/courses/<course_name>')
+@app.route('/courses/course/<course_name>')
 def course(course_name):
     session = Session()
     try:
@@ -451,31 +454,34 @@ def course(course_name):
         if current_user.is_authenticated:
             u = get_user(session, id = current_user.id)
             cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
-            if "Trainer" in current_user.roles:
-                return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=True)
-            return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isStaff=False)
-        return render_template("course.html", course = c, course_program = cp, shift = sh, isStaff=False)
-    except:
+            return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isTrainer=is_trainer(current_user))
+    except Exception as exc:
+        flash(repr(exc), category='error')
         session.rollback()
-        raise
+        session.close()
+        return redirect(url_for('course'), course_name=course_name)
     finally:
         session.close()
 
-@app.route('/trainer_courses')
+@app.route('/courses/trainer_courses')
 @login_required
 def trainer_courses():
     session = Session()
     try:
         user = get_user(session, email=current_user.email)
-        if is_trainer(user):
-            courses = user.trainer.courses
-            return render_template("trainer_courses.html", courses = courses, trainer = user.trainer, today= datetime.date.today())
+        if is_trainer(current_user):
+            courses = user.trainer[0].courses #TODO aggiustare relationship non con lista
+            return render_template("trainer_courses.html", courses = courses, trainer = user.trainer[0], today= datetime.date.today())
+        return redirect(url_for('courses'))
+    except Exception as exc:
+        flash(repr(exc), category='error')
+        if is_trainer(current_user):
+            ret = redirect(url_for('trainer_courses'))
         else:
-            session.commit()
-            abort(401)
-    except:
+            ret = redirect(url_for('trainer_courses'))
         session.rollback()
-        raise
+        session.close()
+        return ret
     finally:
         session.close()
 

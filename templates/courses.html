@@ -25,6 +25,13 @@
       {% endif %}
     {%endfor%}
   </div>
+
+  {% if "Trainer" in current_user.roles %}
+    <form action= "{{url_for('trainer_courses')}}">
+      <input type="submit" value="My Courses" class="btn btn-info text-white">
+    </form>
+  {% endif %}
+
 </div>
 <div class="py-5 bg-info text-white text-center"></div>
 {% endblock %}
