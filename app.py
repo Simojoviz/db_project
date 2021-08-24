@@ -229,7 +229,6 @@ def prenotations():
         past_shifts = filter(lambda sh: sh.date <= datetime.date.today() and datetime.datetime.now().time() >= sh.ending, user.shifts)
         return make_response(render_template("prenotations.html", shifts=shifts, past_shifts=past_shifts))
     except BaseException as exc:
-        raise
         flash(repr(exc), category='error')
         session.rollback()
         session.close()
@@ -510,7 +509,7 @@ def course(course_name):
         if current_user.is_authenticated:
             u = get_user(session, id = current_user.id)
             cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
-            return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs, isTrainer=is_trainer(current_user))
+            return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs)
     except BaseException as exc:
         flash(repr(exc), category='error')
         session.rollback()

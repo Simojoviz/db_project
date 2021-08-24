@@ -194,7 +194,7 @@ class Course(Base):
     instructor_id    = Column(Integer, ForeignKey('trainers.id', ondelete='CASCADE'))
 
     trainer         = relationship("Trainer",       back_populates="courses")
-    shifts          = relationship("Shift",         back_populates="course")
+    shifts          = relationship("Shift",         back_populates="course", order_by="Shift.date, Shift.starting")
     users           = relationship("User",          back_populates="courses", secondary="course_signs_up", cascade="all,delete")
     course_programs = relationship("CourseProgram", back_populates="course")
     course_signs_up = relationship("CourseSignUp", viewonly=True)
