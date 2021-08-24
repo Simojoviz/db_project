@@ -241,7 +241,7 @@ def delete_user_role(session, user_id=None, role_id=None):
         user_role = get_user_role(session, user_id=user_id, role_id=role_id)
         session.delete(user_role)
     else:
-        raise Exception("Cannot revoke role: User " + user.fullname + " doesn't have " + role.name + " role")
+        raise BaseException("Cannot revoke role: User " + user.fullname + " doesn't have " + role.name + " role")
 
 
 # Returns Admin's id
@@ -491,7 +491,7 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
             session.add(Prenotation(user_id=user.id, shift_id=shift.id))
             return True
         else:
-            raise Exception("Week prenotation peak reached")
+            raise BaseException("Week prenotation peak reached")
     elif prenotation is not None:
         user_  = get_user(session, id=prenotation.user_id)
         shift_ = get_shift(session, id=prenotation.shift_id)
@@ -600,7 +600,7 @@ def update_room_max_capacity(session, name=None, mc=None):
                             session.delete(pr)
             return True
         else:
-            raise Exception("Room " + name + " doesn't exists")
+            raise BaseException("Room " + name + " doesn't exists")
     else:
         return False
 
@@ -835,10 +835,10 @@ def plan_course(session, name):
     
     course = get_course(session, name=name)
     if course is None:
-        raise Exception("Course " + name + " does not exixsts")
+        raise BaseException("Course " + name + " does not exixsts")
     course_programs = get_course_program(session, course_id=course.id)
     if course_programs is None:
-        raise Exception("Course " + name + " is planned with no course program")
+        raise BaseException("Course " + name + " is planned with no course program")
     end = course.ending + timedelta(days=0)
     for prog in course_programs:
         dayname = prog.week_day
@@ -850,9 +850,9 @@ def plan_course(session, name):
         while(day < end):
             shift = get_shift_turn(session, date=datetime.date(year=day.year, month=day.month, day=day.day), room_id=room_id, turn=turn)
             if shift is None:
-                raise Exception("There is not that turn in that day")
+                raise BaseException("There is not that turn in that day")
             if(shift.course_id is not None):
-                raise Exception("Course cannot be planned: it overlaps with an other course!")
+                raise BaseException("Course cannot be planned: it overlaps with an other course!")
             else:
                 # Deletes all Prenotation in that Shift
                 prenotations = session.query(Prenotation).where(Prenotation.shift_id==shift.id)
