@@ -84,7 +84,7 @@
               {% endfor %}
             </div>
           {% else %}
-            {% if s in user.shifts %}  
+            {% if current_user.is_authenticated and s in current_user.shifts %}  
                 <input type="submit", value="Booked" class="btn btn-success btn-sm">
             {% elif s.room.max_capacity - s.prenotations|length > 0 %}
               <form action= "{{ url_for('prenotation', shift = s.id) }}">

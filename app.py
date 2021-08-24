@@ -396,10 +396,11 @@ def shifts():
         shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
         if date == date.today():
             shifts = filter(lambda sh: sh.ending >= datetime.datetime.now().time(), shifts)
-        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda x: (x.ending, x.room_id)), date_string=date_string, rooms=r, user=get_user(session, email=current_user.email)))
+        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda x: (x.ending, x.room_id)), date_string=date_string, rooms=r))
         session.commit()
         return resp
     except BaseException as exc:
+        raise
         flash(str(exc), category='error')
         session.rollback()
         session.close()
