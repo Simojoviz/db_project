@@ -958,19 +958,7 @@ def add_room_form():
         try:
             name = request.form['name']
             max_capacity = request.form['max_capacity']
-            date_str = request.form['date']
-            date_str = date_str.replace('-', '/')
-            date = datetime.datetime.strptime(date_str, '%Y/%m/%d')
-            date = date.date()
-            if date < datetime.date.today():
-                raise BaseException("Could not plan shift in the past")
             add_room(session, name=name, max_capacity=max_capacity)
-            session.flush()
-            room = get_room(session, name=name)
-            if room is not None:
-                plan_shifts(session, starting=datetime.date.today(), ending=date, room_id=room.id)
-            else:
-                raise BaseException("non trovo stanza appena aggiunta")
             session.commit()
             return redirect(url_for('room_settings'))
         except BaseException as exc:
@@ -1096,7 +1084,6 @@ def revoke_trainer_role_(user_id):
         session.commit()
         return redirect(url_for('user_settings', user_id=user_id))
     except BaseException as exc:
-            raise
             flash(str(exc), category='error')
             session.rollback()
             session.close()
