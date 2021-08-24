@@ -1081,10 +1081,11 @@ def revoke_trainer_role_(user_id):
         session.commit()
         return redirect(url_for('user_settings', user_id=user_id))
     except BaseException as exc:
+            raise
             flash(str(exc), category='error')
             session.rollback()
             session.close()
-            return redirect(url_for('user_settings'), user_id=user_id)
+            return redirect(url_for('user_settings', user_id=user_id))
     finally:
         session.close()
 
