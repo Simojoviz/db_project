@@ -434,7 +434,6 @@ def shifts():
         session.commit()
         return resp
     except BaseException as exc:
-        raise
         flash(str(exc), category='error')
         session.rollback()
         session.close()
