@@ -2,35 +2,53 @@
 
 {% block pagebody %}
 <div class="container">
-  <div class="col text-center">
+  <div class="row">
   
-    <h3> Free </h3>
+    <h1 class="display-4 text-center"> Free </h1>
     {% for us in cs0 %}
-        {{us.fullname}} 
-        <form action="{{url_for('user_settings', user_id = us.id)}}">
-          <input type="submit" value="Update" class="btn btn-danger my-2">
-        </form>
+      <div class="col-xs-12 col-md-3 my-4">
+        <div class="card bg-light shadow" style="width: 90%; border: hidden; margin: auto;">
+          <div class="card-body pt-4">
+            <h3 class="card-title">{{us.fullname}}</h3>
+            <form action="{{url_for('user_settings', user_id = us.id)}}">
+              <input type="submit" value="Update" class="btn btn-info text-white my-2">
+            </form>
+          </div>
+        </div>
+      </div>
     {% endfor %}
 
-    <h3> Had Contacts </h3>
+    <h1 class="display-4 text-center"> Had Contacts </h1>
     {% for us in cs1 %}
-        {{us.fullname}} 
-        <form action="{{url_for('user_settings', user_id = us.id)}}">
-          <input type="submit" value="Update" class="btn btn-danger my-2">
-        </form>
+      <div class="col-xs-12 col-md-3 my-4">
+        <div class="card bg-light shadow" style="width: 90%; border: hidden; margin: auto;">
+          <div class="card-body pt-4">
+            <h3 class="card-title">{{us.fullname}}</h3>
+            <form action="{{url_for('user_settings', user_id = us.id)}}">
+              <input type="submit" value="Update" class="btn btn-info text-white my-2">
+            </form>
+          </div>
+        </div>
+      </div>
     {% endfor %}
 
-    <h3> Positive </h3>
+    <h1 class="display-4 text-center"> Positive </h1>
     {% for us in cs2 %}
-        {{us.fullname}} 
-        <form action="{{url_for('user_settings', user_id = us.id)}}">
-          <input type="submit" value="Update" class="btn btn-danger my-2">
-        </form>
+      <div class="col-xs-12 col-md-3 my-4">
+        <div class="card bg-light shadow" style="width: 90%; border: hidden; margin: auto;">
+          <div class="card-body pt-4">
+            <h3 class="card-title">{{us.fullname}}</h3>
+            <form action="{{url_for('user_settings', user_id = us.id)}}">
+              <input type="submit" value="Update" class="btn btn-info text-white my-2">
+            </form>
+          </div>
+        </div>
+      </div>
     {% endfor %}
     
   </div>
 
-  <div class="mt-4">
+  <div class="my-4">
     <form action="{{url_for('private')}}">
       <input type="submit", value="Back" class="btn btn-info text-light">
     </form>

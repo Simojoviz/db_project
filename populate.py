@@ -109,6 +109,10 @@ courses = [
     Course(name = 'Judo',
         starting=datetime.datetime(year=2021, month=9, day=1), ending = datetime.datetime(year=2021, month=9, day=30), max_partecipants = 20, 
         instructor_id = get_trainer(session, email='riccardo@gmail.com').id
+    ),
+    Course(name = 'Test',
+        starting=datetime.datetime(year=2021, month=8, day=1), ending = datetime.datetime(year=2021, month=8, day=15), max_partecipants = 20, 
+        instructor_id = get_trainer(session, email='stefano@gmail.com').id
     )
 ]
 add_course_from_list(session, courses)
@@ -194,6 +198,12 @@ add_course_sign_up(
     course=get_course(session, name='Judo')
 )
 
-# user_covid_report(session, get_user(session, email='andrea@gmail.com').id)
+add_course_sign_up(
+    session,
+    user=get_user(session, email='andrea@gmail.com'),
+    course=get_course(session, name='Test'),
+)
+
+#covid_report_messages(session, get_user(session, email='andrea@gmail.com').id)
 
 session.commit()

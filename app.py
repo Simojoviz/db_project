@@ -766,7 +766,49 @@ def plan_course_(course_name):
             return redirect(url_for('course', course_name = course_name))
     finally:
         session.close()
-        
+
+
+@app.route('/update_course/<course_name>')
+def upd_course(course_name):
+    session = Session()
+    course = get_course(session, name= course_name)
+    return render_template('update_course.html', course=course)
+
+@app.route('/update_course_form/<course_name>', methods=["POST"])
+def upd_course_form(course_name):
+    if request.method == 'POST':
+        session = Session()
+        try:
+            course = get_course(session, name=course_name)
+            courses = get_course(session, all=True)
+            
+            name = request.form['name']
+            for i in courses:
+                if i.name == name and i.name != course_name:
+                    flash("Name already exists!", category='error')
+                    return redirect(url_for('upd_course', course_name= course_name))           
+            
+            max_partecipants = int(request.form['max_partecipants'])
+            min_max_capacity = 1000
+            for i in course.course_programs:
+                if i.room.max_capacity < min_max_capacity:
+                    min_max_capacity = i.room.max_capacity
+
+            sign_ups = 0
+            for i in course.users:
+                sign_ups += 1
+            if max_partecipants < sign_ups or max_partecipants > min_max_capacity:
+                flash("Invalid Max Partecipants!", category='error')
+                return redirect(url_for('upd_course', course_name= course_name))
+            
+            update_course(session, course=course, name=name, max_partecipants=max_partecipants)
+            session.commit()
+            return redirect(url_for('trainer_course', course_name = name))
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()        
 
 @app.route('/courses/sign_up/<course_name>')
 @login_required
@@ -808,20 +850,6 @@ def delete_sign_up(course_name):
 
 
 # ________________________________________________________ADMIN SETTINGS________________________________________________________
-@app.route('/admin/settings')
-@login_required
-def settings():
-    try:
-        if is_admin(current_user):
-            return make_response(render_template("settings.html"))
-        else:
-            return redirect(url_for('private'))
-    except BaseException as exc:
-        if is_admin(current_user):
-            return redirect(url_for("settings"))
-        else:
-            return redirect(url_for('private'))
-
 
 @app.route('/admin/settings/global_settings')
 @login_required
@@ -859,7 +887,7 @@ def global_settings_form():
                 if val != global_setting.value:
                     update_global_setting(session, name=global_setting.name, value=val)
             session.commit()
-            return redirect(url_for('settings'))
+            return redirect(url_for('private'))
         except BaseException as exc:
             flash(str(exc), category='error')
             session.rollback()
@@ -982,28 +1010,6 @@ def del_room(room_id):
         finally:
             session.close()
 
-
-@app.route('/admin/settings/users_settings')
-@login_required
-def users_settings():
-    session = Session()
-    try:
-        if is_admin(current_user):
-            users = get_user(session, all=True)
-            users = filter(lambda us: us.email != 'admin@gmail.com', users)
-            users = sorted(users, key=lambda us: (us.id))
-            return make_response(render_template("users_settings.html", users=users))
-        else:
-            return redirect(url_for('private'))
-    except BaseException as exc:
-            flash(str(exc), category='error')
-            session.rollback()
-            session.close()
-            return redirect(url_for('user_settings'))
-    finally:
-        session.close()
-
-
 @app.route('/admin/settings/user_settings_form', methods=['GET', 'POST'])
 @login_required
 def users_settings_form():
@@ -1102,10 +1108,11 @@ def revoke_trainer_role_(user_id):
         session.commit()
         return redirect(url_for('user_settings', user_id=user_id))
     except BaseException as exc:
+            raise
             flash(str(exc), category='error')
             session.rollback()
             session.close()
-            return redirect(url_for('user_settings'), user_id=user_id)
+            return redirect(url_for('user_settings', user_id=user_id))
     finally:
         session.close()
 
@@ -1118,27 +1125,6 @@ def users_info():
             users = get_user(session, all=True)
             users = filter(lambda us: us.email != 'admin@gmail.com', users)
             return make_response(render_template("users_info.html", users=users))
-        else:
-            return redirect(url_for('private'))
-    except BaseException as exc:
-            flash(str(exc), category='error')
-            session.rollback()
-            session.close()
-            return redirect(url_for('private'))
-    finally:
-        session.close()
-
-@app.route('/admin/deadlines')
-@login_required
-def deadlines():
-    session = Session()
-    try:
-        if is_admin(current_user):
-            valid =     filter(lambda us: us.subscription >= datetime.date.today(), filter(lambda us: us.email != 'admin@gmail.com', get_user(session, all=True)))
-            not_valid = filter(lambda us: us.subscription <  datetime.date.today(), filter(lambda us: us.email != 'admin@gmail.com', get_user(session, all=True)))
-            valid =     sorted(valid,     key=lambda us: us.subscription)
-            not_valid = sorted(not_valid, key=lambda us: us.subscription)
-            return make_response(render_template("deadlines.html", valid=valid, not_valid=not_valid))
         else:
             return redirect(url_for('private'))
     except BaseException as exc:

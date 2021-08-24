@@ -57,18 +57,18 @@
 
     <div class="col text-center">
       <form action="{{url_for('prenotations')}}">
-        <input type="submit", value="My Prenotations" class="btn btn-info text-white" style="width: 120px;">
+        <input type="submit", value="Prenotations" class="btn btn-info text-white" style="width: 120px;">
       </form>
     </div>
     <div class="col text-center">
       <form action="{{url_for('courses_sign_up')}}">
-        <input type="submit", value="My Signs-Up" class="btn btn-info text-white" style="width: 120px;">
+        <input type="submit", value="Signs-Up" class="btn btn-info text-white" style="width: 120px;">
       </form>
     </div>
     {% if "Trainer" in current_user.roles %}
       <div class="col text-center">
           <form action="{{url_for('trainer_courses')}}">
-            <input type="submit", value="My Courses" class="btn btn-info text-white" style="width: 120px;">
+            <input type="submit", value="Courses" class="btn btn-info text-white" style="width: 120px;">
           </form>
       </div>
     {% endif %}
@@ -95,20 +95,19 @@
       </div>
 
       <div class="col text-center">
-        <form action="{{url_for('deadlines')}}">
-            <input type="submit", value="Deadlines" class="btn btn-info text-white" style="width: 120px;">
-          </form>
-        </div>
-
+        <form action="{{url_for('global_settings')}}">
+          <input type="submit", value="Global Settings" class="btn btn-info text-white" >
+        </form>
+      </div>
       <div class="col text-center">
-        <form action="{{url_for('users_info')}}">
-          <input type="submit", value="Users Info" class="btn btn-info text-white" style="width: 120px;">
+        <form action="{{url_for('room_settings')}}">
+          <input type="submit", value="Room Settings" class="btn btn-info text-white">
         </form>
       </div>
 
       <div class="col text-center">
-        <form action="{{url_for('settings')}}">
-            <input type="submit", value="Settings" class="btn btn-info text-white" style="width: 120px;">
+        <form action="{{url_for('users_info')}}">
+          <input type="submit", value="Users Info" class="btn btn-info text-white" style="width: 120px;">
         </form>
       </div>
 

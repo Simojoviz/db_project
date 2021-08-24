@@ -195,7 +195,7 @@ class Course(Base):
 
     trainer         = relationship("Trainer",       back_populates="courses")
     shifts          = relationship("Shift",         back_populates="course", order_by="Shift.date, Shift.starting")
-    users           = relationship("User",          back_populates="courses", secondary="course_signs_up", cascade="all,delete")
+    users           = relationship("User",          back_populates="courses", secondary="course_signs_up")
     course_programs = relationship("CourseProgram", back_populates="course")
     course_signs_up = relationship("CourseSignUp", viewonly=True)
 

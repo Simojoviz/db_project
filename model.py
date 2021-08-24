@@ -461,6 +461,7 @@ def get_prenotation(session, user_id=None, shift_id=None, date=None, all=False):
 # Raises an Exception if
 # - shift is occupied by a course (trigger)
 # - maximum capacity has already been reached (trigger)
+# - prenotation overlaps with an other one (trigger)
 # - User is already in that turn (BaseException, violated p_key contraint)
 # - User has reached week-limit hours (app)
 # - User has an unsafe covid-state (trigger)
@@ -879,6 +880,16 @@ def delete_course(session, course_id=None):
                         text= "The course " + c.name + " you signed-up has been deleted")
         session.delete(c)
  
+
+#update course
+def update_course(session, course=None, name=None, max_partecipants=None):
+    if course is not None:
+        if name != course.name:
+            course.name = name
+        if max_partecipants != course.max_partecipants:
+            course.max_partecipants = max_partecipants
+        return True
+    return False
 
 # ________________________________________ COURSE PROGRAM ________________________________________
 
