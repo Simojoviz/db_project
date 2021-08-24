@@ -436,7 +436,6 @@ def shifts_load_state():
 
 
 @app.route('/prenotation/<shift>')
-@login_required
 def prenotation(shift):
     session = Session()
     try:
