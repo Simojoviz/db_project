@@ -482,9 +482,9 @@ def del_prenotation(shift):
 def courses():
     session = Session()
     try:
-        user = get_user(session, email=current_user.email)
         courses = get_course(session, all=True)
         if is_trainer(current_user):
+            user = get_user(session, email=current_user.email)
             courses = filter(lambda course: course not in user.trainer.courses, courses)
         return render_template("courses.html", courses = courses, today= datetime.date.today())
     except BaseException as exc:
@@ -544,46 +544,61 @@ def trainer_courses():
 @app.route('/trainer_courses/<course_name>')
 @login_required
 def trainer_course(course_name):
+
+    def time_to_timedelta(time_obj):
+        return timedelta(hours=time_obj.hour, minutes=time_obj.minute)
+
+    def timedelta_to_time(time_delta):
+        return datetime.time(hour=time_delta.hour, minute=time_delta.minute)
+
     session = Session()
     try:
         trainer = get_trainer(session, email = current_user.email)
         course = get_course(session, name=course_name)
         if is_trainer(current_user) and course.instructor_id == trainer.id:
-            course_program = get_course_program(session, course_id = course.id)
             sh = []
-            for i in course_program:
-                sh.append(get_shift(session, id=i.turn_number))
-            session.commit()
-            return render_template("trainer_course.html", course = course, course_program = course_program, shifts = sh)
+            for cp in course.course_programs:
+                ws = get_week_setting(session, day_name=cp.week_day)
+                starting = time_to_timedelta(ws.starting) + time_to_timedelta(ws.length) * (cp.turn_number-1)
+                ending = starting + time_to_timedelta(ws.length)
+                sh.append(Shift(
+                    date=datetime.date.today(), # not used
+                    starting = starting,
+                    ending = ending,
+                    room_id = cp.room_id,
+                    course_id = course.id
+                ))
+            return render_template("trainer_course.html", course = course, course_program = course.course_programs, shifts = sh)
         else:
             return redirect(url_for('courses'))
     except BaseException as exc:
         flash(str(exc), category='error')
         session.rollback()
         session.close()
-        return redirect(url_for('trainer_course'), course_name=course_name)
+        return redirect(url_for('trainer_course', course_name=course_name))
     finally:
         session.close()
 
 
-@app.route('/courses/delete_course/<course_name>')
+@app.route('/courses/delete_course/<course_name>', methods=['POST'])
 @login_required
 def del_course(course_name):
-    session = Session()
-    try:
-        trainer = get_trainer(session, email = current_user.email)
-        course = get_course(session, name=course_name)
-        if is_trainer(current_user) and course.instructor_id == trainer.id:
-            delete_course(session, course_id = course.id)
-            session.commit()
-            return redirect(url_for('trainer_courses'))
-    except BaseException as exc:
-        flash(str(exc), category='error')
-        session.rollback()
-        session.close()
-        return redirect(url_for('trainer_course'), course_name=course_name)
-    finally:
-        session.close()
+    if request.method == 'POST':
+        session = Session()
+        try:
+            trainer = get_trainer(session, email = current_user.email)
+            course = get_course(session, name=course_name)
+            if is_trainer(current_user) and course.instructor_id == trainer.id:
+                delete_course(session, course_id = course.id)
+                session.commit()
+                return redirect(url_for('trainer_courses'))
+        except BaseException as exc:
+            flash(str(exc), category='error')
+            session.rollback()
+            session.close()
+            return redirect(url_for('trainer_course'), course_name=course_name)
+        finally:
+            session.close()
 
 @app.route('/courses/new_course')
 @login_required
