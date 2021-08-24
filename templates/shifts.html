@@ -84,9 +84,20 @@
               {% endfor %}
             </div>
           {% else %}
-            {% if s[4] > 0 %}
-              <form action= "{{ url_for('prenotation', shift = s.id) }}">
+            {% if s[5] is not none and user is not none and user in s[5].users_prenoted %}
+              <input type="submit", value="Booked" class="btn btn-success btn-sm">
+            {% elif s[4] > 0 %}
+              <form action= "{{ url_for('prenotation') }}", method="POST">
                 <input type="submit", value="Book" class="btn btn-success btn-sm">
+                {% if s[5] is not none %}
+                  <input name="shift_id" type="hidden", value={{ s[5].id }}>
+                {% else %}
+                  <input name="shift_id" type="hidden", value=-1>
+                {% endif %}
+                <input name="date" type="hidden", value={{ s[0] }}>
+                <input name="start" type="hidden", value={{ s[1] }}>
+                <input name="end" type="hidden", value={{ s[2] }}>
+                <input name="room_id" type="hidden", value={{ s[3].id }}>       
               </form>
             {% else %}
                 <input type="submit", value="Full" class="btn btn-success btn-sm">

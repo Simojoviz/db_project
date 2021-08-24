@@ -416,8 +416,7 @@ def add_shift(session, date=None, start=None, end=None, room_id=None, course_id=
     elif date      is not None and\
          start     is not None and\
          end       is not None and\
-         room_id   is not None and\
-         course_id is not None:
+         room_id   is not None:
         return add_shift(session, shift=Shift(date=date, starting=start, ending=end, room_id=room_id, course_id=course_id))
     else:
         return False
