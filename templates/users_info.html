@@ -2,10 +2,10 @@
 
 {% block pagebody %}
 <div class="container">
-  <h1 class="display-3 text-center">Room Settings</h1>
+  <h1 class="display-3 text-center">User Settings</h1>
   <div class="row">
     {% for user in users %}
-      <div class="col-xs-12 col-md-3 my-4">
+      <div class="col-xs-12 col-md-4 my-4">
         <div class="card bg-light shadow" style="width: 90%; border: hidden; margin: auto;">
           <div class="card-body pt-4">
             <h3 class="card-title">{{user.fullname}}</h3>
@@ -13,7 +13,7 @@
             Address : {{user.address}} <br>
             Telephone : {{user.telephone}} <br>
             Roles : 
-            {% for role in user.roles %} {{role.name }} <br> {% endfor %}
+            {% for role in user.roles %} {{role.name }}  {% endfor %} <br>
             Subscription to : {{user.subscription}} <br>
             Covid State :
               {% if user.covid_state == 0 %}
@@ -25,7 +25,7 @@
               {% endif %}
             <div class="col-xs-4 col-md-4">
               <form action="{{url_for('user_settings', user_id = user.id)}}">
-                <input type="submit" value="Update" class="btn btn-danger my-2">
+                <input type="submit" value="Update" class="btn btn-info text-white my-2">
               </form>
             </div>
           </div>
@@ -34,7 +34,7 @@
     {% endfor %}
   </div>
 
-  <div class="mt-4">
+  <div class="my-4">
     <form action="{{url_for('private')}}">
       <input type="submit", value="Back" class="btn btn-info text-light">
     </form>
