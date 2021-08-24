@@ -946,10 +946,8 @@ def deadlines():
     session = Session()
     try:
         if is_admin(current_user):
-            users = get_user(session, all=True)
-            users = filter(lambda us: us.email != 'admin@gmail.com', users)
-            valid =     filter(lambda us: us.subscription >= datetime.date.today(), users)
-            not_valid = filter(lambda us: us.subscription <  datetime.date.today(), users)
+            valid =     filter(lambda us: us.subscription >= datetime.date.today(), filter(lambda us: us.email != 'admin@gmail.com', get_user(session, all=True)))
+            not_valid = filter(lambda us: us.subscription <  datetime.date.today(), filter(lambda us: us.email != 'admin@gmail.com', get_user(session, all=True)))
             valid =     sorted(valid,     key=lambda us: us.subscription)
             not_valid = sorted(not_valid, key=lambda us: us.subscription)
             return make_response(render_template("deadlines.html", valid=valid, not_valid=not_valid))
