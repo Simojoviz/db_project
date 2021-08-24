@@ -1,3 +1,4 @@
+from sqlalchemy.orm import with_expression
 from app import shifts
 from sqlalchemy import create_engine
 
@@ -37,11 +38,11 @@ conn.execute(
 
 conn.execute(
     "ALTER TABLE public.users\
-    DROP CONSTRAINT IF EXISTS covid_state_range;\
+    DROP CONSTRAINT IF EXISTS covid_state;\
     ALTER TABLE public.users\
     ADD CONSTRAINT covid_state CHECK (covid_state = 0 OR covid_state = 1 OR covid_state = 2);\
     \
-    COMMENT ON CONSTRAINT password_length ON public.users\
+    COMMENT ON CONSTRAINT covid_state ON public.users\
         IS 'covid state must be 0, 1 or 2';"
 )
 
@@ -293,6 +294,13 @@ conn.execute(
         ) THEN\
             RAISE EXCEPTION 'Cannot prenote: Shift date is over your subription';\
             RETURN NULL;\
+        ELSIF EXISTS(\
+            SELECT \
+            FROM prenotations pr JOIN shifts s2 ON pr.user_id = NEW.user_id AND s2.id = pr.shift_id JOIN shifts new_shift ON new_shift.id = NEW.shift_id\
+            WHERE new_shift.date = s2.date AND new_shift.starting = s2.starting\
+        ) THEN\
+            RAISE EXCEPTION 'Cannot prenote: New Prenotation overlaps with an other one';\
+            RETURN NULL;\
         END IF;\
         RETURN NEW;\
     END\
@@ -302,7 +310,7 @@ conn.execute(
         OWNER TO postgres;\
     \
     COMMENT ON FUNCTION public.no_invalid_prenotation()\
-        IS 'Raise an exception if - The shift is full, The shift is occupied by a course, Covid state is not safe, Shift is over user subscription-deadline ';\
+        IS 'Raise an exception if - The shift is full, The shift is occupied by a course, Covid state is not safe, Shift is over user subscription-deadline, New Prenotation overlaps with an other one ';\
         \
     CREATE TRIGGER NoInvalidPrenotation\
     BEFORE INSERT OR UPDATE\
@@ -311,7 +319,7 @@ conn.execute(
     EXECUTE PROCEDURE public.no_invalid_prenotation();\
     \
     COMMENT ON TRIGGER NoInvalidPrenotation ON public.prenotations\
-        IS 'Raise an exception if - The shift is full, The shift is occupied by a course, Covid state is not safe, Shift is over user subscription-deadline ';"
+        IS 'Raise an exception if - The shift is full, The shift is occupied by a course, Covid state is not safe, Shift is over user subscription-deadline, New Prenotation overlaps with an other one ';"
 )
 
 #___________COURSE SIGN UP___________

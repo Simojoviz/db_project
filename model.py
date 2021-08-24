@@ -461,6 +461,7 @@ def get_prenotation(session, user_id=None, shift_id=None, date=None, all=False):
 # Raises an Exception if
 # - shift is occupied by a course (trigger)
 # - maximum capacity has already been reached (trigger)
+# - prenotation overlaps with an other one (trigger)
 # - User is already in that turn (BaseException, violated p_key contraint)
 # - User has reached week-limit hours (app)
 # - User has an unsafe covid-state (trigger)
