@@ -2,6 +2,32 @@
 
 {% block pagebody %}
 
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+.collapsible {
+  background-color: rgb(13, 202, 240);
+  color: white;
+  cursor: pointer;
+  padding: 18px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 15px;
+}
+
+.active, .collapsible:hover {
+  background-color: rgb(13, 202, 240);
+}
+
+.content {
+  padding: 0 18px;
+  display: none;
+  overflow: hidden;
+  background-color: #f1f1f1;
+}
+</style>
+
 <div class="container"> 
   <h1 class="display-3 text-center">{{course.name}}</h1>
   <div class="card bg-light shadow p-3 mb-5 mt-4 mx-auto w-75" style="border: hidden;">
@@ -42,7 +68,7 @@
         <td>{{course.max_partecipants - course.users|length}}/{{course.max_partecipants}}</td>
       </tr>
     </table>
-    {% if isStaff == False %}
+    {% if "Admin" not in current_user.roles  %}
       {% if current_user.is_authenticated %}
         {% if course_sign_up.course_id != course.id %}
           <form action= "{{ url_for('sign_up', course_name = course.name) }}">
@@ -58,6 +84,13 @@
           <input type="submit", value="Subscribe" class="btn btn-success">
         </form>
       {% endif %}
+    {% else %}
+      <button type="button" class="collapsible">Signs-Up</button>
+      <div class="content">
+        {% for u in course.users %}
+          {{u.fullname}} <br>
+        {% endfor %}
+      </div>
     {% endif %}
   </div>
 
@@ -68,4 +101,21 @@
   </div>
 
 </div>
+
+<script>
+  var coll = document.getElementsByClassName("collapsible");
+  var i;
+  
+  for (i = 0; i < coll.length; i++) {
+    coll[i].addEventListener("click", function() {
+      this.classList.toggle("active");
+      var content = this.nextElementSibling;
+      if (content.style.display === "block") {
+        content.style.display = "none";
+      } else {
+        content.style.display = "block";
+      }
+    });
+  }
+</script>
 {% endblock %}
