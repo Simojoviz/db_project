@@ -2,11 +2,7 @@
 
 {% block pagebody %}
 <div class="container">
-  {% if get_flashed_messages(category_filter=('error')) %}
-    <div class="card bg-light shadow" style="width: 30rem; height: 20rem; margin: auto; margin-top: 12%; border: hidden;">
-  {% else %}
-    <div class="card bg-light shadow" style="width: 30rem; height: 16rem; margin: auto; margin-top: 12%; border: hidden;">
-  {% endif %}
+  <div class="card bg-light shadow" style="width: 30rem; height: 28rem; margin: auto; margin-top: 9%; border: hidden;">
     <div class="card-body">
       <div class="container text-center" style="margin-top: 2rem;">
         <h3 class="card-title">Update Global Settings</h3>
@@ -23,7 +19,7 @@
     </div>
   </div>
   <div class="mt-4">
-    <form action="{{url_for('settings')}}">
+    <form action="{{url_for('private')}}">
       <input type="submit", value="Back" class="btn btn-info text-light">
     </form>
   </div>

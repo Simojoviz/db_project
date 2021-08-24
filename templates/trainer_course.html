@@ -51,7 +51,7 @@
           <input type="submit" onclick="del_course()" value="Delete Course" class="btn btn-danger">
       </div>
       <div class="col-2">
-        <form action="#">
+        <form action="{{ url_for('upd_course', course_name= course.name) }}">
           <input type="submit" value="Update Course" class="btn btn-warning text-white">
         </form>
       </div>

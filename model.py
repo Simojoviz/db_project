@@ -880,6 +880,16 @@ def delete_course(session, course_id=None):
         session.delete(c)
  
 
+#update course
+def update_course(session, course=None, name=None, max_partecipants=None):
+    if course is not None:
+        if name != course.name:
+            course.name = name
+        if max_partecipants != course.max_partecipants:
+            course.max_partecipants = max_partecipants
+        return True
+    return False
+
 # ________________________________________ COURSE PROGRAM ________________________________________
 
 
