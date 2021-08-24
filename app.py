@@ -645,6 +645,12 @@ def new_course_form():
             starting = request.form['starting']
             ending = request.form['ending']
             max_partecipants = request.form['max_partecipants']
+            if name is "":
+                flash("Name not valid", category='error')
+                return redirect(url_for('new_course'))    
+            for course in get_course(session, all=True):
+                if course.name == name:
+                    raise BaseException(name + " Course already exists")
             instructor_id = current_user.id
             add_course(session, name=name, starting=starting, ending=ending, max_partecipants=max_partecipants, instructor_id=instructor_id)
             session.commit()
@@ -691,7 +697,7 @@ def undo_course(course_name):
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
             session.close()
-            return redirect(url_for('new_program'))
+            return redirect(url_for('new_program', course_name=course_name))
     finally:
         session.close()
 
