@@ -24,10 +24,10 @@ class User(Base):
     subscription = Column(Date,    nullable=False)
     covid_state  = Column(Integer, nullable=False)
 
-    shifts          =  relationship("Shift",  secondary="prenotations",    back_populates="users_prenoted")
+    shifts          = relationship("Shift",  secondary="prenotations",    back_populates="users_prenoted")
     courses         = relationship("Course", secondary="course_signs_up", back_populates="users")
     roles           = relationship("Role",   secondary="user_roles",      back_populates="users")
-    trainer         = relationship("Trainer", back_populates="user", uselist=False)
+    trainer         = relationship("Trainer", back_populates="user", uselist=False, cascade="all,delete")
     prenotations    = relationship("Prenotation",  viewonly=True)
     course_signs_up = relationship("CourseSignUp", viewonly=True)
 
@@ -42,7 +42,7 @@ class Trainer(Base):
     id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
 
     user = relationship("User", back_populates="trainer")
-    courses = relationship("Course", back_populates="trainer")
+    courses = relationship("Course", back_populates="trainer", cascade="all,delete")
 
     def __repr__(self):
         return "<Trainer(fullname='%s', email='%s')>" % (self.user.fullname,
@@ -132,8 +132,8 @@ class Room(Base):
     max_capacity = Column(Integer, nullable=False)
     new          = Column(Boolean, nullable=False)
 
-    shifts          = relationship("Shift",         back_populates="room")
-    course_programs = relationship("CourseProgram", back_populates="room")
+    shifts          = relationship("Shift",         back_populates="room", cascade="all,delete")
+    course_programs = relationship("CourseProgram", back_populates="room", cascade="all,delete")
 
     def __repr__(self):
         return "<Room(name='%s', capacity='%d')>" % (
@@ -195,7 +195,7 @@ class Course(Base):
 
     trainer         = relationship("Trainer",       back_populates="courses")
     shifts          = relationship("Shift",         back_populates="course")
-    users           = relationship("User",          back_populates="courses", secondary="course_signs_up")
+    users           = relationship("User",          back_populates="courses", secondary="course_signs_up", cascade="all,delete")
     course_programs = relationship("CourseProgram", back_populates="course")
     course_signs_up = relationship("CourseSignUp", viewonly=True)
 
