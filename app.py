@@ -509,6 +509,8 @@ def course(course_name):
             u = get_user(session, id = current_user.id)
             cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
             return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs)
+        else:
+            return redirect(url_for('login'))
     except BaseException as exc:
         flash(str(exc), category='error')
         session.rollback()
