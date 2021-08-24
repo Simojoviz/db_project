@@ -756,7 +756,7 @@ def plan_course_(course_name):
     try:
         plan_course(session, course_name)
         session.commit()
-        return redirect(url_for('course', course_name=course_name))
+        return redirect(url_for('trainer_course', course_name=course_name))
     except BaseException as exc:
             flash(str(exc), category='error')
             session.rollback()
