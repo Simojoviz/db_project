@@ -1,3 +1,4 @@
+from flask.app import Flask
 from sqlalchemy import Column, Integer, Boolean, String, Date, Time, DateTime
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, declarative_base
@@ -26,7 +27,7 @@ class User(Base):
     shifts          =  relationship("Shift",  secondary="prenotations",    back_populates="users_prenoted")
     courses         = relationship("Course", secondary="course_signs_up", back_populates="users")
     roles           = relationship("Role",   secondary="user_roles",      back_populates="users")
-    trainer         = relationship("Trainer", back_populates="user")
+    trainer         = relationship("Trainer", back_populates="user", uselist=False)
     prenotations    = relationship("Prenotation",  viewonly=True)
     course_signs_up = relationship("CourseSignUp", viewonly=True)
 
