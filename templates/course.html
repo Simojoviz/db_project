@@ -48,7 +48,7 @@
       <tr>
         <td><strong>Days</strong></td>
         <td>
-          {% for i in course_program %}
+          {% for i in course.course_programs %}
             {{i.week_day}} - {{i.room.name}} 
             <br>
           {% endfor %}
@@ -57,8 +57,8 @@
       <tr>
         <td><strong>Shifts</strong></td>
         <td>
-          {% for i in shift %}
-            {{i.h_start}} - {{i.h_end}} 
+          {% for i in shifts %}
+            {{i.starting}} - {{i.ending}} 
             <br>
           {% endfor %}
         </td>
@@ -68,19 +68,21 @@
         <td>{{course.max_partecipants - course.users|length}}/{{course.max_partecipants}}</td>
       </tr>
     </table>
-    {% if "Admin" not in current_user.roles  %}
+    {% if current_user.is_authenticated and "Admin" not in current_user.roles %}
       {% if current_user.is_authenticated %}
-        {% if course_sign_up.course_id != course.id %}
-          <form action= "{{ url_for('sign_up', course_name = course.name) }}">
-            <input type="submit" value="Subscribe" class="btn btn-success">
-          </form>
-        {% else %}
-          <form action="{{ url_for('delete_sign_up', course_name = course.name)}}">
-            <input type="submit", value="Unsubscribe" class="btn btn-danger">
-          </form>
+        {% if current_user.id != course.instructor_id %}
+          {% if not has_sign_up %}
+            <form action= "{{ url_for('sign_up', course_name = course.name) }}">
+              <input type="submit" value="Subscribe" class="btn btn-success">
+            </form>
+          {% else %}
+            <form action="{{ url_for('delete_sign_up', course_name = course.name)}}">
+              <input type="submit", value="Unsubscribe" class="btn btn-danger">
+            </form>
+          {% endif %}
         {% endif %}
       {% else %}
-        <form action= "{{ url_for('sign_up', course_name = course.name) }}">
+        <form action= "{{ url_for('login') }}">
           <input type="submit", value="Subscribe" class="btn btn-success">
         </form>
       {% endif %}

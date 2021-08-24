@@ -170,12 +170,12 @@ class WeekSetting(Base):
     changed  = Column(Boolean, nullable=False)
 
     def __repr__(self):
-        return "<WeekSetting(day='%s', starting='%d:%d', ending='%d:%d', length='%d:%d', capacity='%d')>" % (
+        return "<WeekSetting(day='%s', starting='%d:%d', ending='%d:%d', length='%d:%d', changed='%d')>" % (
             self.day_name,
             self.starting.hour, self.starting.minute,
             self.ending.hour,   self.ending.minute,
             self.length.hour,   self.length.minute,
-            self.capacity
+            self.changed
         )
 
 

@@ -322,6 +322,139 @@ conn.execute(
         IS 'Raise an exception if - The shift is full, The shift is occupied by a course, Covid state is not safe, Shift is over user subscription-deadline, New Prenotation overlaps with an other one ';"
 )
 
+
+#___________COURSE___________
+
+
+conn.execute(
+    "DROP FUNCTION IF EXISTS public.no_past_course() CASCADE;\
+    CREATE FUNCTION public.no_past_course()\
+    RETURNS trigger\
+    LANGUAGE 'plpgsql'\
+    COST 100\
+    VOLATILE NOT LEAKPROOF\
+    AS $BODY$\
+    BEGIN\
+        IF NEW.starting < (SELECT CURRENT_DATE) THEN\
+            RAISE EXCEPTION 'Cannot create course: starting in the past';\
+            RETURN NULL;\
+        END IF;\
+        RETURN NEW;\
+    END\
+    $BODY$;\
+    \
+    ALTER FUNCTION public.no_past_course()\
+        OWNER TO postgres;\
+    \
+    COMMENT ON FUNCTION public.no_past_course()\
+        IS 'Raise an exception if course starting in set in the past';\
+        \
+    CREATE TRIGGER NoPastCourse\
+    BEFORE INSERT\
+    ON public.courses\
+    FOR EACH ROW\
+    EXECUTE PROCEDURE public.no_past_course();\
+    \
+    COMMENT ON TRIGGER NoPastCourse ON public.courses\
+        IS 'Raise an exception if course starting in set in the past';"
+)
+
+conn.execute(
+    "DROP FUNCTION IF EXISTS public.no_invalid_max_partecipants() CASCADE;\
+    CREATE FUNCTION public.no_invalid_max_partecipants()\
+    RETURNS trigger\
+    LANGUAGE 'plpgsql'\
+    COST 100\
+    VOLATILE NOT LEAKPROOF\
+    AS $BODY$\
+    BEGIN\
+        IF NEW.max_partecipants < (\
+            SELECT COUNT(*)\
+            FROM course_signs_up\
+            WHERE course_id = NEW.id\
+        ) THEN\
+            RAISE EXCEPTION 'Cannot decrease max_partecipants under course_signs_up number';\
+            RETURN NULL;\
+        ELSIF (\
+            NEW.max_partecipants > ANY (\
+                SELECT r.max_capacity\
+                FROM course_programs cp JOIN rooms r ON cp.room_id = r.id\
+                WHERE cp.course_id = NEW.id\
+            )\
+        ) THEN\
+            RAISE EXCEPTION 'Cannot decrease max_partecipants over the max_capacity of a room in course program';\
+            RETURN NULL;\
+        END IF;\
+        RETURN NEW;\
+    END\
+    $BODY$;\
+    \
+    ALTER FUNCTION public.no_invalid_max_partecipants()\
+        OWNER TO postgres;\
+    \
+    COMMENT ON FUNCTION public.no_invalid_max_partecipants()\
+        IS 'Raise an exception if - max_partecipants is under course_signs_up_number or over the max_capacity of a room in course program ';\
+    \
+    CREATE TRIGGER NoInvalidMaxPartecipants\
+    BEFORE INSERT OR UPDATE\
+    ON public.courses\
+    FOR EACH ROW\
+    EXECUTE PROCEDURE public.no_invalid_max_partecipants();\
+    \
+    COMMENT ON TRIGGER NoInvalidMaxPartecipants ON public.courses\
+    IS 'Raise an exception if - max_partecipants is under course_signs_up_number or over the max_capacity of a room in course program ';"
+)
+
+
+#___________COURSE PROGRAM___________
+
+conn.execute(
+    "DROP FUNCTION IF EXISTS public.max_partecipants_in_room() CASCADE;\
+    CREATE FUNCTION public.max_partecipants_in_room()\
+    RETURNS trigger\
+    LANGUAGE 'plpgsql'\
+    COST 100\
+    VOLATILE NOT LEAKPROOF\
+    AS $BODY$\
+    BEGIN\
+        IF (\
+            SELECT max_capacity\
+            FROM rooms\
+            WHERE id = NEW.room_id\
+        ) < (\
+            SELECT max_partecipants\
+            FROM courses\
+            WHERE id = NEW.course_id\
+        ) THEN\
+            UPDATE courses\
+            SET max_partecipants = (\
+                SELECT max_capacity\
+                FROM rooms\
+                WHERE id = NEW.room_id\
+            )\
+            WHERE id=NEW.id;\
+        END IF;\
+        RETURN NEW;\
+    END\
+    $BODY$;\
+    \
+    ALTER FUNCTION public.max_partecipants_in_room()\
+        OWNER TO postgres;\
+    \
+    COMMENT ON FUNCTION public.max_partecipants_in_room()\
+        IS 'Keep course max_capacity lower than the smallest room in course_program';\
+    \
+    CREATE TRIGGER MaxPartecipantsInRoom\
+    AFTER INSERT\
+    ON public.course_programs\
+    FOR EACH ROW\
+    EXECUTE PROCEDURE public.max_partecipants_in_room();\
+    \
+    COMMENT ON TRIGGER MaxPartecipantsInRoom ON public.course_programs\
+    IS 'Keep course max_capacity lower than the smallest room in course_program';"
+)
+
+
 #___________COURSE SIGN UP___________
 
 conn.execute(

@@ -23,6 +23,12 @@ Session = sessionmaker(bind=engine, autoflush=True)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+def time_to_timedelta(time_obj):
+        return timedelta(hours=time_obj.hour, minutes=time_obj.minute)
+
+def timedelta_to_time(time_delta):
+    return datetime.time(hour=time_delta.hour, minute=time_delta.minute)
+
 #__________________________________________ SESSION-USER ________________________________________
 
 
@@ -500,22 +506,30 @@ def courses():
 def course(course_name):
     session = Session()
     try:
-        c = get_course(session,name = course_name)
-        cp = get_course_program(session,course_id = c.id)
-        sh = []
-        for i in cp:
-            sh.append(get_shift(session, id=i.turn_number))
+        course = get_course(session, name = course_name)
         if current_user.is_authenticated:
-            u = get_user(session, id = current_user.id)
-            cs = get_course_sign_up(session, user_id=u.id, course_id=c.id)
-            return render_template("course.html", course = c, course_program = cp, shift = sh, course_sign_up = cs)
+            user = get_user(session, id = current_user.id)
+            sh = []
+            for cp in course.course_programs:
+                ws = get_week_setting(session, day_name=cp.week_day)
+                starting = time_to_timedelta(ws.starting) + time_to_timedelta(ws.length) * (cp.turn_number-1)
+                ending = starting + time_to_timedelta(ws.length)
+                sh.append(Shift(
+                    date=datetime.date.today(), # not used
+                    starting = starting,
+                    ending = ending,
+                    room_id = cp.room_id,
+                    course_id = course.id
+                ))
+                cs = get_course_sign_up(session, user_id=user.id, course_id=course.id)
+            return render_template("course.html", course = course, shifts=sh, has_sign_up= (cs is not None))
         else:
             return redirect(url_for('login'))
     except BaseException as exc:
         flash(str(exc), category='error')
         session.rollback()
         session.close()
-        return redirect(url_for('course'), course_name=course_name)
+        return redirect(url_for('course', course_name=course_name))
     finally:
         session.close()
 
@@ -546,12 +560,6 @@ def trainer_courses():
 @app.route('/trainer_courses/<course_name>')
 @login_required
 def trainer_course(course_name):
-
-    def time_to_timedelta(time_obj):
-        return timedelta(hours=time_obj.hour, minutes=time_obj.minute)
-
-    def timedelta_to_time(time_delta):
-        return datetime.time(hour=time_delta.hour, minute=time_delta.minute)
 
     session = Session()
     try:
@@ -753,16 +761,26 @@ def plan_course_(course_name):
             flash(str(exc), category='error')
             session.rollback()
             session.close()
-            return redirect(url_for('course', course_name = course_name))
+            return redirect(url_for('new_program', course_name = course_name))
     finally:
         session.close()
 
 
+
 @app.route('/update_course/<course_name>')
 def upd_course(course_name):
-    session = Session()
-    course = get_course(session, name= course_name)
-    return render_template('update_course.html', course=course)
+    try:
+        session = Session()
+        course = get_course(session, name= course_name)
+        return render_template('update_course.html', course=course)
+    except BaseException as exc:
+            flash(str(exc), category='error')
+            session.rollback()
+            session.close()
+            return redirect(url_for('upd_course', course_name = course_name))
+    finally:
+        session.close()
+
 
 @app.route('/update_course_form/<course_name>', methods=["POST"])
 def upd_course_form(course_name):
@@ -775,28 +793,19 @@ def upd_course_form(course_name):
             name = request.form['name']
             for i in courses:
                 if i.name == name and i.name != course_name:
-                    flash("Name already exists!", category='error')
+                    flash(name + " course already exists!", category='error')
                     return redirect(url_for('upd_course', course_name= course_name))           
-            
-            max_partecipants = int(request.form['max_partecipants'])
-            min_max_capacity = 1000
-            for i in course.course_programs:
-                if i.room.max_capacity < min_max_capacity:
-                    min_max_capacity = i.room.max_capacity
 
-            sign_ups = 0
-            for i in course.users:
-                sign_ups += 1
-            if max_partecipants < sign_ups or max_partecipants > min_max_capacity:
-                flash("Invalid Max Partecipants!", category='error')
-                return redirect(url_for('upd_course', course_name= course_name))
-            
-            update_course(session, course=course, name=name, max_partecipants=max_partecipants)
+            max_partecipants = int(request.form['max_partecipants'])
+
+            update_course(session, course_id=course.id, name=name, max_partecipants=max_partecipants)
             session.commit()
             return redirect(url_for('trainer_course', course_name = name))
-        except:
+        except BaseException as exc:
+            flash(str(exc), category='error')
             session.rollback()
-            raise
+            session.close()
+            return redirect(url_for('upd_course', course_name = course_name))
         finally:
             session.close()        
 

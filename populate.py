@@ -99,19 +99,19 @@ plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=365, a
 # Courses
 courses = [
     Course(name = 'Boxe',
-        starting=datetime.datetime(year=2021, month=8, day=1), ending = datetime.datetime(year=2021, month=8, day=30), max_partecipants = 7, 
+        starting=datetime.datetime(year=2021, month=9, day=15), ending = datetime.datetime(year=2021, month=10, day=15), max_partecipants = 7, 
         instructor_id = get_trainer(session, email='stefano@gmail.com').id
     ),
     Course(name = 'Zumba',
-        starting=datetime.datetime(year=2021, month=8, day=1), ending = datetime.datetime(year=2021, month=8, day=30), max_partecipants = 12, 
+        starting=datetime.datetime(year=2021, month=9, day=21), ending = datetime.datetime(year=2021, month=10, day=21), max_partecipants = 12, 
         instructor_id = get_trainer(session, email='alessandra@gmail.com').id
     ),
     Course(name = 'Judo',
-        starting=datetime.datetime(year=2021, month=9, day=1), ending = datetime.datetime(year=2021, month=9, day=30), max_partecipants = 20, 
+        starting=datetime.datetime(year=2021, month=10, day=1), ending = datetime.datetime(year=2021, month=10, day=30), max_partecipants = 20, 
         instructor_id = get_trainer(session, email='riccardo@gmail.com').id
     ),
     Course(name = 'Test',
-        starting=datetime.datetime(year=2021, month=8, day=1), ending = datetime.datetime(year=2021, month=8, day=15), max_partecipants = 20, 
+        starting=datetime.datetime(year=2021, month=10, day=1), ending = datetime.datetime(year=2021, month=12, day=24), max_partecipants = 20, 
         instructor_id = get_trainer(session, email='stefano@gmail.com').id
     )
 ]

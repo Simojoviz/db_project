@@ -851,7 +851,7 @@ def plan_course(session, name):
         while(day < end):
             shift = get_shift_turn(session, date=datetime.date(year=day.year, month=day.month, day=day.day), room_id=room_id, turn=turn)
             if shift is None:
-                raise BaseException("There is not that turn in that day")
+                raise("Va creato lo shift per l'update di simone")
             if(shift.course_id is not None):
                 raise BaseException("Course cannot be planned: it overlaps with an other course!")
             else:
@@ -881,15 +881,15 @@ def delete_course(session, course_id=None):
         session.delete(c)
  
 
-#update course
-def update_course(session, course=None, name=None, max_partecipants=None):
-    if course is not None:
+# Update name and max_partecipants Course
+def update_course(session, course_id=None, name=None, max_partecipants=None):
+    if course_id is not None:
+        course = get_course(session, id=course_id)
         if name != course.name:
             course.name = name
         if max_partecipants != course.max_partecipants:
             course.max_partecipants = max_partecipants
-        return True
-    return False
+
 
 # ________________________________________ COURSE PROGRAM ________________________________________
 
