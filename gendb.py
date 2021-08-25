@@ -445,7 +445,7 @@ conn.execute(
         IS 'Keep course max_capacity lower than the smallest room in course_program';\
     \
     CREATE TRIGGER MaxPartecipantsInRoom\
-    AFTER INSERT\
+    AFTER INSERT OR UPDATE\
     ON public.course_programs\
     FOR EACH ROW\
     EXECUTE PROCEDURE public.max_partecipants_in_room();\
@@ -455,7 +455,43 @@ conn.execute(
 )
 
 
-#___________COURSE SIGN UP___________
+#___________ ROOM ___________
+
+# PN! L'azione del trigger è tautologica ma serve a attivare il trigger in update di course_programs
+conn.execute(
+    "DROP FUNCTION IF EXISTS public.room_capacity() CASCADE;\
+    CREATE FUNCTION public.room_capacity()\
+    RETURNS trigger\
+    LANGUAGE 'plpgsql'\
+    COST 100\
+    VOLATILE NOT LEAKPROOF\
+    AS $BODY$\
+    BEGIN\
+        UPDATE course_programs\
+        SET room_id = NEw.id\
+        WHERE room_id = NEW.id;\
+        RETURN NEW;\
+    END\
+    $BODY$;\
+    \
+    ALTER FUNCTION public.room_capacity()\
+        OWNER TO postgres;\
+    \
+    COMMENT ON FUNCTION public.room_capacity()\
+        IS 'Activate courseprograms trigger';\
+    \
+    CREATE TRIGGER RoomCapacity\
+    AFTER INSERT OR UPDATE\
+    ON public.rooms\
+    FOR EACH ROW\
+    EXECUTE PROCEDURE public.room_capacity();\
+    \
+    COMMENT ON TRIGGER RoomCapacity ON public.rooms\
+            IS 'Activate courseprograms trigger';"
+)
+
+
+#___________ COURSE SIGN UP ___________
 
 conn.execute(
     "DROP FUNCTION IF EXISTS public.no_invalid_sign_up() CASCADE;\
