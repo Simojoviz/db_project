@@ -15,7 +15,7 @@ app = Flask ( __name__ )
 #engine = create_engine('sqlite:///database.db', echo=True)
 engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
 #engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=False)
-#engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
+engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
 
 app.config ['SECRET_KEY'] = 'ubersecret'
 
@@ -231,9 +231,8 @@ def prenotations():
     try:
         user = get_user(session, email=current_user.email)
         shifts = filter(lambda sh: (sh.date == datetime.date.today() and datetime.datetime.now().time() <= sh.ending) or sh.date > datetime.date.today(), user.shifts)
-        past_shifts = filter(lambda sh: (sh.date == datetime.date.today() and datetime.datetime.now().time() >= sh.ending) or sh.date < datetime.date.today() , user.shifts)
         shifts = sorted(shifts, key=lambda sh: (sh.date, sh.starting))
-        return make_response(render_template("prenotations.html", shifts=shifts, past_shifts=past_shifts))
+        return make_response(render_template("prenotations.html", shifts=shifts))
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
         session.rollback()
@@ -357,7 +356,7 @@ def update_user_form():
                 raise BaseException("Password Mismatch!")     
             update_user(session, user_id = user.id, fullname = fullname, telephone = telephone, address = address, pwd = pwd1)
             session.commit()
-            return redirect(url_for('upd_user'))
+            return redirect(url_for('private'))
         except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
