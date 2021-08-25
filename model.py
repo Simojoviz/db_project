@@ -21,6 +21,12 @@ def clamp(x, a, b):
     else:
         return x 
 
+def time_to_timedelta(time_obj):
+        return timedelta(hours=time_obj.hour, minutes=time_obj.minute)
+
+def timedelta_to_time(time_delta):
+    return datetime.time(hour=time_delta.hour, minute=time_delta.minute)
+
 # ________________________________________ USER ________________________________________ 
 
 
@@ -826,13 +832,7 @@ def add_course_from_list(session, courses_list):
 # - the course overlaps with any other 
 # PN! When a course is set for a Shift, all Prenotation for that Shift are removed and User is notified with a Message
 def plan_course(session, name):
-
-    def get_shift_turn(session, date, room_id, turn):
-        shifts = get_shift(session, date=date, room_id=room_id)
-        if len(shifts) >= turn:
-            return shifts[turn-1]
-        else:
-            return None
+ 
     
     course = get_course(session, name=name)
     if course is None:
@@ -849,10 +849,19 @@ def plan_course(session, name):
         while(calendar.day_name[day.weekday()] != dayname): # Move to the correct week day
             day = day + timedelta(days = 1)
         while(day < end):
-            shift = get_shift_turn(session, date=datetime.date(year=day.year, month=day.month, day=day.day), room_id=room_id, turn=turn)
+            ws = get_week_setting(session, day_name=calendar.day_name[day.weekday()])
+            starting = time_to_timedelta(ws.starting) + time_to_timedelta(ws.length) * (turn-1)
+            shift = get_shift(session, date=day, start=starting, room_id=room_id)
             if shift is None:
-                raise("Va creato lo shift per l'update di simone")
-            if(shift.course_id is not None):
+                add_shift(
+                    session,
+                    date=day,
+                    start=starting,
+                    end=starting+time_to_timedelta(ws.length),
+                    room_id=room_id,
+                    course_id=course.id
+                )
+            elif (shift.course_id is not None):
                 raise BaseException("Course cannot be planned: it overlaps with an other course!")
             else:
                 # Deletes all Prenotation in that Shift
@@ -863,7 +872,7 @@ def plan_course(session, name):
                     text='Your prenotation on ' + prenotation.shift.date.strftime('%d/%m/%Y') + " from " + shift.starting.strftime('%H:%M') + " to " + shift.ending.strftime('%H:%M') + " in " + prenotation.shift.room.name + " has been deleted due to the planning of " + course.name + " by the trainer " + course.trainer.user.fullname
                     )
                     session.delete(prenotation)
-            shift.course_id = course.id
+                shift.course_id = course.id
             day = day + timedelta(days=7)
 
 
