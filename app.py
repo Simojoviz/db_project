@@ -106,6 +106,7 @@ def login_form():
                     user = get_SessionUser_by_email(session, userReq)
                     login_user(user)
                     session.commit()
+                    flash("Login completed successfully", category='success')
                     return redirect(url_for('login'))
                 else:
                     raise BaseException("Wrong password")
@@ -120,7 +121,7 @@ def login_form():
             session.close()
 
 
-#__________________________________________ signup ________________________________________
+#__________________________________________ SIGNUP ________________________________________
 
 
 @app.route('/signup')
@@ -187,7 +188,7 @@ def signin_form():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('home'))
+    return redirect(url_for('login'))
 
 
 #__________________________________________ HOME ________________________________________
@@ -245,7 +246,7 @@ def prenotations():
         flash(truncate_message(str(exc)), category='error')
         session.rollback()
         session.close()
-        return redirect(url_for('private'))
+        return redirect(url_for('prenotations'))
     finally:
         session.close()
 
@@ -349,30 +350,25 @@ def update_user_form():
         try:
             user = get_user(session, email= current_user.email)
             fullname = request.form['fullname']
-            if fullname == "":
-                flash("Empty Field!", category='error')
-                return redirect(url_for('upd_user'))
+            if not fullname:
+                raise BaseException("Empty fullname!")
             telephone = request.form['telephone']
-            if telephone == "":
-                flash("Empty Field!", category='error')
-                return redirect(url_for('upd_user'))
+            if not telephone:
+                raise BaseException("Empty telephone!")
+            for us in get_user(session, all=True):
+                if telephone == us.telephone and user.email != us.email:
+                    raise BaseException("Phone number " + telephone + " already exixsts")
             address = request.form['address']
-            if address == "":
-                flash("Empty Field!", category='error')
-                return redirect(url_for('upd_user'))
+            if not address:
+                raise BaseException("Empty address!")
             pwd1 = request.form['pwd1']
-            if pwd1 == "":
-                flash("Empty Field!", category='error')
-                return redirect(url_for('upd_user'))
+            if not pwd1:
+                raise BaseException("Empty password!")
             pwd2 = request.form['pwd2']
-            if pwd1 == "":
-                flash("Empty Field!", category='error')
-                return redirect(url_for('upd_user'))
-
+            if not pwd2:
+                raise BaseException("Empty password!")
             if pwd1 != pwd2:
-                flash("Password Mismatch!", category='error')
-                return redirect(url_for('upd_user'))
-                
+                raise BaseException("Password Mismatch!")     
             update_user(session, user_id = user.id, fullname = fullname, telephone = telephone, address = address, pwd = pwd1)
             session.commit()
             return redirect(url_for('upd_user'))
@@ -413,7 +409,6 @@ def shifts():
         session.commit()
         return resp
     except BaseException as exc:
-        raise
         flash(truncate_message(str(exc)), category='error')
         session.rollback()
         session.close()
