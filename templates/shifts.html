@@ -39,7 +39,6 @@
         <th>End</th>
         <th>Room</th>
         <th>Capacity</th>
-        <th>Booking</th>
       </tr>
 
       {% for s in shifts %}
@@ -53,9 +52,11 @@
           {% if current_user.is_authenticated and "Admin" in current_user.roles %}
             <button type="button" class="collapsible">Users</button>
             <div class="content">
-              {% for u in s.users_prenoted %}
-                {{u.fullname}} <br>
-              {% endfor %}
+              {% if s[5] is not none %}
+                {% for u in s[5].users_prenoted %}
+                  {{u.fullname}} <br>
+                {% endfor %}
+              {% endif %}
             </div>
           {% else %}
             {% if s[5] is not none and user is not none and user in s[5].users_prenoted %}
