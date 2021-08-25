@@ -22,20 +22,22 @@
         <td><strong>Address</strong></td>
         <td>{{us.address}}</td>
       </tr>
-      <tr>
-        <td><strong>Subscription to</strong></td>
-        <td>{{us.subscription}}</td>
-      </tr>
-      <tr>
-        <td><strong>Covid State</strong></td>
-        {% if us.covid_state == 0 %}
-          <td>Free</td>
-        {% elif us.covid_state == 1 %}
-          <td>You came into contact with a Client affected form Covid-19</td>
-        {% else %}
-          <td>You signaled you are affected from Covid-19</td>
-        {% endif %}
-      </tr>
+      {% if "Admin" not in current_user.roles %}
+        <tr>
+          <td><strong>Subscription to</strong></td>
+          <td>{{us.subscription}}</td>
+        </tr>
+        <tr>
+          <td><strong>Covid State</strong></td>
+          {% if us.covid_state == 0 %}
+            <td>Free</td>
+          {% elif us.covid_state == 1 %}
+            <td>You came into contact with a Client affected form Covid-19</td>
+          {% else %}
+            <td>You signaled you are affected from Covid-19</td>
+          {% endif %}
+        </tr>
+      {% endif %}
     </table>
     <div class="row">
       <div class="col-2">
