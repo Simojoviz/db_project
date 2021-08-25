@@ -44,11 +44,11 @@
 
       {% for s in shifts %}
       <tr>
-        <td>{{s.date}}</td>
-        <td>{{s.starting}}</td>
-        <td>{{s.ending}}</td>
-        <td>{{s.room.name}}</td>
-        <td>{{s.room.max_capacity - s.prenotations|length}}/{{s.room.max_capacity}}</td>
+        <td>{{ s[0] }}</td>
+        <td>{{ s[1] }}</td>
+        <td>{{ s[2] }}</td>
+        <td>{{ s[3].name }}</td>
+        <td>{{ s[4] }} / {{ s[3].max_capacity }}</td>
         <td>
           {% if current_user.is_authenticated and "Admin" in current_user.roles %}
             <button type="button" class="collapsible">Users</button>
@@ -58,11 +58,20 @@
               {% endfor %}
             </div>
           {% else %}
-            {% if current_user.is_authenticated and s in current_user.shifts %}  
-                <input type="submit", value="Booked" class="btn btn-success btn-sm"> <!--TODO doesn't work anymore -->
-            {% elif s.room.max_capacity - s.prenotations|length > 0 %}
-              <form action= "{{ url_for('prenotation', shift = s.id) }}">
+            {% if s[5] is not none and user is not none and user in s[5].users_prenoted %}
+              <input type="submit", value="Booked" class="btn btn-success btn-sm">
+            {% elif s[4] > 0 %}
+              <form action= "{{ url_for('prenotation') }}", method="POST">
                 <input type="submit", value="Book" class="btn btn-success btn-sm">
+                {% if s[5] is not none %}
+                  <input name="shift_id" type="hidden", value={{ s[5].id }}>
+                {% else %}
+                  <input name="shift_id" type="hidden", value=-1>
+                {% endif %}
+                <input name="date" type="hidden", value={{ s[0] }}>
+                <input name="start" type="hidden", value={{ s[1] }}>
+                <input name="end" type="hidden", value={{ s[2] }}>
+                <input name="room_id" type="hidden", value={{ s[3].id }}>       
               </form>
             {% else %}
                 <input type="submit", value="Full" class="btn btn-success btn-sm">

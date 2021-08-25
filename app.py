@@ -13,8 +13,8 @@ from model import *
 app = Flask ( __name__ )
 
 #engine = create_engine('sqlite:///database.db', echo=True)
-engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
-# engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=True)
+#engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
+engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=False)
 #engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
 
 app.config ['SECRET_KEY'] = 'ubersecret'
@@ -391,22 +391,57 @@ def shifts():
         if date < datetime.date.today():
             date = datetime.date.today()
         date_string = date.strftime("%Y-%m-%d")
-        r = get_room(session, all=True)
+        settings = get_week_setting(session, day_name=date.strftime("%A"))
+        length = timedelta(hours=settings.length.hour,   minutes=settings.length.minute)
+        start = timedelta(hours=settings.starting.hour,   minutes=settings.starting.minute)
+        end_ = timedelta(hours=settings.ending.hour,   minutes=settings.ending.minute)
+        shifts = []
         if room == 'All':
-            shifts = get_shift(session, date=date)
+            for r in get_room(session, all=True):
+                end = start + length 
+                while (end <= end_):
+                    shifts.append(
+                        [date,
+                        datetime.time(hour=(end-length).seconds//3600, minute=((end-length).seconds//60)%60), 
+                        datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
+                        r,
+                        r.max_capacity,
+                        None]
+                    )
+                    end += length
         else:
-            room_id = get_room(session, name=room).id
-            shifts = get_shift(session, date=date, room_id=room_id)
-        shifts = filter(lambda sh: sh.course_id is None, shifts) # Remove the shifts occupied from a course
+            r = get_room(session, name=room)
+            end = start + length 
+            while (end <= end_):
+                shifts.append(
+                    [date,
+                    datetime.time(hour=(end-length).seconds//3600, minute=((end-length).seconds//60)%60), 
+                    datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
+                    r,
+                    r.max_capacity,
+                    None]
+                )
+                end += length
+        shifts = [s for s in filter(lambda s: get_shift(session, date=date, start=s[1], room_id=s[3].id) is None or get_shift(session, date=date, start=s[1], room_id=s[3].id).course_id is None, shifts)] # Remove the shifts occupied from a course
         if date == date.today():
-            shifts = filter(lambda sh: sh.ending >= datetime.datetime.now().time(), shifts)
-        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda x: (x.ending, x.room_id)), date_string=date_string, rooms=r))
+            shifts = [s for s in filter(lambda s: s[1] >= datetime.datetime.now().time(), shifts)]
+        for s in shifts:
+            mem_shift = get_shift(session, date=date, start=s[1], room_id=s[3].id)
+            if mem_shift is not None:
+                s[4] = s[4] - len(mem_shift.prenotations)
+                s[5] = mem_shift
+        if current_user.is_authenticated:
+            user = get_user(session, id=current_user.id)
+        else:
+            None
+        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda t: (t[3].id, t[1])), date_string=date_string, rooms=get_room(session, all=True), user=user))
         session.commit()
         return resp
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
         session.rollback()
         session.close()
+        raise
         return redirect(url_for('shifts_first'))
     finally:
         session.close()
@@ -438,27 +473,37 @@ def shifts_load_state():
             session.close()
 
 
-@app.route('/prenotation/<shift>')
-def prenotation(shift):
-    session = Session()
-    try:
-        if current_user.is_authenticated:
-            us = get_user(session, id = current_user.id)
-            s = get_shift(session, id = shift)
-            add_prenotation(session, user = us, shift = s)
-            flash("Booking completed successfully", category='success')
-            session.commit()
-            return redirect(url_for('prenotations'))
-        return redirect(url_for('login'))
-    except BaseException as exc:
-        flash(truncate_message(str(exc)), category='error')
-        session.rollback()
-        session.close()
-        if current_user.is_authenticated:
-            return redirect(url_for('shifts_first'))
-        return redirect(url_for('home'))
-    finally:
-        session.close()
+@app.route('/prenotation', methods=['POST'])
+@login_required
+def prenotation():
+    if request.method == 'POST':
+        session = Session()
+        try:
+            if current_user.is_authenticated:
+                us = get_user(session, id = current_user.id)
+                shift_id = int(request.form['shift_id'])
+                if shift_id != -1:
+                    s = get_shift(session, id = shift_id)
+                else:
+                    date = request.form['date']
+                    start = request.form['start']
+                    end = request.form['end']
+                    room_id = request.form['room_id']
+                    add_shift(session, date=date, start=start, end=end, room_id=room_id)
+                    s = get_shift(session, date=date, start=start, room_id=room_id)
+                add_prenotation(session, user = us, shift = s)
+                session.commit()
+                return redirect(url_for('prenotations'))
+            return redirect(url_for('login'))
+        except BaseException as exc:
+            flash(truncate_message(str(exc)), category='error')
+            session.rollback()
+            session.close()
+            if current_user.is_authenticated:
+                return redirect(url_for('shifts_first'))
+            return redirect(url_for('login'))
+        finally:
+            session.close()
     
 
 @app.route('/del_prenotation/<shift>')
