@@ -92,7 +92,8 @@ def update_user(session, user_id=None, fullname=None, telephone=None, address=No
         if pwd is not None and pwd != user.pwd:
             user.pwd = pwd
         if covid_state is not None and covid_state != user.covid_state:
-            user.covid_state = covid_state
+            if(not (covid_state==1 and user.covid_state==2)):
+                user.covid_state = covid_state
             admin_id = get_admin_id(session)
             if covid_state == 0:
                 text = "Your covid state is now Free! You can prenote"
@@ -1058,23 +1059,24 @@ def user_covid_report(session, user_id):
     # Course
     courses = user.courses
     for course in courses:
-        course_signs_up = get_course_sign_up(session, course_id=course.id)
-        for csu in course_signs_up:
-            if csu.user_id != user.id:
-                update_user(session, user_id=csu.user_id, covid_state=1)
-                add_message(
-                    session,
-                    sender_id=admin_id,
-                    addresser_id=csu.user_id,
-                    text= "One person in course " + course.name + " you signed-up for is affected from COVID19"
-                )
-        update_user(session, user_id=course.instructor_id, covid_state=1)
-        add_message(
-                    session,
-                    sender_id=admin_id,
-                    addresser_id= course.instructor_id,
-                    text= "One person in your course " + course.name + " is affected from COVID19"
-        )
+        if course.starting < datetime.date.today() < course.ending:
+            course_signs_up = get_course_sign_up(session, course_id=course.id)
+            for csu in course_signs_up:
+                if csu.user_id != user.id:
+                    update_user(session, user_id=csu.user_id, covid_state=1)
+                    add_message(
+                        session,
+                        sender_id=admin_id,
+                        addresser_id=csu.user_id,
+                        text= "One person in course " + course.name + " you signed-up for is affected from COVID19"
+                    )
+            update_user(session, user_id=course.instructor_id, covid_state=1)
+            add_message(
+                        session,
+                        sender_id=admin_id,
+                        addresser_id= course.instructor_id,
+                        text= "One person in your course " + course.name + " is affected from COVID19"
+            )
     # Trainer
     if(get_role(session, name="Trainer")) in user.roles:
         trainer = get_trainer(session, email=user.email)

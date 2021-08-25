@@ -53,7 +53,8 @@
           {% if current_user.is_authenticated and "Admin" in current_user.roles %}
             <button type="button" class="collapsible">Users</button>
             <div class="content">
-              {% for u in s.users_prenoted %}
+              {% for u in range(12) %}
+                aaa
                 {{u.fullname}} <br>
               {% endfor %}
             </div>
