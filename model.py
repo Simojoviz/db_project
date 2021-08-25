@@ -101,11 +101,13 @@ def update_user(session, user_id=None, fullname=None, telephone=None, address=No
             else:
                 text = "You signaled you're positive for Covid19! You can't prenote. Please contact Gym's Admin"
             add_message(session, sender_id=admin_id, addresser_id=user_id, text=text)
+            return True
         if subscription is not None and subscription != user.subscription:
             user.subscription = subscription
             admin_id = get_admin_id(session)
             add_message(session, sender_id=admin_id, addresser_id=user_id, text="Your membership-deadline is update to " + subscription.strftime('%d/%m/%Y'))
-
+            return True
+    return False
 
 # ________________________________________ TRAINER ________________________________________ 
 
