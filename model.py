@@ -495,8 +495,11 @@ def add_prenotation(session, user=None, shift=None, prenotation=None):
         max_ = get_global_setting(session, name='MaxWeeklyEntry').value
         count = get_count_weekly_prenotations(session, user, shift.date)
         if (count < max_):
-            session.add(Prenotation(user_id=user.id, shift_id=shift.id))
-            return True
+            if "Admin" not in user.roles:
+                session.add(Prenotation(user_id=user.id, shift_id=shift.id))
+                return True
+            else:
+                raise BaseException("Admin can't book")
         else:
             raise BaseException("Week prenotation peak reached")
     elif prenotation is not None:
@@ -983,9 +986,12 @@ def get_course_sign_up(session, user_id=None, course_id=None, all=False):
 # Notifies both User and Trainer with a Message
 def add_course_sign_up(session, user=None, course=None, course_sign_up=None):
     if user is not None and course is not None:
-        session.add(CourseSignUp(user_id=user.id, course_id=course.id))
-        add_message(session, sender_id=user.id, addresser_id=course.trainer.user.id, text="Hello! I've just Signed-Up for your " + course.name + "course ! ")
-        add_message(session, addresser_id=user.id, sender_id=course.trainer.user.id, text="Hello! Welcome to my " + course.name + " course! ")
+        if "Admin" not in user.roles:
+            session.add(CourseSignUp(user_id=user.id, course_id=course.id))
+            add_message(session, sender_id=user.id, addresser_id=course.trainer.user.id, text="Hello! I've just Signed-Up for your " + course.name + "course ! ")
+            add_message(session, addresser_id=user.id, sender_id=course.trainer.user.id, text="Hello! Welcome to my " + course.name + " course! ")
+        else:
+            raise BaseException("Admin can't signup for a course")
     elif course_sign_up is not None:
         user_  =  get_user(session, id=course_sign_up.user_id)
         course_ = get_shift(session, id=course_sign_up.user_id)
