@@ -1,5 +1,6 @@
 from typing import final
 from flask import *
+from sqlalchemy.sql.selectable import Exists
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -87,7 +88,9 @@ def login():
         return render_template("login.html")
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
-        return redirect(url_for('login'))
+        if current_user.is_authenticated:
+            return redirect(url_for('private'))
+        return render_template("login.html")
 
 
 @app.route('/login_form', methods=['GET', 'POST'])
@@ -105,13 +108,9 @@ def login_form():
                     session.commit()
                     return redirect(url_for('login'))
                 else:
-                    flash("Incorrect username or password.", category='error')
-                    session.commit()
-                    return redirect(url_for('login'))
+                    raise BaseException("Wrong password")
             else:
-                flash("Incorrect username or password.", category='error')
-                session.commit()
-                return redirect(url_for('login'))
+                raise BaseException("email " + userReq + " doesn't exists")
         except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
@@ -121,20 +120,18 @@ def login_form():
             session.close()
 
 
-#__________________________________________ SIGIN ________________________________________
+#__________________________________________ signup ________________________________________
 
 
-@app.route('/signin')
-def signin():
+@app.route('/signup')
+def signup():
     try:
         if current_user.is_authenticated:
             return redirect(url_for('private'))
-        return render_template("signin.html")
+        return render_template("signup.html")
     except BaseException as exc:
-            flash(truncate_message(str(exc)), category='error')
-            if current_user.is_authenticated:
-                return redirect(url_for('private'))
-            return redirect(url_for('home'))
+        flash(truncate_message(str(exc)), category='error')
+        return redirect(url_for('signup'))
 
 @app.route('/signin_form', methods=['GET', 'POST'])
 def signin_form():
@@ -148,33 +145,37 @@ def signin_form():
             pwd1 = request.form['pwd1']
             pwd2 = request.form['pwd2']
             us = get_user(session, email=email)
-            if fullname and email and address and telephone and pwd1 and pwd1 == pwd2 and us is None:
-                flash("Signed in successfully.", category='success')
-                add_user(session, fullname=fullname, email=email, address=address, telephone=telephone, pwd=pwd1)
-                session.commit()
-                return redirect(url_for('login'))
             if not fullname:
-                flash("Please enter a fullname.", category='error')
+                raise BaseException("Please enter a fullname")
             elif not email:
-                flash("Please enter an email.", category='error')
+                raise BaseException("Please enter an email")
             elif not telephone:
-                flash("Please enter telephone", category='error')
+                raise BaseException("Please enter telephone")
             elif not address:
-                flash("Please enter address", category='error')
+                raise BaseException("Please enter address")
             elif us is not None:
-                flash("User already exist.", category='error')
-            elif us is not None:
-                flash("User already exist.", category='error')
+                raise BaseException("email " + email + " already exists")
             elif not pwd1:
-                flash("Please enter a password.", category='error')
-            else:    
-                flash("Passwords do not match.", category='error')
-            return redirect(url_for('signin'))
+                raise BaseException("Please enter a password")
+            elif len(pwd1) < 6:
+                raise BaseException("Password must contain more than 6 characters")
+            elif pwd1 != pwd2: 
+                raise BaseException("Passwords do not match")
+            else:
+                for user in get_user(session, all=True):
+                    if telephone == user.telephone:
+                        raise BaseException("Phone number " + telephone + " already exixsts")
+                add_user(session, fullname=fullname, email=email, address=address, telephone=telephone, pwd=pwd1)
+                user = get_SessionUser_by_email(session, email)
+                login_user(user)
+                session.commit()
+                flash("Signed in successfully.", category='success')
+                return redirect(url_for('signup'))
         except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
             session.close()
-            return redirect(url_for('signin'))
+            return redirect(url_for('signup'))
         finally:
             session.close()
 
@@ -645,16 +646,21 @@ def new_course_form():
             starting = request.form['starting']
             ending = request.form['ending']
             max_partecipants = request.form['max_partecipants']
-            if name is "":
-                flash("Name not valid", category='error')
-                return redirect(url_for('new_course'))    
-            for course in get_course(session, all=True):
-                if course.name == name:
-                    raise BaseException(name + " Course already exists")
-            instructor_id = current_user.id
-            add_course(session, name=name, starting=starting, ending=ending, max_partecipants=max_partecipants, instructor_id=instructor_id)
-            session.commit()
-            return redirect(url_for('new_program', course_name = name))
+            if not name:
+                raise BaseException("Please enter name")
+            elif not starting:
+                raise BaseException("Please enter starting")
+            elif not ending:
+                raise BaseException("Please enter ending")
+            elif not max_partecipants:
+                raise BaseException("Please enter max partecipants")
+            elif get_course(session, name=name) is not None:
+                raise BaseException(name + " Course already exists")
+            else:
+                instructor_id = current_user.id
+                add_course(session, name=name, starting=starting, ending=ending, max_partecipants=max_partecipants, instructor_id=instructor_id)
+                session.commit()
+                return redirect(url_for('new_program', course_name = name))
         except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()

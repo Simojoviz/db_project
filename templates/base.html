@@ -32,14 +32,14 @@
         <ul class="navbar-nav ms-auto text-sm-end">
           {% if current_user.is_authenticated%}
             <li class="nav-item">
-              <a class="nav-link text-light" href="{{ url_for('private') }}">Profile</a>
+              <a class="nav-link text-light" href="{{ url_for('private') }}">{{current_user.email}}</a>
             </li>
           {%else%}
             <li class="nav-item">
               <a class="nav-link text-light" href="{{ url_for('login')}}">Login</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link text-light" href="{{ url_for('signin')}}">Sign In</a>
+              <a class="nav-link text-light" href="{{ url_for('signup')}}">SignUp</a>
             </li>
           {%endif%}
         </ul>
