@@ -2,32 +2,6 @@
 
 {% block pagebody %}
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-.collapsible {
-  background-color: rgb(13, 202, 240);
-  color: white;
-  cursor: pointer;
-  padding: 18px;
-  width: 100%;
-  border: none;
-  text-align: left;
-  outline: none;
-  font-size: 15px;
-}
-
-.active, .collapsible:hover {
-  background-color: rgb(13, 202, 240);
-}
-
-.content {
-  padding: 0 18px;
-  display: none;
-  overflow: hidden;
-  background-color: #f1f1f1;
-}
-</style>
-
 <div class="container">
   <h1 class="display-3 text-center">Sign ups</h1>
   {% for c in courses %}
@@ -40,14 +14,14 @@
             <tr>
               <th>Starting</th>
               <th>Ending</th>
-              <th>Delete</th>
+              <th> </th>
             </tr>
             <tr>
               <td>{{c.starting}}</td>
               <td>{{c.ending}}</td>
               <td>            
-                <form action="{{ url_for('delete_sign_up', course_name=c.name) }}">
-                <input type="submit", value="Unsubscribe" class="btn btn-danger btn-sm">
+                <form action="{{ url_for('course', course_name=c.name) }}">
+                <input type="submit", value="Info" class="btn btn-info text-light">
                 </form>
               </td>
             </tr>
@@ -108,22 +82,6 @@
 
 </div>
 
-<script>
-  var coll = document.getElementsByClassName("collapsible");
-  var i;
-  
-  for (i = 0; i < coll.length; i++) {
-    coll[i].addEventListener("click", function() {
-      this.classList.toggle("active");
-      var content = this.nextElementSibling;
-      if (content.style.display === "block") {
-        content.style.display = "none";
-      } else {
-        content.style.display = "block";
-      }
-    });
-  }
-</script>
   
   
 {% endblock %}

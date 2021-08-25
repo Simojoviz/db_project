@@ -57,7 +57,7 @@
 
       <div class="col text-center">
         <form action="{{url_for('prenotations')}}">
-          <input type="submit", value="Prenotations" class="btn btn-info text-white" style="width: 120px;">
+          <input type="submit", value="Prenotations" class="btn btn-info text-white" style="width: 135px;">
         </form>
       </div>
       
@@ -70,7 +70,7 @@
       {% if "Trainer" in current_user.roles %}
         <div class="col text-center">
             <form action="{{url_for('trainer_courses')}}">
-              <input type="submit", value="Courses" class="btn btn-info text-white" style="width: 120px;">
+              <input type="submit", value="My Own Courses" class="btn btn-info text-white" style="width: 180px;">
             </form>
         </div>
       {% endif %}
@@ -86,7 +86,7 @@
       </div>
 
       <div class="col text-center">
-        <input type="submit", onclick="covid_report()" value="Covid Report" class="btn btn-info text-white" style="width: 120px;">
+        <input type="submit", onclick="covid_report()" value="Covid Report" class="btn btn-info text-white" style="width: 140px;">
       </div>
       
       {% else %}

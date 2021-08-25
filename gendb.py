@@ -373,7 +373,7 @@ conn.execute(
             FROM course_signs_up\
             WHERE course_id = NEW.id\
         ) THEN\
-            RAISE EXCEPTION 'Cannot decrease max_partecipants under course_signs_up number';\
+            RAISE EXCEPTION 'Cannot decrease Max Partecipants under Course Signs Up number';\
             RETURN NULL;\
         ELSIF (\
             NEW.max_partecipants > ANY (\
@@ -382,7 +382,7 @@ conn.execute(
                 WHERE cp.course_id = NEW.id\
             )\
         ) THEN\
-            RAISE EXCEPTION 'Cannot decrease max_partecipants over the max_capacity of a room in course program';\
+            RAISE EXCEPTION 'Cannot decrease Max Partecipants over the Max Capacity of a room in course program';\
             RETURN NULL;\
         END IF;\
         RETURN NEW;\

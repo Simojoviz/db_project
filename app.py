@@ -24,12 +24,6 @@ Session = sessionmaker(bind=engine, autoflush=True)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-def time_to_timedelta(time_obj):
-        return timedelta(hours=time_obj.hour, minutes=time_obj.minute)
-
-def timedelta_to_time(time_delta):
-    return datetime.time(hour=time_delta.hour, minute=time_delta.minute)
-
 def truncate_message(string):
     if "ERRORE" in string:
         string = string.split("ERRORE: ",1)[1]
@@ -241,6 +235,7 @@ def prenotations():
         user = get_user(session, email=current_user.email)
         shifts = filter(lambda sh: sh.date >= datetime.date.today(), user.shifts)
         past_shifts = filter(lambda sh: sh.date <= datetime.date.today() and datetime.datetime.now().time() >= sh.ending, user.shifts)
+        shifts = sorted(shifts, key=lambda sh: (sh.date, sh.starting))
         return make_response(render_template("prenotations.html", shifts=shifts, past_shifts=past_shifts))
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
@@ -451,6 +446,7 @@ def prenotation(shift):
             us = get_user(session, id = current_user.id)
             s = get_shift(session, id = shift)
             add_prenotation(session, user = us, shift = s)
+            flash("Booking completed successfully", category='success')
             session.commit()
             return redirect(url_for('prenotations'))
         return redirect(url_for('login'))
@@ -460,7 +456,7 @@ def prenotation(shift):
         session.close()
         if current_user.is_authenticated:
             return redirect(url_for('shifts_first'))
-        return redirect(url_for('login'))
+        return redirect(url_for('home'))
     finally:
         session.close()
     
@@ -509,24 +505,24 @@ def course(course_name):
     session = Session()
     try:
         course = get_course(session, name = course_name)
+        sh = []
+        for cp in course.course_programs:
+            ws = get_week_setting(session, day_name=cp.week_day)
+            starting = time_to_timedelta(ws.starting) + time_to_timedelta(ws.length) * (cp.turn_number-1)
+            ending = starting + time_to_timedelta(ws.length)
+            sh.append(Shift(
+                date=datetime.date.today(), # not used
+                starting = starting,
+                ending = ending,
+                room_id = cp.room_id,
+                course_id = course.id
+            ))
         if current_user.is_authenticated:
             user = get_user(session, id = current_user.id)
-            sh = []
-            for cp in course.course_programs:
-                ws = get_week_setting(session, day_name=cp.week_day)
-                starting = time_to_timedelta(ws.starting) + time_to_timedelta(ws.length) * (cp.turn_number-1)
-                ending = starting + time_to_timedelta(ws.length)
-                sh.append(Shift(
-                    date=datetime.date.today(), # not used
-                    starting = starting,
-                    ending = ending,
-                    room_id = cp.room_id,
-                    course_id = course.id
-                ))
-                cs = get_course_sign_up(session, user_id=user.id, course_id=course.id)
+            cs = get_course_sign_up(session, user_id=user.id, course_id=course.id)
             return render_template("course.html", course = course, shifts=sh, has_sign_up= (cs is not None))
         else:
-            return redirect(url_for('login'))
+            return render_template("course.html", course = course, shifts=sh)
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
         session.rollback()
@@ -536,7 +532,51 @@ def course(course_name):
         session.close()
 
 
-@app.route('/courses/trainer_courses')
+@app.route('/courses/sign_up/<course_name>')
+def sign_up(course_name):
+    session = Session()
+    try:
+        if current_user.is_authenticated:
+            us = get_user(session, id = current_user.id)
+            c = get_course(session, name= course_name)
+            add_course_sign_up(session, user=us, course=c)
+            session.commit()
+            flash("SignUp completed successfully", category='success')
+            return redirect(url_for('courses_sign_up'))
+        return redirect(url_for('login'))
+    except BaseException as exc:
+            flash(truncate_message(str(exc)), category='error')
+            session.rollback()
+            session.close()
+            return redirect(url_for('course', course_name = course_name))
+    finally:
+        session.close()
+
+
+@app.route('/courses/delete_sign_up/<course_name>')
+@login_required
+def delete_sign_up(course_name):
+    session = Session()
+    try:
+        us = get_user(session,id = current_user.id)
+        c = get_course(session, name = course_name)
+        delete_course_sign_up(session,course = c, user = us)
+        session.commit()
+        flash("SignUp deleted successfully", category='success')
+        return redirect(url_for('courses_sign_up'))
+    except BaseException as exc:
+            flash(truncate_message(str(exc)), category='error')
+            session.rollback()
+            session.close()
+            return redirect(url_for('course', course_name=course_name))
+    finally:
+        session.close()
+
+
+#__________________________________ TRAINER COURSES __________________________________
+
+
+@app.route('/courses/courses/trainer_courses')
 @login_required
 def trainer_courses():
     session = Session()
@@ -548,18 +588,16 @@ def trainer_courses():
         return redirect(url_for('courses'))
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
-        if is_trainer(current_user):
-            ret = redirect(url_for('trainer_courses'))
-        else:
-            ret = redirect(url_for('trainer_courses'))
         session.rollback()
         session.close()
-        return ret
+        if is_trainer(current_user):
+            return redirect(url_for('trainer_courses'))
+        return redirect(url_for('courses'))
     finally:
         session.close()
 
 
-@app.route('/trainer_courses/<course_name>')
+@app.route('/courses/courses/trainer_course/<course_name>')
 @login_required
 def trainer_course(course_name):
 
@@ -612,6 +650,7 @@ def del_course(course_name):
         finally:
             session.close()
 
+
 @app.route('/courses/new_course')
 @login_required
 def new_course():
@@ -631,6 +670,7 @@ def new_course():
     finally:
         session.close()
 
+
 @app.route('/courses/new_course_form', methods=['GET', 'POST'])
 @login_required
 def new_course_form():
@@ -647,6 +687,8 @@ def new_course_form():
                 raise BaseException("Please enter starting")
             elif not ending:
                 raise BaseException("Please enter ending")
+            elif not starting < ending:
+                raise BaseException("Course starts after his ending")
             elif not max_partecipants:
                 raise BaseException("Please enter max partecipants")
             elif get_course(session, name=name) is not None:
@@ -821,44 +863,6 @@ def upd_course_form(course_name):
             return redirect(url_for('upd_course', course_name = course_name))
         finally:
             session.close()        
-
-@app.route('/courses/sign_up/<course_name>')
-@login_required
-def sign_up(course_name):
-    session = Session()
-    try:
-        if current_user.is_authenticated:
-            us = get_user(session, id = current_user.id)
-            c = get_course(session, name= course_name)
-            add_course_sign_up(session, user=us, course=c)
-            session.commit()
-            return redirect(url_for('courses_sign_up'))
-        return redirect(url_for('login'))
-    except BaseException as exc:
-            flash(truncate_message(str(exc)), category='error')
-            session.rollback()
-            session.close()
-            return redirect(url_for('course', course_name = course_name))
-    finally:
-        session.close()
-
-@app.route('/courses/delete_sign_up/<course_name>')
-@login_required
-def delete_sign_up(course_name):
-    session = Session()
-    try:
-        us = get_user(session,id = current_user.id)
-        c = get_course(session, name = course_name)
-        delete_course_sign_up(session,course = c, user = us)
-        session.commit()
-        return redirect(url_for('courses_sign_up'))
-    except BaseException as exc:
-            flash(truncate_message(str(exc)), category='error')
-            session.rollback()
-            session.close()
-            return redirect(url_for('course', course_name=course_name))
-    finally:
-        session.close()
 
 
 # ________________________________________________________ADMIN SETTINGS________________________________________________________
