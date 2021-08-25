@@ -9,8 +9,8 @@ from model import*
 from automap import*
 
 # engine = create_engine('sqlite:///database.db', echo=True)
-#engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
-engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=False)
+engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
+#engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=False)
 #engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
 
 Session = sessionmaker(bind=engine, autoflush=True)
@@ -84,7 +84,7 @@ week_settings = [
 add_week_setting_from_list(session, week_setting_list=week_settings)
 
 # Shifts
-plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=90, all_room=True)
+#plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=90, all_room=True)
 """ Da correggere
 update_weekend_setting(
     session, day_name='Saturday',
@@ -152,6 +152,7 @@ plan_course(session, "Judo")
 # Prenotations
 
 # Prenotatoin for the first Shift on that day
+"""
 def add_prenotation_aux_nostart(session, email, day, month, year, room):
     sh = get_shift(session, date = datetime.date(day = day, month = month, year = year), room_id=get_room(session, name=room).id)
     if sh is not None:
@@ -168,6 +169,7 @@ add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 12, 10, 2021, 'Swim
 add_prenotation_aux_nostart(session, "simone@gmail.com",      3,  9, 2021, 'Fitness Room')
 add_prenotation_aux_nostart(session, "simone@gmail.com",      4,  9, 2021, 'Fitness Room')
 add_prenotation_aux_nostart(session, "simone@gmail.com",      6,  9, 2021, 'Fitness Room')
+"""
 
 add_course_sign_up(
     session,

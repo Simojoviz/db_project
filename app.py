@@ -13,8 +13,8 @@ from model import *
 app = Flask ( __name__ )
 
 #engine = create_engine('sqlite:///database.db', echo=True)
-#engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
-engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=False)
+engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
+#engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=False)
 #engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
 
 app.config ['SECRET_KEY'] = 'ubersecret'
@@ -433,8 +433,8 @@ def shifts():
         if current_user.is_authenticated:
             user = get_user(session, id=current_user.id)
         else:
-            None
-        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda t: (t[3].id, t[1])), date_string=date_string, rooms=get_room(session, all=True), user=user))
+            user = None
+        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda t: (t[1], t[3].id)), date_string=date_string, rooms=get_room(session, all=True), user=user))
         session.commit()
         return resp
     except BaseException as exc:
@@ -474,7 +474,6 @@ def shifts_load_state():
 
 
 @app.route('/prenotation', methods=['POST'])
-@login_required
 def prenotation():
     if request.method == 'POST':
         session = Session()

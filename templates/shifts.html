@@ -48,7 +48,7 @@
         <td>{{ s[1] }}</td>
         <td>{{ s[2] }}</td>
         <td>{{ s[3].name }}</td>
-        <td>{{ s[4] }} / {{ s[3].max_capacity }}</td>
+        <td>{{ s[4] }}/{{ s[3].max_capacity }}</td>
         <td>
           {% if current_user.is_authenticated and "Admin" in current_user.roles %}
             <button type="button" class="collapsible">Users</button>

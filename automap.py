@@ -82,7 +82,7 @@ class Shift(Base):
     starting  = Column(Time, nullable=False)
     ending    = Column(Time, nullable=False)
     room_id   = Column(Integer, ForeignKey('rooms.id',   ondelete='CASCADE'))
-    course_id = Column(Integer, ForeignKey('courses.id', ondelete='SET NULL'))
+    course_id = Column(Integer, ForeignKey('courses.id', ondelete='CASCADE'))
 
     __table_args__ = (UniqueConstraint('date', 'starting', 'room_id'),)
 
@@ -194,7 +194,7 @@ class Course(Base):
     instructor_id    = Column(Integer, ForeignKey('trainers.id', ondelete='CASCADE'))
 
     trainer         = relationship("Trainer",       back_populates="courses")
-    shifts          = relationship("Shift",         back_populates="course", order_by="Shift.date, Shift.starting")
+    shifts          = relationship("Shift",         back_populates="course",  cascade="all,delete", order_by="Shift.date, Shift.starting")
     users           = relationship("User",          back_populates="courses", secondary="course_signs_up")
     course_programs = relationship("CourseProgram", back_populates="course")
     course_signs_up = relationship("CourseSignUp", viewonly=True)
@@ -221,7 +221,7 @@ class CourseProgram(Base):
 
     __table_args__ = (UniqueConstraint('course_id', 'week_day', 'turn_number', ),)
     
-    room   = relationship("Room", back_populates="course_programs") #cascade="all,delete"
+    room   = relationship("Room", back_populates="course_programs")
     course = relationship("Course", back_populates="course_programs")
 
     def __repr__(self):
