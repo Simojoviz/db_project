@@ -130,7 +130,6 @@ class Room(Base):
     id           = Column(Integer, primary_key=True)
     name         = Column(String,  nullable=False, unique=True)
     max_capacity = Column(Integer, nullable=False)
-    new          = Column(Boolean, nullable=False)
 
     shifts          = relationship("Shift",         back_populates="room", cascade="all,delete")
     course_programs = relationship("CourseProgram", back_populates="room", cascade="all,delete")
@@ -167,15 +166,13 @@ class WeekSetting(Base):
     starting = Column(Time, nullable=False)
     ending   = Column(Time, nullable=False)
     length   = Column(Time, nullable=False)
-    changed  = Column(Boolean, nullable=False)
 
     def __repr__(self):
-        return "<WeekSetting(day='%s', starting='%d:%d', ending='%d:%d', length='%d:%d', changed='%d')>" % (
+        return "<WeekSetting(day='%s', starting='%d:%d', ending='%d:%d', length='%d:%d')>" % (
             self.day_name,
             self.starting.hour, self.starting.minute,
             self.ending.hour,   self.ending.minute,
-            self.length.hour,   self.length.minute,
-            self.changed
+            self.length.hour,   self.length.minute
         )
 
 

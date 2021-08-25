@@ -338,75 +338,6 @@ def get_shift(session, date=None, start=None, prenotation=None, id=None, course_
     else:
         return None
 
-# Generates a list of all shifts for the fibem date and room_id
-def generate_room_daily_shifts(session, date=None, room_id=None):
-    if date is not None and room_id is not None:
-
-        day_name = calendar.day_name[date.weekday()]
-        weeksetting = get_week_setting(session, day_name)
-        hour_start = weeksetting.starting
-        hour_end = weeksetting.ending
-        shift_length = weeksetting.length
-        room = get_room(session, id=room_id)
-        
-        l = []
-        start =     timedelta(hours=hour_start.hour,   minutes=hour_start.minute)
-        length =    timedelta(hours=shift_length.hour, minutes=shift_length.minute)
-        end_ =      timedelta(hours=hour_end.hour,     minutes=hour_end.minute)
-        end = start + length
-
-        while(end <= end_):
-            l.append(
-                    Shift(
-                        date=date,
-                        starting = datetime.time(hour=start.seconds//3600, minute=(start.seconds//60)%60),
-                        ending =   datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
-                        room_id = room.id,
-                        course_id = None
-                    )
-                )
-            start = end
-            end = start + length
-
-        return l
-
-
-# - Given the starting date and the number of days and the room  generate the shifts for all days in time-interval
-# - Given the starting date and the ending date and the room     generate the shifts for all days in time-interval
-# If there were previous plans which are changed, the previous shifts are removed
-# If a Shift is removed, noififies User who made a Prenotations for that shift (removed ON CASCADE) wiht a message
-def plan_shifts(session, starting=None, n=1, ending=None, room_id=None, all_room=False):
-    if starting is not None and room_id is not None:
-        day = starting + timedelta(days=0)
-        room = get_room(session, id=room_id)
-        if ending is None:
-            ending = day + timedelta(days=n)
-        while(day <= ending):
-            day_name = calendar.day_name[day.weekday()]
-            ws = get_week_setting(session, day_name=day_name)
-            if ws is not None and (ws.changed or room.new):
-                shifts = get_shift(session, date=day, room_id=room_id)
-                for shift in shifts:
-                    prenotations = shift.prenotations
-                    admin_id = get_user(session, email="admin@gmail.com").id
-                    for pr in prenotations:
-                        add_message(session, sender_id=admin_id, addresser_id=pr.user_id,
-                        text = "Your prenotation on " + pr.shift.date.strftime('%d/%m/%Y') +\
-                            " in " + pr.shift.room.name +  " from " + pr.shift.starting.strftime('%H:%M') +\
-                            " to " + pr.shift.ending.strftime('%H:%M') + " has been deleted due to the replan of week setting")
-                    session.delete(shift)
-                l = generate_room_daily_shifts(session, datetime.date(year=day.year, month=day.month, day=day.day), room_id=room_id)
-                add_shift_from_list(session, l)
-            day = day + timedelta(days=1)
-
-        wss = get_week_setting(session, all=True)
-        for ws in wss:
-            ws.changed = False
-        room.new = False
-    elif starting is not None and all_room is True:
-        for room in get_room(session, all=True):
-            plan_shifts(session, starting=starting, n=n, ending=ending, room_id=room.id)
-
 
 # - Given a Shift adds it to the database
 # - Given a date, starting and ending hour, the room's id and course's id of a Shift adds it to the database
@@ -566,7 +497,7 @@ def add_room(session, name=None, max_capacity=None, room=None):
             return True
     elif name         is not None and\
          max_capacity is not None:
-        return add_room(session, room=Room(name=name, max_capacity=max_capacity, new=True))
+        return add_room(session, room=Room(name=name, max_capacity=max_capacity))
     else:
         return False
     
@@ -728,7 +659,7 @@ def add_week_setting(session, day_name=None, starting=None, ending=None, length=
          ending   is not None and\
          length   is not None:
         exist = get_week_setting(session, day_name=day_name)
-        add_week_setting(session, WeekSetting(day_name=day_name, starting=starting, ending=ending, length=length, changed=True))
+        add_week_setting(session, WeekSetting(day_name=day_name, starting=starting, ending=ending, length=length))
     else:
         return False
 
@@ -748,7 +679,6 @@ def add_week_setting_from_list(session, week_setting_list):
 def update_weekend_setting(session, day_name=None, starting=None, ending=None, length=None):
 
     if day_name is not None:
-        any_change = False
         ws = get_week_setting(session, day_name=day_name)
 
         if starting is not None:
@@ -756,14 +686,12 @@ def update_weekend_setting(session, day_name=None, starting=None, ending=None, l
             if starting.hour < h_start:
                 starting = datetime.time(hour=h_start)
             ws.starting = starting
-            any_change = True
 
         if ending is not None:
             h_end = get_global_setting(session, name="HourClosing").value
             if ending.hour > h_end:
                 ending = datetime.time(hour=h_end)
             ws.ending = ending
-            any_change = True
             
         if length is not None:
             min_len = get_global_setting(session, name='MinimumShiftLength').value
@@ -773,10 +701,6 @@ def update_weekend_setting(session, day_name=None, starting=None, ending=None, l
             length_minutes =  int(length_minutes % 60)
             length = datetime.time(hour = length_hour, minute=length_minutes)
             ws.length = length
-            any_change = True
-
-        if any_change is True:
-            ws.changed=True
 
 
 # ________________________________________ COURSE ________________________________________

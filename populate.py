@@ -18,11 +18,11 @@ session = Session()
 
 # Rooms
 rooms = [
-    Room(name = "Main Room",     max_capacity =  5, new=True),
-    Room(name = "Weight Room",   max_capacity = 30, new=True),
-    Room(name = "Fitness Room",  max_capacity = 25, new=True),
-    Room(name = "Swimming Pool", max_capacity = 40, new=True),
-    Room(name = "Boxing Room",   max_capacity = 25, new=True)
+    Room(name = "Main Room",     max_capacity =  5),
+    Room(name = "Weight Room",   max_capacity = 30),
+    Room(name = "Fitness Room",  max_capacity = 25),
+    Room(name = "Swimming Pool", max_capacity = 40),
+    Room(name = "Boxing Room",   max_capacity = 25)
 ]
 add_room_from_list(session, rooms)
 
@@ -74,12 +74,12 @@ add_global_setting_from_list(session, global_setting_list=global_settings)
 
 # WeekSetting
 week_settings = [
-    WeekSetting(day_name='Monday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), changed = True), # 9
-    WeekSetting(day_name='Tuesday',   starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00), changed = True), # 6
-    WeekSetting(day_name='Wednesday', starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), changed = True), # 9
-    WeekSetting(day_name='Thursday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00), changed = True), # 6
-    WeekSetting(day_name='Friday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30), changed = True), # 9
-    WeekSetting(day_name='Saturday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=15, minute=00), length=datetime.time(hour=1, minute=30), changed = True) # 4
+    WeekSetting(day_name='Monday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30)), # 9
+    WeekSetting(day_name='Tuesday',   starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00)), # 6
+    WeekSetting(day_name='Wednesday', starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30)), # 9
+    WeekSetting(day_name='Thursday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=21, minute=00), length=datetime.time(hour=2, minute=00)), # 6
+    WeekSetting(day_name='Friday',    starting=datetime.time(hour=8, minute=00), ending=datetime.time(hour=21, minute=30), length=datetime.time(hour=1, minute=30)), # 9
+    WeekSetting(day_name='Saturday',  starting=datetime.time(hour=9, minute=00), ending=datetime.time(hour=15, minute=00), length=datetime.time(hour=1, minute=30)) # 4
 ]
 add_week_setting_from_list(session, week_setting_list=week_settings)
 
