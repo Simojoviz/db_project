@@ -231,9 +231,8 @@ def prenotations():
     try:
         user = get_user(session, email=current_user.email)
         shifts = filter(lambda sh: (sh.date == datetime.date.today() and datetime.datetime.now().time() <= sh.ending) or sh.date > datetime.date.today(), user.shifts)
-        past_shifts = filter(lambda sh: (sh.date == datetime.date.today() and datetime.datetime.now().time() >= sh.ending) or sh.date < datetime.date.today() , user.shifts)
         shifts = sorted(shifts, key=lambda sh: (sh.date, sh.starting))
-        return make_response(render_template("prenotations.html", shifts=shifts, past_shifts=past_shifts))
+        return make_response(render_template("prenotations.html", shifts=shifts))
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
         session.rollback()
