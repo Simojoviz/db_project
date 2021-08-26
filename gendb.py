@@ -262,7 +262,7 @@ conn.execute(
             SELECT count(*)\
             FROM prenotations\
             WHERE shift_id = NEW.shift_id\
-        ) = (\
+        ) >= (\
             SELECT r.max_capacity\
             FROM rooms r JOIN shifts s ON r.id = s.room_id\
             WHERE s.id = NEW.shift_id\

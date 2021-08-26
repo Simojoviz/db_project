@@ -1,11 +1,8 @@
-from sqlalchemy import create_engine
-
+from sqlalchemy import and_, or_
 import datetime
 from datetime import timedelta
 import calendar
 
-from sqlalchemy.sql.expression import text
-from sqlalchemy.sql.operators import exists
 
 from automap import *
 
@@ -459,11 +456,13 @@ def delete_prenotation(session, shift=None, user=None):
         return True
     elif shift is not None:
         p = get_prenotation(session, shift_id=shift.id)
-        session.delete(p)
+        for x in p:
+            session.delete(x)
         return True
     elif user is not None:
         p = get_prenotation(session, user_id = user.id)
-        session.delete(p)
+        for x in p:
+            session.delete(x)
         return True
     else:
         return False
@@ -630,6 +629,34 @@ def update_global_setting(session, name=None, value=None):
     if name is not None and value is not None:
         gs = get_global_setting(session, name=name) # raise an exeption if doesn't exixsts
         gs.value = value
+        if name == "HourOpening":
+            shifts = session.query(Shift).filter(Shift.starting < datetime.time(gs.value), or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all()
+            for s in shifts:
+                session.delete(s)
+            for setting in get_week_setting(session, all=True):
+                if setting.starting < datetime.time(gs.value):
+                    update_weekend_setting(session, day_name=setting.day_name, starting=datetime.time(gs.value))
+        if name == "HourClosing":
+            shifts = session.query(Shift).filter(Shift.ending > datetime.time(gs.value), or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all()
+            for s in shifts:
+                session.delete(s)
+            for setting in get_week_setting(session, all=True):
+                if setting.ending > datetime.time(gs.value):
+                    update_weekend_setting(session, day_name=setting.day_name, ending=datetime.time(gs.value))
+        if name == "MaximumShiftLength":
+            shifts = session.query(Shift).filter(Shift.ending - Shift.starting > datetime.time(gs.value), or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all()
+            for s in shifts:
+                session.delete(s)
+            for setting in get_week_setting(session, all=True):
+                if setting.length > datetime.time(gs.value):
+                    update_weekend_setting(session, day_name=setting.day_name, length=datetime.time(gs.value))
+        if name == "MinimumShiftLength":
+            shifts = session.query(Shift).filter(Shift.ending - Shift.starting < datetime.time(gs.value), or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all()
+            for s in shifts:
+                session.delete(s)
+            for setting in get_week_setting(session, all=True):
+                if setting.length < datetime.time(gs.value):
+                    update_weekend_setting(session, day_name=setting.day_name, length=datetime.time(gs.value))
 
 
 # ________________________________________ WEEK SETTING ________________________________________
@@ -684,19 +711,25 @@ def update_weekend_setting(session, day_name=None, starting=None, ending=None, l
     if day_name is not None:
         ws = get_week_setting(session, day_name=day_name)
 
-        if starting is not None:
+        if starting is not None and starting != ws.starting:
             h_start = get_global_setting(session, name="HourOpening").value
             if starting.hour < h_start:
                 starting = datetime.time(hour=h_start)
             ws.starting = starting
+            shifts = session.query(Shift).filter(Shift.datestrftime("%A") == day_name, or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all()
+            for s in shifts:
+                session.delete(s)
 
-        if ending is not None:
+        if ending is not None and ending != ws.ending:
             h_end = get_global_setting(session, name="HourClosing").value
             if ending.hour > h_end:
                 ending = datetime.time(hour=h_end)
             ws.ending = ending
+            shifts = session.query(Shift).filter(Shift.datestrftime("%A") == day_name, Shift.ending > ending, or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all()
+            for s in shifts:
+                session.delete(s)
             
-        if length is not None:
+        if length is not None and ws.length != length:
             min_len = get_global_setting(session, name='MinimumShiftLength').value
             max_len = get_global_setting(session, name='MaximumShiftLength').value
             length_minutes = clamp(length.minute + length.hour * 60, min_len, max_len)
@@ -704,6 +737,9 @@ def update_weekend_setting(session, day_name=None, starting=None, ending=None, l
             length_minutes =  int(length_minutes % 60)
             length = datetime.time(hour = length_hour, minute=length_minutes)
             ws.length = length
+            shifts = session.query(Shift).filter(Shift.datestrftime("%A") == day_name, Shift.ending - Shift.starting != datetime.time(gs.value), or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all()
+            for s in shifts:
+                session.delete(s)
 
 
 # ________________________________________ COURSE ________________________________________

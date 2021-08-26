@@ -1226,3 +1226,9 @@ def week_settings():
 def week_Settings_form(day):
     if request.method == 'POST':
         session = Session()
+        starting = request.form['Starting']
+        ending = request.form['Ending']
+        length = request.form['Shifts Length']
+        update_weekend_setting(session, day_name=day, starting=starting, ending=ending, length=length)
+
+
