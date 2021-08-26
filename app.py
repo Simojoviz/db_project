@@ -1,4 +1,3 @@
-from typing import final
 from flask import *
 from sqlalchemy.sql.selectable import Exists
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
@@ -949,7 +948,7 @@ def users_info():
     except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
-            return redirect(url_for('user_info'))
+            return redirect(url_for('users_info'))
     finally:
         session.close()
 
@@ -1190,3 +1189,40 @@ def revoke_trainer_role_(user_id):
         return redirect(url_for('user_settings', user_id=user_id))
     finally:
         session.close()
+
+
+@app.route('/admin/settings/week_settings')
+@login_required
+def week_settings():
+    session = Session()
+    try:
+        if is_admin(current_user):
+            global_settings = { 
+                "Opening":get_global_setting(session, name="HourOpening").value, 
+                "Closing":get_global_setting(session, name="HourClosing").value,
+                "MaxShiftLength":get_global_setting(session, name="MaximumShiftLength").value,
+                "MinShiftLength":get_global_setting(session, name="MinimumShiftLength").value
+                }
+            week_settings = get_week_setting(session, all=True)
+            convert = {'Monday' : 0, 'Tuesday' : 1, 'Wednesday' : 2, 'Thursday' : 3, 'Friday' : 4, 'Saturday' : 5, 'Sunday' : 6}
+            week_settings.sort(key=lambda t: convert[t.day_name])
+            resp = make_response(render_template("week_settings.html", week_settings=week_settings, global_settings=global_settings))
+            session.commit()
+            return resp
+        else:
+            return redirect(url_for("private"))
+    except BaseException as exc:
+        flash(truncate_message(str(exc)), category='error')
+        session.rollback()
+        if is_admin(current_user):
+            return redirect(url_for("week_settings"))
+        else:
+            return redirect(url_for('private'))
+    finally:
+        session.close()
+
+@app.route('/admin/settings/week_settings_form/<day>', methods=['POST'])
+@login_required
+def week_Settings_form(day):
+    if request.method == 'POST':
+        session = Session()
