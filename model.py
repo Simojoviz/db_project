@@ -716,7 +716,7 @@ def update_weekend_setting(session, day_name=None, starting=None, ending=None, l
             if starting.hour < h_start:
                 starting = datetime.time(hour=h_start)
             ws.starting = starting
-            shifts = session.query(Shift).filter(Shift.datestrftime("%A") == day_name, or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all()
+            shifts = filter(lambda s: s.date.strftime("%A") == day_name, session.query(Shift).filter(or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all())
             for s in shifts:
                 session.delete(s)
 
@@ -725,7 +725,7 @@ def update_weekend_setting(session, day_name=None, starting=None, ending=None, l
             if ending.hour > h_end:
                 ending = datetime.time(hour=h_end)
             ws.ending = ending
-            shifts = session.query(Shift).filter(Shift.datestrftime("%A") == day_name, Shift.ending > ending, or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all()
+            shifts = filter(lambda s: s.date.strftime("%A") == day_name, session.query(Shift).filter(Shift.ending > ending, or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all())
             for s in shifts:
                 session.delete(s)
             
@@ -737,7 +737,7 @@ def update_weekend_setting(session, day_name=None, starting=None, ending=None, l
             length_minutes =  int(length_minutes % 60)
             length = datetime.time(hour = length_hour, minute=length_minutes)
             ws.length = length
-            shifts = session.query(Shift).filter(Shift.datestrftime("%A") == day_name, Shift.ending - Shift.starting != datetime.time(gs.value), or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all()
+            shifts = filter(lambda s: s.date.strftime("%A") == day_name, session.query(Shift).filter(Shift.ending - Shift.starting != datetime.time(gs.value), or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all())
             for s in shifts:
                 session.delete(s)
 

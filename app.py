@@ -1198,8 +1198,8 @@ def week_settings():
     try:
         if is_admin(current_user):
             global_settings = { 
-                "Opening":get_global_setting(session, name="HourOpening").value, 
-                "Closing":get_global_setting(session, name="HourClosing").value,
+                "Opening":str(get_global_setting(session, name="HourOpening").value) + ":00", 
+                "Closing":str(get_global_setting(session, name="HourClosing").value) + ":00",
                 "MaxShiftLength":get_global_setting(session, name="MaximumShiftLength").value,
                 "MinShiftLength":get_global_setting(session, name="MinimumShiftLength").value
                 }
@@ -1221,14 +1221,20 @@ def week_settings():
     finally:
         session.close()
 
-@app.route('/admin/settings/week_settings_form/<day>', methods=['POST'])
+@app.route('/admin/settings/week_settings_form/<day_name>', methods=['POST'])
 @login_required
-def week_Settings_form(day):
+def week_Settings_form(day_name):
     if request.method == 'POST':
         session = Session()
-        starting = request.form['Starting']
-        ending = request.form['Ending']
-        length = request.form['Shifts Length']
-        update_weekend_setting(session, day_name=day, starting=starting, ending=ending, length=length)
+        print(request.form['Starting'])
+        print(request.form['Ending'])
+        print(request.form['Shifts Length'])
 
+        starting = datetime.datetime.strptime(request.form['Starting'], "%H:%M").time()
+        ending = datetime.datetime.strptime(request.form['Ending'], "%H:%M").time()
+        length = datetime.datetime.strptime(request.form['Shifts Length'], "%H:%M").time()
+        update_weekend_setting(session, day_name=day_name, starting=starting, ending=ending, length=length)
+        flash("Week Settings Updated successfully", category='success')        
+        session.commit()
+        return redirect(url_for('private'))
 

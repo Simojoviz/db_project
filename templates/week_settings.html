@@ -9,18 +9,18 @@
         <div class="card bg-light shadow" style="width: 90%; border: hidden; margin: auto;">
           <div class="card-body pt-4">
             <h3 class="card-title">{{ setting.day_name }}</h3>
-            <form action="{{url_for('private') }}" method="POST" class="mx-2">
+            <form action="{{url_for('week_Settings_form', day_name=setting.day_name) }}" method="POST" class="mx-2">
                 <div class="row">
                   <div class="col-md-6"><strong>Opening</strong></div>
-                  <div class="col-md-6"><input name="Starting" type="time" min="{{ global_settings['Opening'] }}" max="{{ global_settings['Closing'] }}" style="width: 150px;" value="{{ setting.starting }}"></div>
+                  <div class="col-md-6"><input name="Starting" type="time" step="60" min="{{ global_settings['Opening'] }}" max="{{ global_settings['Closing'] }}" style="width: 150px;" value="{{ setting.starting }}"></div>
                 </div>
                 <div class="row">
                   <div class="col-md-6"><strong>Ending</strong></div>
-                  <div class="col-md-6"><input name="Ending" type="time" min="{{ global_settings['Opening'] }}" max="{{ global_settings['Closing'] }}" style="width: 150px;" value="{{ setting.ending }}"></div>
+                  <div class="col-md-6"><input name="Ending" type="time" step="60" min="{{ global_settings['Opening'] }}" max="{{ global_settings['Closing'] }}" style="width: 150px;" value="{{ setting.ending }}"></div>
                 </div>
                 <div class="row">
                   <div class="col-md-6"><strong>Shift Length</strong></div>
-                  <div class="col-md-6"><input name="Shifts Length" type="time" min="{{ global_settings['MinShiftLength'] }}" max="{{ global_settings['MaxShiftLength'] }}" style="width: 150px;" value="{{ setting.length }}"></div>
+                  <div class="col-md-6"><input name="Shifts Length" type="time" step="60" min="{{ global_settings['MinShiftLength'] }}" max="{{ global_settings['MaxShiftLength'] }}" style="width: 150px;" value="{{ setting.length }}"></div>
                 </div>
               <input type="submit" class="btn btn-info text-light mt-3" value="Update">
             </form>
