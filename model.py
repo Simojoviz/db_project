@@ -714,7 +714,7 @@ def update_weekend_setting(session, day_name=None, starting=None, ending=None, l
         if starting is not None and starting != ws.starting:
             h_start = get_global_setting(session, name="HourOpening").value
             if starting.hour < h_start:
-                starting = datetime.time(hour=h_start)
+                raise BaseException("New opening hour must be later then " + str(datetime.time(h_start)))
             ws.starting = starting
             shifts = filter(lambda s: s.date.strftime("%A") == day_name, session.query(Shift).filter(or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all())
             for s in shifts:
@@ -723,7 +723,7 @@ def update_weekend_setting(session, day_name=None, starting=None, ending=None, l
         if ending is not None and ending != ws.ending:
             h_end = get_global_setting(session, name="HourClosing").value
             if ending.hour > h_end:
-                ending = datetime.time(hour=h_end)
+                raise BaseException("New closing hour must be earlier then " + str(datetime.time(h_start)))
             ws.ending = ending
             shifts = filter(lambda s: s.date.strftime("%A") == day_name, session.query(Shift).filter(Shift.ending > ending, or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all())
             for s in shifts:
@@ -732,12 +732,15 @@ def update_weekend_setting(session, day_name=None, starting=None, ending=None, l
         if length is not None and ws.length != length:
             min_len = get_global_setting(session, name='MinimumShiftLength').value
             max_len = get_global_setting(session, name='MaximumShiftLength').value
-            length_minutes = clamp(length.minute + length.hour * 60, min_len, max_len)
+            length_minutes = length.minute + length.hour * 60
+            if length_minutes < min_len or length_minutes > max_len:
+                raise BaseException("New shift length must be between " + str(min_len) + " and " + str(max_len) + " minutes")
+
             length_hour = int(length_minutes / 60)
             length_minutes =  int(length_minutes % 60)
             length = datetime.time(hour = length_hour, minute=length_minutes)
             ws.length = length
-            shifts = filter(lambda s: s.date.strftime("%A") == day_name, session.query(Shift).filter(Shift.ending - Shift.starting != datetime.time(gs.value), or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all())
+            shifts = filter(lambda s: s.date.strftime("%A") == day_name, session.query(Shift).filter(Shift.ending - Shift.starting != length, or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all())
             for s in shifts:
                 session.delete(s)
 

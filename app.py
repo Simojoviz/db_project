@@ -1224,17 +1224,23 @@ def week_settings():
 @app.route('/admin/settings/week_settings_form/<day_name>', methods=['POST'])
 @login_required
 def week_Settings_form(day_name):
-    if request.method == 'POST':
-        session = Session()
-        print(request.form['Starting'])
-        print(request.form['Ending'])
-        print(request.form['Shifts Length'])
-
-        starting = datetime.datetime.strptime(request.form['Starting'], "%H:%M").time()
-        ending = datetime.datetime.strptime(request.form['Ending'], "%H:%M").time()
-        length = datetime.datetime.strptime(request.form['Shifts Length'], "%H:%M").time()
-        update_weekend_setting(session, day_name=day_name, starting=starting, ending=ending, length=length)
-        flash("Week Settings Updated successfully", category='success')        
-        session.commit()
-        return redirect(url_for('private'))
+    try:
+        if request.method == 'POST':
+            session = Session()
+            starting = datetime.datetime.strptime(request.form['Starting'], "%H:%M:%S").time()
+            ending = datetime.datetime.strptime(request.form['Ending'], "%H:%M:%S").time()
+            length = datetime.datetime.strptime(request.form['Shifts Length'], "%H:%M:%S").time()
+            update_weekend_setting(session, day_name=day_name, starting=starting, ending=ending, length=length)
+            session.commit()
+            flash("Week Settings Updated successfully", category='success')        
+            return redirect(url_for('private'))
+    except BaseException as exc:
+        flash(truncate_message(str(exc)), category='error')
+        session.rollback()
+        if is_admin(current_user):
+            return redirect(url_for("week_settings"))
+        else:
+            return redirect(url_for('private'))
+    finally:
+        session.close()
 
