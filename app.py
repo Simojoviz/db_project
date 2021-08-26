@@ -15,7 +15,7 @@ app = Flask ( __name__ )
 #engine = create_engine('sqlite:///database.db', echo=True)
 engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
 #engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=False)
-engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
+#engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
 
 app.config ['SECRET_KEY'] = 'ubersecret'
 
@@ -533,7 +533,7 @@ def course(course_name):
         course = get_course(session, name = course_name)
         sh = []
         for cp in course.course_programs:
-            ws = get_week_setting(session, day_name=cp.week_day)
+            ws = cp.week_setting
             starting = time_to_timedelta(ws.starting) + time_to_timedelta(ws.length) * (cp.turn_number-1)
             ending = starting + time_to_timedelta(ws.length)
             sh.append(Shift(
@@ -630,7 +630,7 @@ def trainer_course(course_name):
         if is_trainer(current_user) and course.instructor_id == trainer.id:
             sh = []
             for cp in course.course_programs:
-                ws = get_week_setting(session, day_name=cp.week_day)
+                ws = cp.week_setting
                 starting = time_to_timedelta(ws.starting) + time_to_timedelta(ws.length) * (cp.turn_number-1)
                 ending = starting + time_to_timedelta(ws.length)
                 sh.append(Shift(
