@@ -702,7 +702,6 @@ def add_week_setting_from_list(session, week_setting_list):
 
 
 # Updates the WeekSetting with the given parameters
-# If at least one parameter is updated, changed flag is set True 
 # PN! Values are clamped between GlobalSetting's values
 def update_weekend_setting(session, day_name=None, starting=None, ending=None, length=None):
 

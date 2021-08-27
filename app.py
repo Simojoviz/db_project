@@ -23,6 +23,7 @@ Session = sessionmaker(bind=engine, autoflush=True)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+#Utiliy for making error meggage more readable
 def truncate_message(string):
     if "ERRORE" in string:
         string = string.split("ERRORE: ",1)[1]
@@ -31,9 +32,8 @@ def truncate_message(string):
 
 #__________________________________________ SESSION-USER ________________________________________
 
-
+# SEssion user used dy the flask-ligon library
 class SessionUser(UserMixin):
-    # costruttore di classe
     def __init__(self, id, email, pwd, roles, active=True):
         self.id = id
         self.email = email
@@ -41,6 +41,7 @@ class SessionUser(UserMixin):
         self.roles = roles
         self.active = active
 
+# Given the user email return the corresponding SessionUser
 def get_SessionUser_by_email(session, email):
     user = get_user(session, email = email)
     if user is not None:
@@ -63,16 +64,18 @@ def load_user(user_id):
     finally:
         session.close()
 
+# Given the user logged in the session return true if he has the Admin role
 def is_admin(us):
     return us.is_authenticated and "Admin" in us.roles
 
+# Given the user logged in the session return true if he has the Admin role
 def is_trainer(us):
     return us.is_authenticated and "Trainer" in us.roles
 
 
 #__________________________________________ LOGIN ________________________________________
 
-
+# Route for the login on the web app
 @app.route('/login')
 def login():
     try:
@@ -86,6 +89,7 @@ def login():
         return render_template("login.html")
 
 
+# Route that handle the login form and make the effective login
 @app.route('/login_form', methods=['POST'])
 def login_form():
     if request.method == 'POST':
@@ -115,7 +119,7 @@ def login_form():
 
 #__________________________________________ SIGNUP ________________________________________
 
-
+# Route for the signup on the web app
 @app.route('/signup')
 def signup():
     try:
@@ -126,6 +130,7 @@ def signup():
         flash(truncate_message(str(exc)), category='error')
         return redirect(url_for('signup'))
 
+# Route that handle the signin form and make the effective signin
 @app.route('/signin_form', methods=['POST'])
 def signin_form():
     if request.method == 'POST':
@@ -174,7 +179,7 @@ def signin_form():
 
 #__________________________________________ LOGOUT ________________________________________
 
-
+# Route for the signup on the web app
 @app.route('/logout')
 @login_required
 def logout():
@@ -184,7 +189,7 @@ def logout():
 
 #__________________________________________ HOME ________________________________________
 
-
+# Route for the home page of the app
 @app.route('/')
 def home():
     try:
@@ -196,7 +201,7 @@ def home():
 
 # ________________________________________________________ PRIVATE ________________________________________________________
 
-
+# Route for the private section of the logged in users
 @app.route('/private')
 @login_required
 def private():
@@ -222,7 +227,7 @@ def private():
     finally:
         session.close()
 
-
+# Route that shows all the future prenotations of a logged in user
 @app.route('/private/prenotations')
 @login_required
 def prenotations():
@@ -240,6 +245,7 @@ def prenotations():
         session.close()
 
 
+# Route that shows all the courses that a logged in user is signed up
 @app.route('/private/courses_sign_up')
 @login_required
 def courses_sign_up():
@@ -256,6 +262,8 @@ def courses_sign_up():
         session.close()
 
 
+# Route that mark the logged in user as positive to Coronavirus 
+# and informs the users he had contacts
 @app.route('/private/covid_report')
 @login_required
 def covid_report():
@@ -272,7 +280,7 @@ def covid_report():
     finally:
         session.close()
 
-
+# Route that shows all the messages of a logged in user
 @app.route('/private/messages')
 @login_required
 def messages():
@@ -291,6 +299,7 @@ def messages():
         session.close()
 
 
+# Route that delete a specific message of a logged in user
 @app.route('/private/messages/del/<mess_id>', methods=['POST'])
 @login_required
 def delete_message(mess_id):
@@ -310,7 +319,7 @@ def delete_message(mess_id):
 
 # ________________________________________________________ UPDATE USER ________________________________________________________
 
-
+# Route for updating the data of a logged in user
 @app.route('/private/update_user')
 @login_required
 def upd_user():
@@ -325,7 +334,7 @@ def upd_user():
     finally:
         session.close()
 
-
+# Route that handle the update form and make the effective update of the logged in user
 @app.route('/private/update_user_form', methods=['POST'])
 @login_required
 def update_user_form():
@@ -366,6 +375,7 @@ def update_user_form():
 
 # ________________________________________________________ SHIFT, PRENOTATION ________________________________________________________
 
+# Route that given a specific date and room shows all the prenotable shifts of that day
 @app.route('/shifts')
 def shifts():
     session = Session()
@@ -435,12 +445,14 @@ def shifts():
         session.close()
 
 
+# Route that redirect to the shifts of today
 @app.route('/shifts/shifts_first')
 def shifts_first():
     curr = datetime.date.today()
     return redirect('/shifts?year=%s&month=%s&day=%s&room=All' % (curr.year, curr.month, curr.day))
 
 
+# Route that using the data of a form make the right request to the shifts of the desidered date and room
 @app.route('/shifts/load_date', methods=['POST'])
 def shifts_load_state():
     if request.method == 'POST':
@@ -460,6 +472,7 @@ def shifts_load_state():
             session.close()
 
 
+# Route that make a prenotation of a shift for the logged in user
 @app.route('/prenotation', methods=['POST'])
 def prenotation():
     if request.method == 'POST':
@@ -492,6 +505,7 @@ def prenotation():
             session.close()
     
 
+# Route that delete a perenotation of a shift for the logged in user
 @app.route('/del_prenotation/<shift>')
 @login_required
 def del_prenotation(shift):
@@ -511,7 +525,7 @@ def del_prenotation(shift):
 
 # ________________________________________________________COURSES________________________________________________________
 
-
+# Route that shows all the corsse of the gym
 @app.route('/courses')
 def courses():
     session = Session()
@@ -530,6 +544,7 @@ def courses():
         session.close()
 
 
+# Route that shows the infos of a specific course
 @app.route('/courses/course/<course_name>')
 def course(course_name):
     session = Session()
@@ -563,6 +578,7 @@ def course(course_name):
         session.close()
 
 
+# Route that signs up a logged in user to a course
 @app.route('/courses/sign_up/<course_name>')
 def sign_up(course_name):
     session = Session()
@@ -584,6 +600,7 @@ def sign_up(course_name):
         session.close()
 
 
+# Route that deletes the sign-up to a course of a logged in user
 @app.route('/courses/delete_sign_up/<course_name>')
 @login_required
 def delete_sign_up(course_name):
@@ -605,7 +622,7 @@ def delete_sign_up(course_name):
 
 #__________________________________ TRAINER COURSES __________________________________
 
-
+# Route that shows all the courses of a legged in trainer
 @app.route('/courses/courses/trainer_courses')
 @login_required
 def trainer_courses():
@@ -628,6 +645,7 @@ def trainer_courses():
         session.close()
 
 
+# Route that shows the infos o a course of a logged in trainer
 @app.route('/courses/courses/trainer_course/<course_name>')
 @login_required
 def trainer_course(course_name):
@@ -662,6 +680,7 @@ def trainer_course(course_name):
         session.close()
 
 
+# Route that deletes a course of a logged in trainer
 @app.route('/courses/delete_course/<course_name>', methods=['POST'])
 @login_required
 def del_course(course_name):
@@ -684,6 +703,7 @@ def del_course(course_name):
             session.close()
 
 
+# Route to create a course of a logged in trainer
 @app.route('/courses/new_course')
 @login_required
 def new_course():
@@ -705,6 +725,7 @@ def new_course():
         session.close()
 
 
+# Route that handles the form and makes the effective creation of a course of a logged in trainer
 @app.route('/courses/new_course_form', methods=['POST'])
 @login_required
 def new_course_form():
@@ -744,6 +765,7 @@ def new_course_form():
             session.close()
 
 
+# Route to create new programs of a newly created course of a logged in trainer
 @app.route('/courses/new_course/new_program/<course_name>')
 @login_required
 def new_program(course_name):
@@ -769,6 +791,7 @@ def new_program(course_name):
         session.close()
 
 
+# Route that undo the creation of a newly created course of a logged in trainer
 @app.route('/courses/undo_course/<course_name>')
 @login_required
 def undo_course(course_name):
@@ -794,6 +817,7 @@ def undo_course(course_name):
         session.close()
 
 
+# Route that adds a new program of a newly created course of a logged in trainer
 @app.route('/courses/new_course/add_program/<course_name>')
 @login_required
 def add_program(course_name):
@@ -816,6 +840,8 @@ def add_program(course_name):
         session.close()
 
 
+# Route that handles the form and make the actual creation of a new program of a newly created couse
+# of a logged in trainer 
 @app.route('/courses/new_course/add_program_form/<course_name>', methods=['POST'])
 @login_required
 def add_program_form(course_name):
@@ -850,6 +876,7 @@ def add_program_form(course_name):
             session.close()
 
 
+# Route that delete a program of a newly created course of a logged in trainer
 @app.route('/courses/new_course/del_program/<program_id>/<course_name>')
 @login_required
 def del_program(program_id, course_name):
@@ -871,6 +898,8 @@ def del_program(program_id, course_name):
     finally:
         session.close()
 
+
+# Route that plan the newly created course of a logged in trainer and create the course's shifts
 @app.route('/courses/new_course/plan_course/<course_name>')
 @login_required
 def plan_course_(course_name):
@@ -898,6 +927,7 @@ def plan_course_(course_name):
 #____________________________________ UPDATE COURSE ____________________________________
 
 
+# Route that updates the infos of a course of a logged in trainer
 @app.route('/update_course/<course_name>')
 @login_required
 def upd_course(course_name):
@@ -919,6 +949,7 @@ def upd_course(course_name):
         session.close()
 
 
+# Route that handles the form and make the actual update of the infos of a course of a logged in trainer 
 @app.route('/update_course_form/<course_name>', methods=["POST"])
 @login_required
 def upd_course_form(course_name):
@@ -955,8 +986,9 @@ def upd_course_form(course_name):
             session.close()        
 
 
-# ________________________________________________________ADMIN SETTINGS________________________________________________________
+# ________________________________________________________GLOBAL SETTINGS________________________________________________________
 
+# Route that shows and allows the admin to update the global settings of the gym 
 @app.route('/admin/settings/global_settings')
 @login_required
 def global_settings():
@@ -982,6 +1014,7 @@ def global_settings():
         session.close()
 
 
+# Route that handles the form and make the actual update of the global settings
 @app.route('/admin/settings/global_settings_form', methods=['POST'])
 @login_required
 def global_settings_form():
@@ -1010,6 +1043,7 @@ def global_settings_form():
             session.close()
 
 
+# Route that shows and allows the admin to update the users data 
 @app.route('/admin/users_info')
 @login_required
 def users_info():
@@ -1030,6 +1064,7 @@ def users_info():
     finally:
         session.close()
 
+# Route that shows and allows the admin to update the users Coronavirus state 
 @app.route('/admin/covid_states')
 @login_required
 def covid_states():
@@ -1055,6 +1090,7 @@ def covid_states():
 #_____________________________________ ROOM SETTINGS _____________________________________
 
 
+# Route that shows and allows the admin to update the room settings of the gym 
 @app.route('/admin/settings/room_settings')
 @login_required
 def room_settings():
@@ -1080,6 +1116,7 @@ def room_settings():
         session.close()
 
 
+# Route that handles the form and make the actual update of the room settings of a specific room
 @app.route('/admin/settings/rooms_settings_form/<room_id>', methods=['POST'])
 @login_required
 def room_settings_form(room_id):
@@ -1106,6 +1143,7 @@ def room_settings_form(room_id):
             session.close()
 
 
+# Route that add a room on the gym (only for the admin)
 @app.route('/admin/settings/room_settings/add_room')
 @login_required
 def add_room_():
@@ -1128,6 +1166,7 @@ def add_room_():
         session.close()
 
 
+# Route that handles the form and make the actual addition of a room on the gym (only for the admin)
 @app.route('/admin/settings/room_settings/add_room_form', methods=['POST'])
 @login_required
 def add_room_form():
@@ -1158,6 +1197,7 @@ def add_room_form():
             session.close()
 
 
+# Route that deletes a room of the gym (only for the admin)
 @app.route('/admin/settings/room_settings/delete_room/<room_id>')
 @login_required
 def del_room(room_id):
@@ -1181,6 +1221,7 @@ def del_room(room_id):
 #_____________________________________ USER SETTINGS _____________________________________
 
 
+# Route that shows the info of a specific user (only for the admin)
 @app.route('/admin/settings/user_settings/user/<user_id>')
 @login_required
 def user_settings(user_id):
@@ -1227,6 +1268,7 @@ def users_settings_form():
             session.close()
 
 
+# Route that reset the Corona virus state of a user (only for the admin)
 @app.route('/admin/settings/user_settings/user/reset_covid_state/<user_id>')
 @login_required
 def reset_covid_state(user_id):
@@ -1247,6 +1289,7 @@ def reset_covid_state(user_id):
         session.close()
 
 
+# Route tha postpones the deadline of a user (only for the admin)
 @app.route('/admin/settings/new_deadline/<user_id>', methods=["POST"])
 @login_required
 def new_deadline(user_id):
@@ -1273,6 +1316,7 @@ def new_deadline(user_id):
             session.close()
 
 
+# Route that assigns the trainer role to a user (only for the admin)
 @app.route('/admin/settings/user_settings/assign_trainer_role/<user_id>')
 @login_required
 def assign_trainer_role_(user_id):
@@ -1293,6 +1337,7 @@ def assign_trainer_role_(user_id):
         session.close()
 
 
+# Route that revokes the trainer role from a user (only for the admin)
 @app.route('/admin/settings/user_settings/revoke_trainer_role/<user_id>')
 @login_required
 def revoke_trainer_role_(user_id):
@@ -1313,6 +1358,10 @@ def revoke_trainer_role_(user_id):
         session.close()
 
 
+#_____________________________________ WEEK SETTINGS _____________________________________
+
+
+# Route that shows and allows the admin to update the week settings of the gym 
 @app.route('/admin/settings/week_settings')
 @login_required
 def week_settings():
@@ -1344,6 +1393,8 @@ def week_settings():
     finally:
         session.close()
 
+
+# Route that handles the form and make the actual update of the week settings of a week day
 @app.route('/admin/settings/week_settings_form/<day_name>', methods=['POST'])
 @login_required
 def week_Settings_form(day_name):
@@ -1367,4 +1418,3 @@ def week_Settings_form(day_name):
             return redirect(url_for('private'))
     finally:
         session.close()
-
