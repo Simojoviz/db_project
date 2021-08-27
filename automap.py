@@ -175,6 +175,8 @@ class WeekSetting(Base):
             self.length.hour,   self.length.minute
         )
 
+    course_programs = relationship("CourseProgram", back_populates='week_setting')
+
 
 # ______________________________________ COURSE, COURSE-PROGRAM, COURSE-SIGN-UP ______________________________________
 
@@ -211,15 +213,16 @@ class CourseProgram(Base):
     __tablename__ = 'course_programs'
 
     id          = Column(Integer, primary_key=True)
-    week_day    = Column(String,  nullable=False)
+    week_day    = Column(String,  ForeignKey('week_settings.day_name'))
     turn_number = Column(Integer, nullable=False)
     room_id     = Column(Integer, ForeignKey('rooms.id',   ondelete='CASCADE'))
     course_id   = Column(Integer, ForeignKey('courses.id', ondelete='CASCADE'))
 
     __table_args__ = (UniqueConstraint('course_id', 'week_day', 'turn_number', ),)
     
-    room   = relationship("Room", back_populates="course_programs")
-    course = relationship("Course", back_populates="course_programs")
+    room         = relationship("Room", back_populates="course_programs")
+    course       = relationship("Course", back_populates="course_programs")
+    week_setting = relationship("WeekSetting", back_populates="course_programs")
 
     def __repr__(self):
         return "<CourseProgram(weekday='%s', turn number='%d', room='%s', course='%s')>" % (

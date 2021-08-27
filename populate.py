@@ -152,24 +152,31 @@ plan_course(session, "Judo")
 # Prenotations
 
 # Prenotatoin for the first Shift on that day
-"""
-def add_prenotation_aux_nostart(session, email, day, month, year, room):
-    sh = get_shift(session, date = datetime.date(day = day, month = month, year = year), room_id=get_room(session, name=room).id)
-    if sh is not None:
-        add_prenotation(session, user = get_user(session, email = email), shift= sh[0])
 
-add_prenotation_aux_nostart(session, "andrea@gmail.com",     20,  8, 2021, 'Main Room')
-add_prenotation_aux_nostart(session, "andrea@gmail.com",     21,  8, 2021, 'Swimming Pool')
-add_prenotation_aux_nostart(session, "andrea@gmail.com",     2,   9, 2021, 'Main Room')
-add_prenotation_aux_nostart(session, "andrea@gmail.com",     13,  9, 2021, 'Fitness Room')
-add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 20,  8, 2021, 'Main Room')
-add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 23,  9, 2021, 'Weight Room')
-add_prenotation_aux_nostart(session, "sebastiano@gmail.com",  2,  9, 2021, 'Main Room')
-add_prenotation_aux_nostart(session, "sebastiano@gmail.com", 12, 10, 2021, 'Swimming Pool')
-add_prenotation_aux_nostart(session, "simone@gmail.com",      3,  9, 2021, 'Fitness Room')
-add_prenotation_aux_nostart(session, "simone@gmail.com",      4,  9, 2021, 'Fitness Room')
-add_prenotation_aux_nostart(session, "simone@gmail.com",      6,  9, 2021, 'Fitness Room')
-"""
+def add_populate_prenotation(session, email, day, month, year, room_name, turn_number):
+    user = get_user(session, email = email)
+    date = datetime.date(day = day, month = month, year = year)
+    room = get_room(session, name=room_name)
+    ws = get_week_setting(session, day_name=calendar.day_name[date.weekday()])
+    starting = time_to_timedelta(ws.starting) + time_to_timedelta(ws.length) * (turn_number-1)
+    ending = starting + time_to_timedelta(ws.length)
+    add_shift(session, date=date, start=starting, end=ending, room_id=room.id)
+    sh = get_shift(session, date=date, start=starting, room_id=room.id)
+    add_prenotation(session, user = user, shift= sh)
+
+
+add_populate_prenotation(session, "andrea@gmail.com",     20,  8, 2021, 'Main Room',     5)
+add_populate_prenotation(session, "andrea@gmail.com",     21,  8, 2021, 'Swimming Pool', 5)
+add_populate_prenotation(session, "andrea@gmail.com",     2,   9, 2021, 'Main Room',     1)
+add_populate_prenotation(session, "andrea@gmail.com",     13,  9, 2021, 'Fitness Room',  2)
+add_populate_prenotation(session, "sebastiano@gmail.com", 20,  8, 2021, 'Main Room',     5)
+add_populate_prenotation(session, "sebastiano@gmail.com", 23,  9, 2021, 'Weight Room',   5)
+add_populate_prenotation(session, "sebastiano@gmail.com",  2,  9, 2021, 'Main Room',     1)
+add_populate_prenotation(session, "sebastiano@gmail.com", 12, 10, 2021, 'Swimming Pool', 2)
+add_populate_prenotation(session, "simone@gmail.com",      3,  9, 2021, 'Fitness Room',  3)
+add_populate_prenotation(session, "simone@gmail.com",      4,  9, 2021, 'Fitness Room',  3)
+add_populate_prenotation(session, "simone@gmail.com",      6,  9, 2021, 'Fitness Room',  3)
+
 
 add_course_sign_up(
     session,
