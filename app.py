@@ -1,4 +1,3 @@
-from typing import final
 from flask import *
 from sqlalchemy.sql.selectable import Exists
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
@@ -13,8 +12,8 @@ from model import *
 app = Flask ( __name__ )
 
 #engine = create_engine('sqlite:///database.db', echo=True)
-engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
-#engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=False)
+#engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
+engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=False)
 #engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
 
 app.config ['SECRET_KEY'] = 'ubersecret'
@@ -24,6 +23,7 @@ Session = sessionmaker(bind=engine, autoflush=True)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+#Utiliy for making error meggage more readable
 def truncate_message(string):
     if "ERRORE" in string:
         string = string.split("ERRORE: ",1)[1]
@@ -32,9 +32,8 @@ def truncate_message(string):
 
 #__________________________________________ SESSION-USER ________________________________________
 
-
+# SEssion user used dy the flask-ligon library
 class SessionUser(UserMixin):
-    # costruttore di classe
     def __init__(self, id, email, pwd, roles, active=True):
         self.id = id
         self.email = email
@@ -42,6 +41,7 @@ class SessionUser(UserMixin):
         self.roles = roles
         self.active = active
 
+# Given the user email return the corresponding SessionUser
 def get_SessionUser_by_email(session, email):
     user = get_user(session, email = email)
     if user is not None:
@@ -64,16 +64,18 @@ def load_user(user_id):
     finally:
         session.close()
 
+# Given the user logged in the session return true if he has the Admin role
 def is_admin(us):
     return us.is_authenticated and "Admin" in us.roles
 
+# Given the user logged in the session return true if he has the Admin role
 def is_trainer(us):
     return us.is_authenticated and "Trainer" in us.roles
 
 
 #__________________________________________ LOGIN ________________________________________
 
-
+# Route for the login on the web app
 @app.route('/login')
 def login():
     try:
@@ -87,6 +89,7 @@ def login():
         return render_template("login.html")
 
 
+# Route that handle the login form and make the effective login
 @app.route('/login_form', methods=['POST'])
 def login_form():
     if request.method == 'POST':
@@ -116,7 +119,7 @@ def login_form():
 
 #__________________________________________ SIGNUP ________________________________________
 
-
+# Route for the signup on the web app
 @app.route('/signup')
 def signup():
     try:
@@ -127,6 +130,7 @@ def signup():
         flash(truncate_message(str(exc)), category='error')
         return redirect(url_for('signup'))
 
+# Route that handle the signin form and make the effective signin
 @app.route('/signin_form', methods=['POST'])
 def signin_form():
     if request.method == 'POST':
@@ -175,7 +179,7 @@ def signin_form():
 
 #__________________________________________ LOGOUT ________________________________________
 
-
+# Route for the signup on the web app
 @app.route('/logout')
 @login_required
 def logout():
@@ -185,7 +189,7 @@ def logout():
 
 #__________________________________________ HOME ________________________________________
 
-
+# Route for the home page of the app
 @app.route('/')
 def home():
     try:
@@ -197,7 +201,7 @@ def home():
 
 # ________________________________________________________ PRIVATE ________________________________________________________
 
-
+# Route for the private section of the logged in users
 @app.route('/private')
 @login_required
 def private():
@@ -223,7 +227,7 @@ def private():
     finally:
         session.close()
 
-
+# Route that shows all the future prenotations of a logged in user
 @app.route('/private/prenotations')
 @login_required
 def prenotations():
@@ -241,6 +245,7 @@ def prenotations():
         session.close()
 
 
+# Route that shows all the courses that a logged in user is signed up
 @app.route('/private/courses_sign_up')
 @login_required
 def courses_sign_up():
@@ -257,6 +262,8 @@ def courses_sign_up():
         session.close()
 
 
+# Route that mark the logged in user as positive to Coronavirus 
+# and informs the users he had contacts
 @app.route('/private/covid_report')
 @login_required
 def covid_report():
@@ -273,7 +280,7 @@ def covid_report():
     finally:
         session.close()
 
-
+# Route that shows all the messages of a logged in user
 @app.route('/private/messages')
 @login_required
 def messages():
@@ -292,6 +299,7 @@ def messages():
         session.close()
 
 
+# Route that delete a specific message of a logged in user
 @app.route('/private/messages/del/<mess_id>', methods=['POST'])
 @login_required
 def delete_message(mess_id):
@@ -311,7 +319,7 @@ def delete_message(mess_id):
 
 # ________________________________________________________ UPDATE USER ________________________________________________________
 
-
+# Route for updating the data of a logged in user
 @app.route('/private/update_user')
 @login_required
 def upd_user():
@@ -326,7 +334,7 @@ def upd_user():
     finally:
         session.close()
 
-
+# Route that handle the update form and make the effective update of the logged in user
 @app.route('/private/update_user_form', methods=['POST'])
 @login_required
 def update_user_form():
@@ -367,6 +375,7 @@ def update_user_form():
 
 # ________________________________________________________ SHIFT, PRENOTATION ________________________________________________________
 
+# Route that given a specific date and room shows all the prenotable shifts of that day
 @app.route('/shifts')
 def shifts():
     session = Session()
@@ -380,12 +389,28 @@ def shifts():
             date = datetime.date.today()
         date_string = date.strftime("%Y-%m-%d")
         settings = get_week_setting(session, day_name=date.strftime("%A"))
-        length = timedelta(hours=settings.length.hour,   minutes=settings.length.minute)
-        start = timedelta(hours=settings.starting.hour,   minutes=settings.starting.minute)
-        end_ = timedelta(hours=settings.ending.hour,   minutes=settings.ending.minute)
-        shifts = []
-        if room == 'All':
-            for r in get_room(session, all=True):
+        if settings is None:
+            resp = make_response(render_template("shifts.html", shifts=[], date_string=date_string, rooms=get_room(session, all=True), user=None))
+        else:
+            length = timedelta(hours=settings.length.hour,   minutes=settings.length.minute)
+            start = timedelta(hours=settings.starting.hour,   minutes=settings.starting.minute)
+            end_ = timedelta(hours=settings.ending.hour,   minutes=settings.ending.minute)
+            shifts = []
+            if room == 'All':
+                for r in get_room(session, all=True):
+                    end = start + length 
+                    while (end <= end_):
+                        shifts.append(
+                            [date,
+                            datetime.time(hour=(end-length).seconds//3600, minute=((end-length).seconds//60)%60), 
+                            datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
+                            r,
+                            r.max_capacity,
+                            None]
+                        )
+                        end += length
+            else:
+                r = get_room(session, name=room)
                 end = start + length 
                 while (end <= end_):
                     shifts.append(
@@ -397,32 +422,19 @@ def shifts():
                         None]
                     )
                     end += length
-        else:
-            r = get_room(session, name=room)
-            end = start + length 
-            while (end <= end_):
-                shifts.append(
-                    [date,
-                    datetime.time(hour=(end-length).seconds//3600, minute=((end-length).seconds//60)%60), 
-                    datetime.time(hour=end.seconds//3600, minute=(end.seconds//60)%60),
-                    r,
-                    r.max_capacity,
-                    None]
-                )
-                end += length
-        shifts = [s for s in filter(lambda s: get_shift(session, date=date, start=s[1], room_id=s[3].id) is None or get_shift(session, date=date, start=s[1], room_id=s[3].id).course_id is None, shifts)] # Remove the shifts occupied from a course
-        if date == date.today():
-            shifts = [s for s in filter(lambda s: s[1] >= datetime.datetime.now().time(), shifts)]
-        for s in shifts:
-            mem_shift = get_shift(session, date=date, start=s[1], room_id=s[3].id)
-            if mem_shift is not None:
-                s[4] = s[4] - len(mem_shift.prenotations)
-                s[5] = mem_shift
-        if current_user.is_authenticated:
-            user = get_user(session, id=current_user.id)
-        else:
-            user = None
-        resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda t: (t[1], t[3].id)), date_string=date_string, rooms=get_room(session, all=True), user=user))
+            shifts = [s for s in filter(lambda s: get_shift(session, date=date, start=s[1], room_id=s[3].id) is None or get_shift(session, date=date, start=s[1], room_id=s[3].id).course_id is None, shifts)] # Remove the shifts occupied from a course
+            if date == date.today():
+                shifts = [s for s in filter(lambda s: s[1] >= datetime.datetime.now().time(), shifts)]
+            for s in shifts:
+                mem_shift = get_shift(session, date=date, start=s[1], room_id=s[3].id)
+                if mem_shift is not None:
+                    s[4] = s[4] - len(mem_shift.prenotations)
+                    s[5] = mem_shift
+            if current_user.is_authenticated:
+                user = get_user(session, id=current_user.id)
+            else:
+                user = None
+            resp = make_response(render_template("shifts.html", shifts=sorted(shifts, key=lambda t: (t[1], t[3].id)), date_string=date_string, rooms=get_room(session, all=True), user=user))
         session.commit()
         return resp
     except BaseException as exc:
@@ -433,12 +445,14 @@ def shifts():
         session.close()
 
 
+# Route that redirect to the shifts of today
 @app.route('/shifts/shifts_first')
 def shifts_first():
     curr = datetime.date.today()
     return redirect('/shifts?year=%s&month=%s&day=%s&room=All' % (curr.year, curr.month, curr.day))
 
 
+# Route that using the data of a form make the right request to the shifts of the desidered date and room
 @app.route('/shifts/load_date', methods=['POST'])
 def shifts_load_state():
     if request.method == 'POST':
@@ -458,6 +472,7 @@ def shifts_load_state():
             session.close()
 
 
+# Route that make a prenotation of a shift for the logged in user
 @app.route('/prenotation', methods=['POST'])
 def prenotation():
     if request.method == 'POST':
@@ -478,6 +493,7 @@ def prenotation():
                 add_prenotation(session, user = us, shift = s)
                 session.commit()
                 return redirect(url_for('prenotations'))
+            session.commit()
             return redirect(url_for('login'))
         except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
@@ -489,6 +505,7 @@ def prenotation():
             session.close()
     
 
+# Route that delete a perenotation of a shift for the logged in user
 @app.route('/del_prenotation/<shift>')
 @login_required
 def del_prenotation(shift):
@@ -508,7 +525,7 @@ def del_prenotation(shift):
 
 # ________________________________________________________COURSES________________________________________________________
 
-
+# Route that shows all the corsse of the gym
 @app.route('/courses')
 def courses():
     session = Session()
@@ -517,6 +534,7 @@ def courses():
         if is_trainer(current_user):
             user = get_user(session, email=current_user.email)
             courses = filter(lambda course: course not in user.trainer.courses, courses)
+        session.commit()
         return render_template("courses.html", courses = courses, today= datetime.date.today())
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
@@ -526,6 +544,7 @@ def courses():
         session.close()
 
 
+# Route that shows the infos of a specific course
 @app.route('/courses/course/<course_name>')
 def course(course_name):
     session = Session()
@@ -546,8 +565,10 @@ def course(course_name):
         if current_user.is_authenticated:
             user = get_user(session, id = current_user.id)
             cs = get_course_sign_up(session, user_id=user.id, course_id=course.id)
+            session.commit()
             return render_template("course.html", course = course, shifts=sh, has_sign_up= (cs is not None))
         else:
+            session.commit()
             return render_template("course.html", course = course, shifts=sh)
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
@@ -557,6 +578,7 @@ def course(course_name):
         session.close()
 
 
+# Route that signs up a logged in user to a course
 @app.route('/courses/sign_up/<course_name>')
 def sign_up(course_name):
     session = Session()
@@ -568,6 +590,7 @@ def sign_up(course_name):
             session.commit()
             flash("SignUp completed successfully", category='success')
             return redirect(url_for('courses_sign_up'))
+        session.commit()
         return redirect(url_for('login'))
     except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
@@ -577,6 +600,7 @@ def sign_up(course_name):
         session.close()
 
 
+# Route that deletes the sign-up to a course of a logged in user
 @app.route('/courses/delete_sign_up/<course_name>')
 @login_required
 def delete_sign_up(course_name):
@@ -598,7 +622,7 @@ def delete_sign_up(course_name):
 
 #__________________________________ TRAINER COURSES __________________________________
 
-
+# Route that shows all the courses of a legged in trainer
 @app.route('/courses/courses/trainer_courses')
 @login_required
 def trainer_courses():
@@ -607,7 +631,9 @@ def trainer_courses():
         user = get_user(session, email=current_user.email)
         if is_trainer(current_user):
             courses = user.trainer.courses
+            session.commit()
             return render_template("trainer_courses.html", courses = courses, trainer = user.trainer, today= datetime.date.today())
+        session.commit()
         return redirect(url_for('courses'))
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
@@ -619,6 +645,7 @@ def trainer_courses():
         session.close()
 
 
+# Route that shows the infos o a course of a logged in trainer
 @app.route('/courses/courses/trainer_course/<course_name>')
 @login_required
 def trainer_course(course_name):
@@ -640,8 +667,10 @@ def trainer_course(course_name):
                     room_id = cp.room_id,
                     course_id = course.id
                 ))
+            session.commit()
             return render_template("trainer_course.html", course = course, course_program = course.course_programs, shifts = sh)
         else:
+            session.commit()
             return redirect(url_for('courses'))
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
@@ -651,6 +680,7 @@ def trainer_course(course_name):
         session.close()
 
 
+# Route that deletes a course of a logged in trainer
 @app.route('/courses/delete_course/<course_name>', methods=['POST'])
 @login_required
 def del_course(course_name):
@@ -663,6 +693,8 @@ def del_course(course_name):
                 delete_course(session, course_id = course.id)
                 session.commit()
                 return redirect(url_for('trainer_courses'))
+            session.commit()
+            return redirect(url_for('courses'))
         except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
@@ -671,6 +703,7 @@ def del_course(course_name):
             session.close()
 
 
+# Route to create a course of a logged in trainer
 @app.route('/courses/new_course')
 @login_required
 def new_course():
@@ -678,7 +711,9 @@ def new_course():
     try:
         if is_trainer(current_user):
             r = get_room(session, all=True)
+            session.commit()
             return render_template('add_course.html', rooms=r)
+        session.commit()
         return redirect(url_for('courses'))
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
@@ -690,33 +725,38 @@ def new_course():
         session.close()
 
 
+# Route that handles the form and makes the effective creation of a course of a logged in trainer
 @app.route('/courses/new_course_form', methods=['POST'])
 @login_required
 def new_course_form():
     if request.method == 'POST':
         session = Session()
         try:
-            name = request.form['name']
-            starting = request.form['starting']
-            ending = request.form['ending']
-            max_partecipants = request.form['max_partecipants']
-            if not name:
-                raise BaseException("Please enter name")
-            elif not starting:
-                raise BaseException("Please enter starting")
-            elif not ending:
-                raise BaseException("Please enter ending")
-            elif not starting < ending:
-                raise BaseException("Course starts after his ending")
-            elif not max_partecipants:
-                raise BaseException("Please enter max partecipants")
-            elif get_course(session, name=name) is not None:
-                raise BaseException(name + " Course already exists")
+            if is_trainer(current_user):
+                name = request.form['name']
+                starting = request.form['starting']
+                ending = request.form['ending']
+                max_partecipants = request.form['max_partecipants']
+                if not name:
+                    raise BaseException("Please enter name")
+                elif not starting:
+                    raise BaseException("Please enter starting")
+                elif not ending:
+                    raise BaseException("Please enter ending")
+                elif not starting < ending:
+                    raise BaseException("Course starts after his ending")
+                elif not max_partecipants:
+                    raise BaseException("Please enter max partecipants")
+                elif get_course(session, name=name) is not None:
+                    raise BaseException(name + " Course already exists")
+                else:
+                    instructor_id = current_user.id
+                    add_course(session, name=name, starting=starting, ending=ending, max_partecipants=max_partecipants, instructor_id=instructor_id)
+                    session.commit()
+                    return redirect(url_for('new_program', course_name = name))
             else:
-                instructor_id = current_user.id
-                add_course(session, name=name, starting=starting, ending=ending, max_partecipants=max_partecipants, instructor_id=instructor_id)
                 session.commit()
-                return redirect(url_for('new_program', course_name = name))
+                return redirect(url_for('courses'))
         except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
@@ -725,16 +765,24 @@ def new_course_form():
             session.close()
 
 
+# Route to create new programs of a newly created course of a logged in trainer
 @app.route('/courses/new_course/new_program/<course_name>')
 @login_required
 def new_program(course_name):
     session = Session()
     try:
-        rooms = get_room(session, all=True)
-        r = {}
-        for room in rooms:
-            r[room.id] = room.name
-        return render_template('new_program.html', course = get_course(session, name=course_name), room_dict = r)
+        trainer = get_trainer(session, email = current_user.email)
+        course = get_course(session, name=course_name)
+        if is_trainer(current_user) and course.instructor_id == trainer.id:
+            rooms = get_room(session, all=True)
+            r = {}
+            for room in rooms:
+                r[room.id] = room.name
+            session.commit()
+            return render_template('new_program.html', course = get_course(session, name=course_name), room_dict = r)
+        else:
+            session.commit()
+            return redirect(url_for('courses'))
     except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
@@ -743,18 +791,24 @@ def new_program(course_name):
         session.close()
 
 
+# Route that undo the creation of a newly created course of a logged in trainer
 @app.route('/courses/undo_course/<course_name>')
 @login_required
 def undo_course(course_name):
     session = Session()
     try:
+        trainer = get_trainer(session, email = current_user.email)
         c = get_course(session, name=course_name)
-        starting = c.starting
-        ending = c.ending
-        max_partecipants = c.max_partecipants
-        delete_course(session, course_id=c.id)
-        session.commit()
-        return render_template('add_course.html', rooms=get_room(session, all=True), course_name=course_name, starting=starting, ending=ending, max_partecipants=max_partecipants)
+        if is_trainer(current_user) and c.instructor_id == trainer.id:
+            starting = c.starting
+            ending = c.ending
+            max_partecipants = c.max_partecipants
+            delete_course(session, course_id=c.id)
+            session.commit()
+            return render_template('add_course.html', rooms=get_room(session, all=True), course_name=course_name, starting=starting, ending=ending, max_partecipants=max_partecipants)
+        else:
+            session.commit()
+            return redirect(url_for('courses'))
     except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
@@ -763,13 +817,21 @@ def undo_course(course_name):
         session.close()
 
 
+# Route that adds a new program of a newly created course of a logged in trainer
 @app.route('/courses/new_course/add_program/<course_name>')
 @login_required
 def add_program(course_name):
     session = Session()
     try:
-        r = get_room(session, all=True)
-        return render_template('add_program.html', rooms = r, course = get_course(session, name=course_name), week_setting = get_week_setting(session, all=True))
+        trainer = get_trainer(session, email = current_user.email)
+        course = get_course(session, name=course_name)
+        if is_trainer(current_user) and course.instructor_id == trainer.id:
+            r = get_room(session, all=True)
+            session.commit()
+            return render_template('add_program.html', rooms = r, course = get_course(session, name=course_name), week_setting = get_week_setting(session, all=True))
+        else:
+            session.commit()
+            return redirect(url_for('courses'))
     except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
@@ -778,6 +840,8 @@ def add_program(course_name):
         session.close()
 
 
+# Route that handles the form and make the actual creation of a new program of a newly created couse
+# of a logged in trainer 
 @app.route('/courses/new_course/add_program_form/<course_name>', methods=['POST'])
 @login_required
 def add_program_form(course_name):
@@ -788,17 +852,22 @@ def add_program_form(course_name):
     if request.method == 'POST':
         session = Session()
         try:
-            room = request.form['room']
-            r = get_room(session, name = room)
-            day = request.form['day']
-            c = get_course(session, name = course_name)
-            course_id = c.id
-            tn = request.form['turn_number']
-            ws = get_week_setting(session, day_name=day)
-            tn = clamp(int(tn), 1, (to_second(ws.ending) - to_second(ws.starting) ) / to_second(ws.length))
-            add_course_program(session, week_day=day, turn_number=tn, room_id=r.id, course_id=course_id )
-            session.commit()
-            return redirect(url_for('new_program', course_name = course_name))
+            trainer = get_trainer(session, email = current_user.email)
+            c = get_course(session, name=course_name)
+            if is_trainer(current_user) and c.instructor_id == trainer.id:
+                room = request.form['room']
+                r = get_room(session, name = room)
+                day = request.form['day']
+                course_id = c.id
+                tn = request.form['turn_number']
+                ws = get_week_setting(session, day_name=day)
+                tn = clamp(int(tn), 1, (to_second(ws.ending) - to_second(ws.starting) ) / to_second(ws.length))
+                add_course_program(session, week_day=day, turn_number=tn, room_id=r.id, course_id=course_id )
+                session.commit()
+                return redirect(url_for('new_program', course_name = course_name))
+            else:
+                session.commit()
+                return redirect(url_for('courses'))
         except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
@@ -807,14 +876,21 @@ def add_program_form(course_name):
             session.close()
 
 
+# Route that delete a program of a newly created course of a logged in trainer
 @app.route('/courses/new_course/del_program/<program_id>/<course_name>')
 @login_required
 def del_program(program_id, course_name):
     session = Session()
     try:
-        delete_course_program(session, cp_id=int(program_id))
-        session.commit()
-        return redirect(url_for('new_program', course_name = course_name))
+        trainer = get_trainer(session, email = current_user.email)
+        course = get_course(session, name=course_name)
+        if is_trainer(current_user) and course.instructor_id == trainer.id:
+            delete_course_program(session, cp_id=int(program_id))
+            session.commit()
+            return redirect(url_for('new_program', course_name = course_name))
+        else:
+            session.commit()
+            return redirect(url_for('courses'))
     except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
@@ -822,15 +898,24 @@ def del_program(program_id, course_name):
     finally:
         session.close()
 
+
+# Route that plan the newly created course of a logged in trainer and create the course's shifts
 @app.route('/courses/new_course/plan_course/<course_name>')
 @login_required
 def plan_course_(course_name):
     session = Session()
     try:
-        plan_course(session, course_name)
-        session.commit()
-        flash("Course " + course_name + " created successfully", category='success')
-        return redirect(url_for('trainer_course', course_name=course_name))
+        trainer = get_trainer(session, email = current_user.email)
+        course = get_course(session, name=course_name)
+        if is_trainer(current_user) and course.instructor_id == trainer.id:
+            plan_course(session, course_name)
+            session.commit()
+            flash("Course " + course_name + " created successfully", category='success')
+            return redirect(url_for('trainer_course', course_name=course_name))
+        else:
+            session.commit()
+            return redirect(url_for('courses'))
+    
     except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
@@ -842,12 +927,20 @@ def plan_course_(course_name):
 #____________________________________ UPDATE COURSE ____________________________________
 
 
+# Route that updates the infos of a course of a logged in trainer
 @app.route('/update_course/<course_name>')
+@login_required
 def upd_course(course_name):
+    session = Session()
     try:
-        session = Session()
+        trainer = get_trainer(session, email = current_user.email)
         course = get_course(session, name= course_name)
-        return render_template('update_course.html', course=course)
+        if is_trainer(current_user) and course.instructor_id == trainer.id:
+            session.commit()
+            return render_template('update_course.html', course=course)
+        else:
+            session.commit()
+            return redirect(url_for('courses'))
     except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
@@ -856,28 +949,35 @@ def upd_course(course_name):
         session.close()
 
 
+# Route that handles the form and make the actual update of the infos of a course of a logged in trainer 
 @app.route('/update_course_form/<course_name>', methods=["POST"])
+@login_required
 def upd_course_form(course_name):
     if request.method == 'POST':
         session = Session()
         try:
+            trainer = get_trainer(session, email = current_user.email)
             course = get_course(session, name=course_name)
-            courses = get_course(session, all=True)
-            
-            name = request.form['name']
-            if not name:
-                raise BaseException("Please enter name")    
-            for i in courses:
-                if i.name == name and i.name != course_name:
-                    raise BaseException(name + " course already exists!")    
+            if is_trainer(current_user) and course.instructor_id == trainer.id:
+                courses = get_course(session, all=True)
+                
+                name = request.form['name']
+                if not name:
+                    raise BaseException("Please enter name")    
+                for i in courses:
+                    if i.name == name and i.name != course_name:
+                        raise BaseException(name + " course already exists!")    
 
-            max_partecipants = int(request.form['max_partecipants'])
-            if not max_partecipants:
-                raise BaseException("Please enter max partecipants")  
- 
-            update_course(session, course_id=course.id, name=name, max_partecipants=max_partecipants) # trigger controlli
-            session.commit()
-            return redirect(url_for('trainer_course', course_name = name))
+                max_partecipants = int(request.form['max_partecipants'])
+                if not max_partecipants:
+                    raise BaseException("Please enter max partecipants")  
+    
+                update_course(session, course_id=course.id, name=name, max_partecipants=max_partecipants) # trigger controlli
+                session.commit()
+                return redirect(url_for('trainer_course', course_name = name))
+            else:
+                session.commit()
+                return redirect(url_for('courses'))
         except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
@@ -886,8 +986,9 @@ def upd_course_form(course_name):
             session.close()        
 
 
-# ________________________________________________________ADMIN SETTINGS________________________________________________________
+# ________________________________________________________GLOBAL SETTINGS________________________________________________________
 
+# Route that shows and allows the admin to update the global settings of the gym 
 @app.route('/admin/settings/global_settings')
 @login_required
 def global_settings():
@@ -897,8 +998,10 @@ def global_settings():
             global_settings = get_global_setting(session, all=True)
             global_settings = sorted(global_settings, key=lambda x: x.name)
             resp= make_response(render_template("update_global_settings.html", global_settings=global_settings))
+            session.commit()
             return resp
         else:
+            session.commit()
             return redirect(url_for('private'))
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
@@ -911,22 +1014,27 @@ def global_settings():
         session.close()
 
 
+# Route that handles the form and make the actual update of the global settings
 @app.route('/admin/settings/global_settings_form', methods=['POST'])
 @login_required
 def global_settings_form():
     if request.method == 'POST':
         session = Session()
         try:
-            global_settings = get_global_setting(session, all=True)
-            for global_setting in global_settings:
-                val = int(request.form[global_setting.name])
-                if not val:
-                    raise BaseException("Please enter " + global_setting.name + " value")
-                if val != global_setting.value:
-                    update_global_setting(session, name=global_setting.name, value=val)
-            session.commit()
-            flash("Global Settings Updated successfully", category='success')
-            return redirect(url_for('private'))
+            if is_admin(current_user):
+                global_settings = get_global_setting(session, all=True)
+                for global_setting in global_settings:
+                    val = int(request.form[global_setting.name])
+                    if not val:
+                        raise BaseException("Please enter " + global_setting.name + " value")
+                    if val != global_setting.value:
+                        update_global_setting(session, name=global_setting.name, value=val)
+                session.commit()
+                flash("Global Settings Updated successfully", category='success')
+                return redirect(url_for('private'))
+            else:
+                session.commit()
+                return redirect(url_for('private')) 
         except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
@@ -935,6 +1043,7 @@ def global_settings_form():
             session.close()
 
 
+# Route that shows and allows the admin to update the users data 
 @app.route('/admin/users_info')
 @login_required
 def users_info():
@@ -943,16 +1052,19 @@ def users_info():
         if is_admin(current_user):
             users = get_user(session, all=True)
             users = filter(lambda us: us.email != 'admin@gmail.com', users)
+            session.commit()
             return make_response(render_template("users_info.html", users=users))
         else:
+            session.commit()
             return redirect(url_for('private'))
     except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
-            return redirect(url_for('user_info'))
+            return redirect(url_for('users_info'))
     finally:
         session.close()
 
+# Route that shows and allows the admin to update the users Coronavirus state 
 @app.route('/admin/covid_states')
 @login_required
 def covid_states():
@@ -962,8 +1074,10 @@ def covid_states():
             cs0 = filter(lambda us: us.covid_state == 0, filter(lambda us: us.email != 'admin@gmail.com',  get_user(session, all=True)))
             cs1 = filter(lambda us: us.covid_state == 1, filter(lambda us: us.email != 'admin@gmail.com',  get_user(session, all=True)))
             cs2 = filter(lambda us: us.covid_state == 2, filter(lambda us: us.email != 'admin@gmail.com',  get_user(session, all=True)))
+            session.commit()
             return make_response(render_template("covid_states.html", cs0=cs0, cs1=cs1, cs2=cs2))
         else:
+            session.commit()
             return redirect(url_for('private'))
     except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
@@ -976,6 +1090,7 @@ def covid_states():
 #_____________________________________ ROOM SETTINGS _____________________________________
 
 
+# Route that shows and allows the admin to update the room settings of the gym 
 @app.route('/admin/settings/room_settings')
 @login_required
 def room_settings():
@@ -985,8 +1100,10 @@ def room_settings():
             rooms = get_room(session, all=True)
             rooms = sorted(rooms, key=lambda x: x.id)
             resp= make_response(render_template("update_room_settings.html", rooms=rooms))
+            session.commit()
             return resp
         else:
+            session.commit()
             return redirect(url_for('private'))
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
@@ -999,20 +1116,25 @@ def room_settings():
         session.close()
 
 
+# Route that handles the form and make the actual update of the room settings of a specific room
 @app.route('/admin/settings/rooms_settings_form/<room_id>', methods=['POST'])
 @login_required
 def room_settings_form(room_id):
     if request.method == 'POST':
         session = Session()
         try:
-            room = get_room(session, id=room_id)
-            val = int(request.form[str(room_id)])
-            if not val:
-                raise BaseException("Please enter room_capacity")   
-            if val != room.max_capacity:
-                update_room_max_capacity(session, name=room.name, mc=val)
-            session.commit()
-            return redirect(url_for('room_settings'))
+            if is_admin(current_user):
+                room = get_room(session, id=room_id)
+                val = int(request.form[str(room_id)])
+                if not val:
+                    raise BaseException("Please enter room_capacity")   
+                if val != room.max_capacity:
+                    update_room_max_capacity(session, name=room.name, mc=val)
+                session.commit()
+                return redirect(url_for('room_settings'))
+            else:
+                session.commit()
+                return redirect(url_for('private'))
         except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
@@ -1021,14 +1143,17 @@ def room_settings_form(room_id):
             session.close()
 
 
+# Route that add a room on the gym (only for the admin)
 @app.route('/admin/settings/room_settings/add_room')
 @login_required
 def add_room_():
     session = Session()
     try:
         if is_admin(current_user):
+            session.commit()
             return make_response(render_template("add_room.html"))
         else:
+            session.commit()
             return redirect(url_for('private'))
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
@@ -1041,24 +1166,29 @@ def add_room_():
         session.close()
 
 
+# Route that handles the form and make the actual addition of a room on the gym (only for the admin)
 @app.route('/admin/settings/room_settings/add_room_form', methods=['POST'])
 @login_required
 def add_room_form():
     if request.method == 'POST':
         session = Session()
         try:
-            name = request.form['name']
-            max_capacity = request.form['max_capacity']
-            if not name:
-                raise BaseException("Please enter name")  
-            elif not max_capacity:
-                raise BaseException("Please enter max_capacity")
-            elif get_room(session, name=name) is not None:
-                raise BaseException("Room " + name + " already exists")   
-            add_room(session, name=name, max_capacity=max_capacity)
-            session.commit()
-            flash("Room " + name + " added succesfully", category='success')
-            return redirect(url_for('room_settings'))
+            if is_admin(current_user):  
+                name = request.form['name']
+                max_capacity = request.form['max_capacity']
+                if not name:
+                    raise BaseException("Please enter name")  
+                elif not max_capacity:
+                    raise BaseException("Please enter max_capacity")
+                elif get_room(session, name=name) is not None:
+                    raise BaseException("Room " + name + " already exists")   
+                add_room(session, name=name, max_capacity=max_capacity)
+                session.commit()
+                flash("Room " + name + " added succesfully", category='success')
+                return redirect(url_for('room_settings'))
+            else:
+                session.commit()
+                return redirect(url_for('private'))
         except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
@@ -1067,14 +1197,19 @@ def add_room_form():
             session.close()
 
 
+# Route that deletes a room of the gym (only for the admin)
 @app.route('/admin/settings/room_settings/delete_room/<room_id>')
 @login_required
 def del_room(room_id):
     session = Session()
     try:
-        delete_room(session, room_id=int(room_id))
-        session.commit()
-        return redirect(url_for('room_settings'))
+        if is_admin(current_user):
+            delete_room(session, room_id=int(room_id))
+            session.commit()
+            return redirect(url_for('room_settings'))
+        else:
+            session.commit()
+            return redirect(url_for('private'))
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
         session.rollback()
@@ -1086,6 +1221,7 @@ def del_room(room_id):
 #_____________________________________ USER SETTINGS _____________________________________
 
 
+# Route that shows the info of a specific user (only for the admin)
 @app.route('/admin/settings/user_settings/user/<user_id>')
 @login_required
 def user_settings(user_id):
@@ -1095,8 +1231,10 @@ def user_settings(user_id):
             user = get_user(session, id=user_id)
             for role in user.roles:
                 print(role.name)
+            session.commit()
             return make_response(render_template("user_settings.html", user=user, isStaff=(get_role(session,name="Trainer") in user.roles)))
         else:
+            session.commit()
             return redirect(url_for('private'))
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
@@ -1115,8 +1253,13 @@ def users_settings_form():
     if request.method == 'POST':
         session = Session()
         try:
-            user_id = request.form['user']
-            return redirect(url_for('user_settings', user_id=user_id))
+            if is_admin(current_user):
+                user_id = request.form['user']
+                session.commit()
+                return redirect(url_for('user_settings', user_id=user_id))
+            else:
+                session.commit()
+                return redirect(url_for('private'))
         except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
@@ -1125,14 +1268,19 @@ def users_settings_form():
             session.close()
 
 
+# Route that reset the Corona virus state of a user (only for the admin)
 @app.route('/admin/settings/user_settings/user/reset_covid_state/<user_id>')
 @login_required
 def reset_covid_state(user_id):
     session = Session()
     try:
-        update_user(session=session, user_id=user_id, covid_state=0)
-        session.commit()
-        return redirect(url_for('user_settings', user_id=user_id))         
+        if is_admin(current_user):
+            update_user(session=session, user_id=user_id, covid_state=0)
+            session.commit()
+            return redirect(url_for('user_settings', user_id=user_id))         
+        else:
+            session.commit()
+            return redirect(url_for('private'))
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
         session.rollback()
@@ -1141,19 +1289,25 @@ def reset_covid_state(user_id):
         session.close()
 
 
+# Route tha postpones the deadline of a user (only for the admin)
 @app.route('/admin/settings/new_deadline/<user_id>', methods=["POST"])
+@login_required
 def new_deadline(user_id):
     if request.method == 'POST':
         session = Session()
         try:
-            date_str = request.form["date"]
-            date_str = date_str.replace('-', '/')
-            date = datetime.datetime.strptime(date_str, '%Y/%m/%d')
-            if date.date() <= get_user(session, id=user_id).subscription:
-                raise BaseException("Subscription can only be posponed")
-            update_user(session, user_id=user_id, subscription=date)
-            session.commit()
-            return redirect(url_for('user_settings', user_id=user_id))
+            if is_admin(current_user):
+                date_str = request.form["date"]
+                date_str = date_str.replace('-', '/')
+                date = datetime.datetime.strptime(date_str, '%Y/%m/%d')
+                if date.date() <= get_user(session, id=user_id).subscription:
+                    raise BaseException("Subscription can only be posponed")
+                update_user(session, user_id=user_id, subscription=date)
+                session.commit()
+                return redirect(url_for('user_settings', user_id=user_id))
+            else:
+                session.close()
+                return redirect(url_for('private'))
         except BaseException as exc:
             flash(truncate_message(str(exc)), category='error')
             session.rollback()
@@ -1162,13 +1316,19 @@ def new_deadline(user_id):
             session.close()
 
 
+# Route that assigns the trainer role to a user (only for the admin)
 @app.route('/admin/settings/user_settings/assign_trainer_role/<user_id>')
+@login_required
 def assign_trainer_role_(user_id):
     session = Session()
     try:
-        assign_trainer_role(session, user_id=user_id)
-        session.commit()
-        return redirect(url_for('user_settings', user_id=user_id))
+        if is_admin(current_user):
+            assign_trainer_role(session, user_id=user_id)
+            session.commit()
+            return redirect(url_for('user_settings', user_id=user_id))
+        else:
+            session.commit()
+            return redirect(url_for('private'))
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
         session.rollback()
@@ -1177,16 +1337,84 @@ def assign_trainer_role_(user_id):
         session.close()
 
 
+# Route that revokes the trainer role from a user (only for the admin)
 @app.route('/admin/settings/user_settings/revoke_trainer_role/<user_id>')
+@login_required
 def revoke_trainer_role_(user_id):
     session = Session()
     try:
-        revoke_trainer_role(session, user_id=user_id)
-        session.commit()
-        return redirect(url_for('user_settings', user_id=user_id))
+        if is_admin(current_user):
+            revoke_trainer_role(session, user_id=user_id)
+            session.commit()
+            return redirect(url_for('user_settings', user_id=user_id))
+        else:
+            session.commit()
+            return redirect(url_for('private'))
     except BaseException as exc:
         flash(truncate_message(str(exc)), category='error')
         session.rollback()
         return redirect(url_for('user_settings', user_id=user_id))
+    finally:
+        session.close()
+
+
+#_____________________________________ WEEK SETTINGS _____________________________________
+
+
+# Route that shows and allows the admin to update the week settings of the gym 
+@app.route('/admin/settings/week_settings')
+@login_required
+def week_settings():
+    session = Session()
+    try:
+        if is_admin(current_user):
+            global_settings = { 
+                "Opening":str(get_global_setting(session, name="HourOpening").value) + ":00", 
+                "Closing":str(get_global_setting(session, name="HourClosing").value) + ":00",
+                "MaxShiftLength":get_global_setting(session, name="MaximumShiftLength").value,
+                "MinShiftLength":get_global_setting(session, name="MinimumShiftLength").value
+                }
+            week_settings = get_week_setting(session, all=True)
+            convert = {'Monday' : 0, 'Tuesday' : 1, 'Wednesday' : 2, 'Thursday' : 3, 'Friday' : 4, 'Saturday' : 5, 'Sunday' : 6}
+            week_settings.sort(key=lambda t: convert[t.day_name])
+            resp = make_response(render_template("week_settings.html", week_settings=week_settings, global_settings=global_settings))
+            session.commit()
+            return resp
+        else:
+            session.commit()
+            return redirect(url_for("private"))
+    except BaseException as exc:
+        flash(truncate_message(str(exc)), category='error')
+        session.rollback()
+        if is_admin(current_user):
+            return redirect(url_for("week_settings"))
+        else:
+            return redirect(url_for('private'))
+    finally:
+        session.close()
+
+
+# Route that handles the form and make the actual update of the week settings of a week day
+@app.route('/admin/settings/week_settings_form/<day_name>', methods=['POST'])
+@login_required
+def week_Settings_form(day_name):
+    session = Session()
+    try:
+        if request.method == 'POST':
+            if is_admin(current_user):                
+                starting = datetime.datetime.strptime(request.form['Starting'], "%H:%M:%S").time()
+                ending = datetime.datetime.strptime(request.form['Ending'], "%H:%M:%S").time()
+                length = datetime.datetime.strptime(request.form['Shifts Length'], "%H:%M:%S").time()
+                update_weekend_setting(session, day_name=day_name, starting=starting, ending=ending, length=length)
+                flash("Week Settings Updated successfully", category='success')        
+            session.commit()
+            return redirect(url_for('private'))
+    except BaseException as exc:
+        flash(truncate_message(str(exc)), category='error')
+        session.rollback()
+        if is_admin(current_user):
+            return redirect(url_for("week_settings"))
+        else:
+            return redirect(url_for('private'))
     finally:
         session.close()

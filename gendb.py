@@ -1,12 +1,11 @@
 from sqlalchemy.orm import with_expression
-from app import shifts
 from sqlalchemy import create_engine
 
 from automap import *
 
 # engine = create_engine('sqlite:///database.db', echo=True)
-engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
-#engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=False)
+#engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
+engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=False)
 #engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
 
 Base.metadata.create_all(engine)
@@ -262,7 +261,7 @@ conn.execute(
             SELECT count(*)\
             FROM prenotations\
             WHERE shift_id = NEW.shift_id\
-        ) = (\
+        ) >= (\
             SELECT r.max_capacity\
             FROM rooms r JOIN shifts s ON r.id = s.room_id\
             WHERE s.id = NEW.shift_id\

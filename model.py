@@ -1,12 +1,7 @@
-from sqlalchemy import create_engine
-
+from sqlalchemy import and_, or_
 import datetime
 from datetime import timedelta
 import calendar
-
-from sqlalchemy.sql.expression import text
-from sqlalchemy.sql.operators import exists
-
 from automap import *
 
 # ________________________________________ UTILITIES ________________________________________ 
@@ -459,11 +454,13 @@ def delete_prenotation(session, shift=None, user=None):
         return True
     elif shift is not None:
         p = get_prenotation(session, shift_id=shift.id)
-        session.delete(p)
+        for x in p:
+            session.delete(x)
         return True
     elif user is not None:
         p = get_prenotation(session, user_id = user.id)
-        session.delete(p)
+        for x in p:
+            session.delete(x)
         return True
     else:
         return False
@@ -630,6 +627,34 @@ def update_global_setting(session, name=None, value=None):
     if name is not None and value is not None:
         gs = get_global_setting(session, name=name) # raise an exeption if doesn't exixsts
         gs.value = value
+        if name == "HourOpening":
+            shifts = session.query(Shift).filter(Shift.starting < datetime.time(gs.value), or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all()
+            for s in shifts:
+                session.delete(s)
+            for setting in get_week_setting(session, all=True):
+                if setting.starting < datetime.time(gs.value):
+                    update_weekend_setting(session, day_name=setting.day_name, starting=datetime.time(gs.value))
+        if name == "HourClosing":
+            shifts = session.query(Shift).filter(Shift.ending > datetime.time(gs.value), or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all()
+            for s in shifts:
+                session.delete(s)
+            for setting in get_week_setting(session, all=True):
+                if setting.ending > datetime.time(gs.value):
+                    update_weekend_setting(session, day_name=setting.day_name, ending=datetime.time(gs.value))
+        if name == "MaximumShiftLength":
+            shifts = session.query(Shift).filter(Shift.ending - Shift.starting > datetime.time(gs.value), or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all()
+            for s in shifts:
+                session.delete(s)
+            for setting in get_week_setting(session, all=True):
+                if setting.length > datetime.time(gs.value):
+                    update_weekend_setting(session, day_name=setting.day_name, length=datetime.time(gs.value))
+        if name == "MinimumShiftLength":
+            shifts = session.query(Shift).filter(Shift.ending - Shift.starting < datetime.time(gs.value), or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all()
+            for s in shifts:
+                session.delete(s)
+            for setting in get_week_setting(session, all=True):
+                if setting.length < datetime.time(gs.value):
+                    update_weekend_setting(session, day_name=setting.day_name, length=datetime.time(gs.value))
 
 
 # ________________________________________ WEEK SETTING ________________________________________
@@ -677,33 +702,44 @@ def add_week_setting_from_list(session, week_setting_list):
 
 
 # Updates the WeekSetting with the given parameters
-# If at least one parameter is updated, changed flag is set True 
 # PN! Values are clamped between GlobalSetting's values
 def update_weekend_setting(session, day_name=None, starting=None, ending=None, length=None):
 
     if day_name is not None:
         ws = get_week_setting(session, day_name=day_name)
 
-        if starting is not None:
+        if starting is not None and starting != ws.starting:
             h_start = get_global_setting(session, name="HourOpening").value
             if starting.hour < h_start:
-                starting = datetime.time(hour=h_start)
+                raise BaseException("New opening hour must be later then " + str(datetime.time(h_start)))
             ws.starting = starting
+            shifts = filter(lambda s: s.date.strftime("%A") == day_name, session.query(Shift).filter(or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all())
+            for s in shifts:
+                session.delete(s)
 
-        if ending is not None:
+        if ending is not None and ending != ws.ending:
             h_end = get_global_setting(session, name="HourClosing").value
             if ending.hour > h_end:
-                ending = datetime.time(hour=h_end)
+                raise BaseException("New closing hour must be earlier then " + str(datetime.time(h_start)))
             ws.ending = ending
+            shifts = filter(lambda s: s.date.strftime("%A") == day_name, session.query(Shift).filter(Shift.ending > ending, or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all())
+            for s in shifts:
+                session.delete(s)
             
-        if length is not None:
+        if length is not None and ws.length != length:
             min_len = get_global_setting(session, name='MinimumShiftLength').value
             max_len = get_global_setting(session, name='MaximumShiftLength').value
-            length_minutes = clamp(length.minute + length.hour * 60, min_len, max_len)
+            length_minutes = length.minute + length.hour * 60
+            if length_minutes < min_len or length_minutes > max_len:
+                raise BaseException("New shift length must be between " + str(min_len) + " and " + str(max_len) + " minutes")
+
             length_hour = int(length_minutes / 60)
             length_minutes =  int(length_minutes % 60)
             length = datetime.time(hour = length_hour, minute=length_minutes)
             ws.length = length
+            shifts = filter(lambda s: s.date.strftime("%A") == day_name, session.query(Shift).filter(Shift.ending - Shift.starting != length, or_(Shift.date > datetime.date.today(), and_(Shift.date == datetime.date.today(), datetime.datetime.now().time() >= Shift.starting))).all())
+            for s in shifts:
+                session.delete(s)
 
 
 # ________________________________________ COURSE ________________________________________
@@ -1063,14 +1099,16 @@ def user_covid_report(session, user_id):
             course_signs_up = get_course_sign_up(session, course_id=course.id)
             for csu in course_signs_up:
                 if csu.user_id != user.id:
-                    update_user(session, user_id=csu.user_id, covid_state=1)
+                    if get_user(session, id=csu.user_id).covid_state != 2:
+                        update_user(session, user_id=csu.user_id, covid_state=1)
                     add_message(
                         session,
                         sender_id=admin_id,
                         addresser_id=csu.user_id,
                         text= "One person in course " + course.name + " you signed-up for is affected from COVID19"
                     )
-            update_user(session, user_id=course.instructor_id, covid_state=1)
+            if get_user(session, id=course.instructor_id).covid_state != 2:
+                update_user(session, user_id=course.instructor_id, covid_state=1)
             add_message(
                         session,
                         sender_id=admin_id,
@@ -1083,7 +1121,8 @@ def user_covid_report(session, user_id):
         for course in trainer.courses:
             course_signs_up = get_course_sign_up(session, course_id=course.id)
             for csu in course_signs_up:
-                update_user(session, user_id=csu.user_id, covid_state=1)
+                if get_user(session, id=csu.user_id).covid_state != 2:
+                    update_user(session, user_id=csu.user_id, covid_state=1)
                 add_message(
                     session,
                     sender_id=admin_id,

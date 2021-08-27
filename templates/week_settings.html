@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block pagebody %}
+<div class="container">
+  <h1 class="display-3 text-center">Week Settings</h1>
+  <div class="row">
+    {% for setting in week_settings %}
+      <div class="col-xs-12 col-md-4 my-4">
+        <div class="card bg-light shadow" style="width: 90%; border: hidden; margin: auto;">
+          <div class="card-body pt-4">
+            <h3 class="card-title">{{ setting.day_name }}</h3>
+            <form action="{{url_for('week_Settings_form', day_name=setting.day_name) }}" method="POST" class="mx-2">
+                <div class="row">
+                  <div class="col-md-6"><strong>Opening</strong></div>
+                  <div class="col-md-6"><input name="Starting" type="time" step="1" min="{{ global_settings['Opening'] }}" max="{{ global_settings['Closing'] }}" style="width: 150px;" value="{{ setting.starting }}"></div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6"><strong>Ending</strong></div>
+                  <div class="col-md-6"><input name="Ending" type="time" step="1" min="{{ global_settings['Opening'] }}" max="{{ global_settings['Closing'] }}" style="width: 150px;" value="{{ setting.ending }}"></div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6"><strong>Shift Length</strong></div>
+                  <div class="col-md-6"><input name="Shifts Length" type="time" step="1" min="{{ global_settings['MinShiftLength'] }}" max="{{ global_settings['MaxShiftLength'] }}" style="width: 150px;" value="{{ setting.length }}"></div>
+                </div>
+              <input type="submit" class="btn btn-info text-light mt-3" value="Update">
+            </form>
+            
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="my-4">
+    <form action="{{url_for('private')}}">
+      <input type="submit", value="Back" class="btn btn-info text-light">
+    </form>
+  </div>
+
+{% endblock %}
