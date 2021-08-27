@@ -1,5 +1,4 @@
 from sqlalchemy.orm import with_expression
-from app import shifts
 from sqlalchemy import create_engine
 
 from automap import *

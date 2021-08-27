@@ -2,8 +2,6 @@ from sqlalchemy import and_, or_
 import datetime
 from datetime import timedelta
 import calendar
-
-
 from automap import *
 
 # ________________________________________ UTILITIES ________________________________________ 
@@ -1102,14 +1100,16 @@ def user_covid_report(session, user_id):
             course_signs_up = get_course_sign_up(session, course_id=course.id)
             for csu in course_signs_up:
                 if csu.user_id != user.id:
-                    update_user(session, user_id=csu.user_id, covid_state=1)
+                    if get_user(session, id=csu.user_id).covid_state != 2:
+                        update_user(session, user_id=csu.user_id, covid_state=1)
                     add_message(
                         session,
                         sender_id=admin_id,
                         addresser_id=csu.user_id,
                         text= "One person in course " + course.name + " you signed-up for is affected from COVID19"
                     )
-            update_user(session, user_id=course.instructor_id, covid_state=1)
+            if get_user(session, id=course.instructor_id).covid_state != 2:
+                update_user(session, user_id=course.instructor_id, covid_state=1)
             add_message(
                         session,
                         sender_id=admin_id,
@@ -1122,7 +1122,8 @@ def user_covid_report(session, user_id):
         for course in trainer.courses:
             course_signs_up = get_course_sign_up(session, course_id=course.id)
             for csu in course_signs_up:
-                update_user(session, user_id=csu.user_id, covid_state=1)
+                if get_user(session, id=csu.user_id).covid_state != 2:
+                    update_user(session, user_id=csu.user_id, covid_state=1)
                 add_message(
                     session,
                     sender_id=admin_id,
