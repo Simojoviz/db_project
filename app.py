@@ -23,7 +23,7 @@ Session = sessionmaker(bind=engine, autoflush=True)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-#Utiliy for making error meggage more readable
+# Utiliy for making error meggage more readable
 def truncate_message(string):
     if "ERRORE" in string:
         string = string.split("ERRORE: ",1)[1]
@@ -32,7 +32,7 @@ def truncate_message(string):
 
 #__________________________________________ SESSION-USER ________________________________________
 
-# SEssion user used dy the flask-ligon library
+# Session user used dy the flask-ligon library
 class SessionUser(UserMixin):
     def __init__(self, id, email, pwd, roles, active=True):
         self.id = id
@@ -41,7 +41,7 @@ class SessionUser(UserMixin):
         self.roles = roles
         self.active = active
 
-# Given the user email return the corresponding SessionUser
+# Given the user email returns the corresponding SessionUser
 def get_SessionUser_by_email(session, email):
     user = get_user(session, email = email)
     if user is not None:
@@ -64,7 +64,7 @@ def load_user(user_id):
     finally:
         session.close()
 
-# Given the user logged in the session return true if he has the Admin role
+# Given the user logged in the session returns true if he has the Admin role
 def is_admin(us):
     return us.is_authenticated and "Admin" in us.roles
 
@@ -89,7 +89,7 @@ def login():
         return render_template("login.html")
 
 
-# Route that handle the login form and make the effective login
+# Route that handles the login form and make the effective login
 @app.route('/login_form', methods=['POST'])
 def login_form():
     if request.method == 'POST':
@@ -130,7 +130,7 @@ def signup():
         flash(truncate_message(str(exc)), category='error')
         return redirect(url_for('signup'))
 
-# Route that handle the signin form and make the effective signin
+# Route that handles the signin form and make the effective signin
 @app.route('/signin_form', methods=['POST'])
 def signin_form():
     if request.method == 'POST':
@@ -299,7 +299,7 @@ def messages():
         session.close()
 
 
-# Route that delete a specific message of a logged in user
+# Route that deletes a specific message of a logged in user
 @app.route('/private/messages/del/<mess_id>', methods=['POST'])
 @login_required
 def delete_message(mess_id):
@@ -334,7 +334,7 @@ def upd_user():
     finally:
         session.close()
 
-# Route that handle the update form and make the effective update of the logged in user
+# Route that handles the update form and make the effective update of the logged in user
 @app.route('/private/update_user_form', methods=['POST'])
 @login_required
 def update_user_form():
@@ -445,14 +445,14 @@ def shifts():
         session.close()
 
 
-# Route that redirect to the shifts of today
+# Route that redirects to the shifts of today
 @app.route('/shifts/shifts_first')
 def shifts_first():
     curr = datetime.date.today()
     return redirect('/shifts?year=%s&month=%s&day=%s&room=All' % (curr.year, curr.month, curr.day))
 
 
-# Route that using the data of a form make the right request to the shifts of the desidered date and room
+# Route that using the data of a form makes the right request to the shifts of the desidered date and room
 @app.route('/shifts/load_date', methods=['POST'])
 def shifts_load_state():
     if request.method == 'POST':
@@ -472,7 +472,7 @@ def shifts_load_state():
             session.close()
 
 
-# Route that make a prenotation of a shift for the logged in user
+# Route that makes a prenotation of a shift for the logged in user
 @app.route('/prenotation', methods=['POST'])
 def prenotation():
     if request.method == 'POST':
@@ -505,7 +505,7 @@ def prenotation():
             session.close()
     
 
-# Route that delete a perenotation of a shift for the logged in user
+# Route that deletes a perenotation of a shift for the logged in user
 @app.route('/del_prenotation/<shift>')
 @login_required
 def del_prenotation(shift):
@@ -876,7 +876,7 @@ def add_program_form(course_name):
             session.close()
 
 
-# Route that delete a program of a newly created course of a logged in trainer
+# Route that deletes a program of a newly created course of a logged in trainer
 @app.route('/courses/new_course/del_program/<program_id>/<course_name>')
 @login_required
 def del_program(program_id, course_name):
@@ -899,7 +899,7 @@ def del_program(program_id, course_name):
         session.close()
 
 
-# Route that plan the newly created course of a logged in trainer and create the course's shifts
+# Route that plans the newly created course of a logged in trainer and create the course's shifts
 @app.route('/courses/new_course/plan_course/<course_name>')
 @login_required
 def plan_course_(course_name):
@@ -1143,7 +1143,7 @@ def room_settings_form(room_id):
             session.close()
 
 
-# Route that add a room on the gym (only for the admin)
+# Route that adds a room on the gym (only for the admin)
 @app.route('/admin/settings/room_settings/add_room')
 @login_required
 def add_room_():
@@ -1268,7 +1268,7 @@ def users_settings_form():
             session.close()
 
 
-# Route that reset the Corona virus state of a user (only for the admin)
+# Route that resets the Corona virus state of a user (only for the admin)
 @app.route('/admin/settings/user_settings/user/reset_covid_state/<user_id>')
 @login_required
 def reset_covid_state(user_id):
