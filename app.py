@@ -11,10 +11,9 @@ from model import *
 
 app = Flask ( __name__ )
 
-#engine = create_engine('sqlite:///database.db', echo=True)
-#engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
-engine = create_engine('postgresql://postgres:Simone01@localhost:5432/Gym', echo=False)
-#engine = create_engine('postgresql://postgres:gemellirosa@localhost:5432/Gym', echo=True)
+
+engine = create_engine('postgresql://utente:password@localhost:5432/Gym', echo=False)
+
 
 app.config ['SECRET_KEY'] = 'ubersecret'
 
@@ -1246,26 +1245,6 @@ def user_settings(user_id):
     finally:
         session.close()
 
-
-@app.route('/admin/settings/user_settings_form', methods=['POST'])
-@login_required
-def users_settings_form():
-    if request.method == 'POST':
-        session = Session()
-        try:
-            if is_admin(current_user):
-                user_id = request.form['user']
-                session.commit()
-                return redirect(url_for('user_settings', user_id=user_id))
-            else:
-                session.commit()
-                return redirect(url_for('private'))
-        except BaseException as exc:
-            flash(truncate_message(str(exc)), category='error')
-            session.rollback()
-            return redirect(url_for('user_settings', user_id=user_id))
-        finally:
-            session.close()
 
 
 # Route that resets the Corona virus state of a user (only for the admin)

@@ -1,4 +1,3 @@
-from flask.app import Flask
 from sqlalchemy import Column, Integer, Boolean, String, Date, Time, DateTime
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, declarative_base
