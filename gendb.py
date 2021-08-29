@@ -1,4 +1,3 @@
-from sqlalchemy.orm import with_expression
 from sqlalchemy import create_engine
 
 from automap import *
