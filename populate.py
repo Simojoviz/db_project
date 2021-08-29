@@ -82,7 +82,7 @@ add_week_setting_from_list(session, week_setting_list=week_settings)
 # Courses
 courses = [
     Course(name = 'Boxe',
-        starting=datetime.datetime(year=2021, month=9, day=15), ending = datetime.datetime(year=2021, month=10, day=15), max_partecipants = 7, 
+        starting=datetime.datetime(year=2021, month=8, day=30), ending = datetime.datetime(year=2021, month=9, day=30), max_partecipants = 7, 
         instructor_id = get_trainer(session, email='stefano@gmail.com').id
     ),
     Course(name = 'Zumba',
