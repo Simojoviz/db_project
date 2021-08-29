@@ -42,7 +42,7 @@ users = [
     User(fullname = "Simone Jovon",           email='simone@gmail.com',       pwd='simone1',       telephone='3019837283', address='Via Cesare 12',   covid_state=0, subscription=datetime.date.today() + timedelta(days=90)),
     User(fullname = "Andrea Rosa",            email='andrea@gmail.com',       pwd='andrea1',       telephone='3254173433', address='Castello 2534/A', covid_state=0, subscription=datetime.date.today() + timedelta(days=90)),
     User(fullname = "Sebastiano Quintavalle", email='sebastiano@gmail.com',   pwd='sebastiano1',   telephone='5272735383', address='Castello 13',     covid_state=0, subscription=datetime.date.today() + timedelta(days=90)),
-    User(fullname = "Massimiliano Fardo",     email='massimiliano@gmail.com', pwd='massimiliano1', telephone='5272735382', address='A Zattere',       covid_state=2, subscription=datetime.date.today())
+    User(fullname = "Mario Rossi",            email='mario@gmail.com',        pwd='mario1',        telephone='5674567438', address='Via Falsa 13',    covid_state=2, subscription=datetime.date.today() + timedelta(days=90)),
 ]
 add_user_from_list(session, users)
 
@@ -59,7 +59,6 @@ trainers = [
     get_user(session, email='alessandra@gmail.com')
 ]
 add_trainer_from_list(session, trainers)
-add_trainer(session, fullname='Riccardo Focardi', email='riccardo@gmail.com', pwd='riccardo1',  telephone='8302837481', address='Via Ciao 2')
 
 # GlobalSettings
 global_settings = [
@@ -83,19 +82,6 @@ week_settings = [
 ]
 add_week_setting_from_list(session, week_setting_list=week_settings)
 
-# Shifts
-#plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=90, all_room=True)
-""" Da correggere
-update_weekend_setting(
-    session, day_name='Saturday',
-    starting = datetime.time(hour=10, minute=00),
-    ending   = datetime.time(hour=15, minute=00),
-    length   = datetime.time(hour=1,  minute=00)
-)
-plan_shifts(session, starting=datetime.date(day=1, month=8, year=2021), n=365, all_room=True)
-"""
-
-
 # Courses
 courses = [
     Course(name = 'Boxe',
@@ -108,7 +94,7 @@ courses = [
     ),
     Course(name = 'Judo',
         starting=datetime.datetime(year=2021, month=10, day=1), ending = datetime.datetime(year=2021, month=10, day=30), max_partecipants = 20, 
-        instructor_id = get_trainer(session, email='riccardo@gmail.com').id
+        instructor_id = get_trainer(session, email='stefano@gmail.com').id
     )
 ]
 add_course_from_list(session, courses)
@@ -165,17 +151,13 @@ def add_populate_prenotation(session, email, day, month, year, room_name, turn_n
     add_prenotation(session, user = user, shift= sh)
 
 
-add_populate_prenotation(session, "andrea@gmail.com",     20,  8, 2021, 'Main Room',     5)
-add_populate_prenotation(session, "andrea@gmail.com",     21,  8, 2021, 'Swimming Pool', 5)
-add_populate_prenotation(session, "andrea@gmail.com",     2,   9, 2021, 'Main Room',     1)
 add_populate_prenotation(session, "andrea@gmail.com",     13,  9, 2021, 'Fitness Room',  2)
 add_populate_prenotation(session, "sebastiano@gmail.com", 20,  8, 2021, 'Main Room',     5)
 add_populate_prenotation(session, "sebastiano@gmail.com", 23,  9, 2021, 'Weight Room',   5)
-add_populate_prenotation(session, "sebastiano@gmail.com",  2,  9, 2021, 'Main Room',     1)
 add_populate_prenotation(session, "sebastiano@gmail.com", 12, 10, 2021, 'Swimming Pool', 2)
-add_populate_prenotation(session, "simone@gmail.com",      3,  9, 2021, 'Fitness Room',  3)
-add_populate_prenotation(session, "simone@gmail.com",      4,  9, 2021, 'Fitness Room',  3)
-add_populate_prenotation(session, "simone@gmail.com",      6,  9, 2021, 'Fitness Room',  3)
+add_populate_prenotation(session, "simone@gmail.com",      8,  9, 2021, 'Fitness Room',  3)
+add_populate_prenotation(session, "simone@gmail.com",      9,  9, 2021, 'Fitness Room',  3)
+add_populate_prenotation(session, "simone@gmail.com",      10,  9, 2021, 'Fitness Room',  3)
 
 
 add_course_sign_up(
@@ -202,6 +184,5 @@ add_course_sign_up(
     course=get_course(session, name='Judo')
 )
 
-#covid_report_messages(session, get_user(session, email='andrea@gmail.com').id)
 
 session.commit()

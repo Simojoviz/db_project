@@ -41,7 +41,7 @@ class SessionUser(UserMixin):
         self.roles = roles
         self.active = active
 
-# Given the user email return the corresponding SessionUser
+# Given the user email returns the corresponding SessionUser
 def get_SessionUser_by_email(session, email):
     user = get_user(session, email = email)
     if user is not None:
@@ -89,7 +89,7 @@ def login():
         return render_template("login.html")
 
 
-# Route that handle the login form and make the effective login
+# Route that handles the login form and make the effective login
 @app.route('/login_form', methods=['POST'])
 def login_form():
     if request.method == 'POST':
@@ -130,7 +130,7 @@ def signup():
         flash(truncate_message(str(exc)), category='error')
         return redirect(url_for('signup'))
 
-# Route that handle the signin form and make the effective signin
+# Route that handles the signin form and make the effective signin
 @app.route('/signin_form', methods=['POST'])
 def signin_form():
     if request.method == 'POST':
@@ -445,14 +445,14 @@ def shifts():
         session.close()
 
 
-# Route that redirect to the shifts of today
+# Route that redirects to the shifts of today
 @app.route('/shifts/shifts_first')
 def shifts_first():
     curr = datetime.date.today()
     return redirect('/shifts?year=%s&month=%s&day=%s&room=All' % (curr.year, curr.month, curr.day))
 
 
-# Route that using the data of a form make the right request to the shifts of the desidered date and room
+# Route that using the data of a form makes the right request to the shifts of the desidered date and room
 @app.route('/shifts/load_date', methods=['POST'])
 def shifts_load_state():
     if request.method == 'POST':
@@ -1143,7 +1143,7 @@ def room_settings_form(room_id):
             session.close()
 
 
-# Route that add a room on the gym (only for the admin)
+# Route that adds a room on the gym (only for the admin)
 @app.route('/admin/settings/room_settings/add_room')
 @login_required
 def add_room_():
@@ -1268,7 +1268,7 @@ def users_settings_form():
             session.close()
 
 
-# Route that reset the Corona virus state of a user (only for the admin)
+# Route that resets the Corona virus state of a user (only for the admin)
 @app.route('/admin/settings/user_settings/user/reset_covid_state/<user_id>')
 @login_required
 def reset_covid_state(user_id):
