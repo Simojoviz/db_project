@@ -19,6 +19,12 @@
 4) flask run
 5) sul browser aprire l’url: http://localhost:5000
 
-# Il comando per distruggere la base di dati e tutti i suoi dati è il seguente:
+# Il comando per distruggere la base di dati, e tutti i suoi dati, è il seguente:
 1) python destroydb.py
+
+# Nei seguenti file dovrà essere l’url del database per permettere la connessione alla base di dati postgresql:
+1) app.py
+2) gendb.py
+3) destroydb.py
+4) populate.py
 
