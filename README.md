@@ -22,7 +22,8 @@
 # Il comando per distruggere la base di dati, e tutti i suoi dati, è il seguente:
 1) python destroydb.py
 
-# Nei seguenti file dovrà essere l’url del database per permettere la connessione alla base di dati postgresql:
+# Nei seguenti file dovranno essere inserite le proprie credenziali del proprio database locale nell’url sottostante, per 
+# permetterne la connessione:
 1) app.py
 2) gendb.py
 3) destroydb.py
