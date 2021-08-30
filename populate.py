@@ -8,7 +8,8 @@ from sqlalchemy.sql.expression import update
 from model import*
 from automap import*
 
-engine = create_engine('postgresql://utente:password@localhost:5432/Gym', echo=False)
+# engine = create_engine('postgresql://utente:password@localhost:5432/Gym', echo=False)
+engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
 
 Session = sessionmaker(bind=engine, autoflush=True)
 session = Session()

@@ -950,7 +950,7 @@ def add_course_sign_up(session, user=None, course=None, course_sign_up=None):
     if user is not None and course is not None:
         if "Admin" not in user.roles:
             session.add(CourseSignUp(user_id=user.id, course_id=course.id))
-            add_message(session, sender_id=user.id, addresser_id=course.trainer.user.id, text="Hello! I've just Signed-Up for your " + course.name + "course ! ")
+            add_message(session, sender_id=user.id, addresser_id=course.trainer.user.id, text="Hello! I've just Signed-Up for your " + course.name + " course ! ")
             add_message(session, addresser_id=user.id, sender_id=course.trainer.user.id, text="Hello! Welcome to my " + course.name + " course! ")
         else:
             raise BaseException("Admin can't signup for a course")

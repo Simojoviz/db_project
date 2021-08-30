@@ -12,7 +12,8 @@ from model import *
 app = Flask ( __name__ )
 
 
-engine = create_engine('postgresql://utente:password@localhost:5432/Gym', echo=False)
+# engine = create_engine('postgresql://utente:password@localhost:5432/Gym', echo=False)
+engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
 
 
 app.config ['SECRET_KEY'] = 'ubersecret'
