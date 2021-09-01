@@ -1129,3 +1129,83 @@ def user_covid_report(session, user_id):
                     addresser_id=csu.user_id,
                     text= "One person in course " + course.name + " you signed-up for is affected from COVID19"
                 )
+
+# Trigger to populate in the past
+
+def del_no_past_deadline():
+    return "\
+        DROP FUNCTION IF EXISTS public.no_past_deadline() CASCADE;\
+        DROP TRIGGER IF EXISTS NoPastDeadline ON public.users CASCADE;\
+    "
+
+def create_no_past_deadline():
+    return "\
+        CREATE FUNCTION public.no_past_deadline()\
+        RETURNS trigger\
+        LANGUAGE 'plpgsql'\
+        COST 100\
+        VOLATILE NOT LEAKPROOF\
+        AS $BODY$\
+        BEGIN\
+            IF NEW.subscription < (SELECT CURRENT_DATE) THEN\
+                RAISE EXCEPTION 'Cannot insert user: deadline is in the past';\
+                RETURN NULL;\
+            END IF;\
+            RETURN NEW;\
+        END\
+        $BODY$;\
+        \
+        ALTER FUNCTION public.no_past_deadline()\
+            OWNER TO postgres;\
+        \
+        COMMENT ON FUNCTION public.no_past_deadline()\
+            IS 'Raise an exception if deadline-membership in set in the past';\
+            \
+        CREATE TRIGGER NoPastDeadline\
+        BEFORE INSERT\
+        ON public.users\
+        FOR EACH ROW\
+        EXECUTE PROCEDURE public.no_past_deadline();\
+        \
+        COMMENT ON TRIGGER NoPastDeadline ON public.users\
+            IS 'Raise an exception if deadline-membership in set in the past';\
+    "
+
+def del_no_past_course():
+    return "\
+        DROP FUNCTION IF EXISTS public.no_past_course() CASCADE;\
+        DROP TRIGGER IF EXISTS NoPastCourse ON public.courses CASCADE;\
+    "
+
+def create_no_past_course():
+    return "\
+        CREATE FUNCTION public.no_past_course()\
+        RETURNS trigger\
+        LANGUAGE 'plpgsql'\
+        COST 100\
+        VOLATILE NOT LEAKPROOF\
+        AS $BODY$\
+        BEGIN\
+            IF NEW.starting < (SELECT CURRENT_DATE) THEN\
+                RAISE EXCEPTION 'Cannot create course: starting in the past';\
+                RETURN NULL;\
+            END IF;\
+            RETURN NEW;\
+        END\
+        $BODY$;\
+        \
+        ALTER FUNCTION public.no_past_course()\
+            OWNER TO postgres;\
+        \
+        COMMENT ON FUNCTION public.no_past_course()\
+            IS 'Raise an exception if course starting in set in the past';\
+            \
+        CREATE TRIGGER NoPastCourse\
+        BEFORE INSERT\
+        ON public.courses\
+        FOR EACH ROW\
+        EXECUTE PROCEDURE public.no_past_course();\
+        \
+        COMMENT ON TRIGGER NoPastCourse ON public.courses\
+            IS 'Raise an exception if course starting in set in the past';\
+    "

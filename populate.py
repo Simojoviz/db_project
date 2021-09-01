@@ -11,6 +11,10 @@ from automap import*
 # engine = create_engine('postgresql://utente:password@localhost:5432/Gym', echo=False)
 engine = create_engine('postgresql://postgres:1sebaQuinta@localhost:5432/Gym', echo=False)
 
+conn = engine.connect()
+conn.execute(del_no_past_deadline())
+conn.execute(del_no_past_course())
+
 Session = sessionmaker(bind=engine, autoflush=True)
 session = Session()
 
@@ -40,8 +44,10 @@ users = [
     User(fullname = "Simone Jovon",           email='simone@gmail.com',       pwd='simone1',       telephone='3019837283', address='Via Cesare 12',   covid_state=0, subscription=datetime.date.today() + timedelta(days=90)),
     User(fullname = "Andrea Rosa",            email='andrea@gmail.com',       pwd='andrea1',       telephone='3254173433', address='Castello 2534/A', covid_state=0, subscription=datetime.date.today() + timedelta(days=90)),
     User(fullname = "Sebastiano Quintavalle", email='sebastiano@gmail.com',   pwd='sebastiano1',   telephone='5272735383', address='Castello 13',     covid_state=0, subscription=datetime.date.today() + timedelta(days=90)),
-    User(fullname = "Mario Rossi",            email='mario@gmail.com',        pwd='mario1',        telephone='5674567438', address='Via Falsa 13',    covid_state=2, subscription=datetime.date.today() + timedelta(days=90)),
+    User(fullname = "Mario Rossi",            email='mario@gmail.com',        pwd='mario1',        telephone='5674567438', address='Via Falsa 13',    covid_state=2, subscription=datetime.date.today() - timedelta(days=30)),
 ]
+
+# Rimozione del trigger per aggiungere scadenze nel passato
 add_user_from_list(session, users)
 
 # User-Roles
@@ -83,18 +89,20 @@ add_week_setting_from_list(session, week_setting_list=week_settings)
 # Courses
 courses = [
     Course(name = 'Boxe',
-        starting=datetime.datetime(year=2021, month=8, day=30), ending = datetime.datetime(year=2021, month=9, day=30), max_partecipants = 7, 
+        starting=datetime.datetime(year=2021, month=8, day=1), ending = datetime.datetime(year=2021, month=9, day=30), max_partecipants = 7, 
         instructor_id = get_trainer(session, email='stefano@gmail.com').id
     ),
     Course(name = 'Zumba',
-        starting=datetime.datetime(year=2021, month=9, day=21), ending = datetime.datetime(year=2021, month=10, day=21), max_partecipants = 12, 
+        starting=datetime.datetime(year=2021, month=7, day=21), ending = datetime.datetime(year=2021, month=10, day=21), max_partecipants = 12, 
         instructor_id = get_trainer(session, email='alessandra@gmail.com').id
     ),
     Course(name = 'Judo',
-        starting=datetime.datetime(year=2021, month=10, day=1), ending = datetime.datetime(year=2021, month=10, day=30), max_partecipants = 20, 
+        starting=datetime.datetime(year=2021, month=10, day=11), ending = datetime.datetime(year=2021, month=11, day=16), max_partecipants = 20, 
         instructor_id = get_trainer(session, email='stefano@gmail.com').id
     )
 ]
+
+# Rimozione del trigger per aggiungere corsi nel passato
 add_course_from_list(session, courses)
 
 # CourseProgram
@@ -149,19 +157,31 @@ def add_populate_prenotation(session, email, day, month, year, room_name, turn_n
     add_prenotation(session, user = user, shift= sh)
 
 
-add_populate_prenotation(session, "andrea@gmail.com",     13,  9, 2021, 'Fitness Room',  2)
-add_populate_prenotation(session, "sebastiano@gmail.com", 20,  8, 2021, 'Main Room',     5)
-add_populate_prenotation(session, "sebastiano@gmail.com", 23,  9, 2021, 'Weight Room',   5)
-add_populate_prenotation(session, "sebastiano@gmail.com", 12, 10, 2021, 'Swimming Pool', 2)
-add_populate_prenotation(session, "simone@gmail.com",      8,  9, 2021, 'Fitness Room',  3)
-add_populate_prenotation(session, "simone@gmail.com",      9,  9, 2021, 'Fitness Room',  3)
-add_populate_prenotation(session, "simone@gmail.com",      10,  9, 2021, 'Fitness Room',  3)
+add_populate_prenotation(session, "andrea@gmail.com",     31,  8, 2021, 'Fitness Room',  2)
+add_populate_prenotation(session, "andrea@gmail.com",      7,  9, 2021, 'Weight Room',   2)
+add_populate_prenotation(session, "andrea@gmail.com",     18,  9, 2021, 'Weight Room',   5)
+add_populate_prenotation(session, "andrea@gmail.com",      2,  10, 2021, 'Swimming Pool', 5)
+
+add_populate_prenotation(session, "sebastiano@gmail.com", 31,  8, 2021, 'Fitness Room',  2)
+add_populate_prenotation(session, "sebastiano@gmail.com", 18,  9, 2021, 'Weight Room',   5)
+add_populate_prenotation(session, "sebastiano@gmail.com", 30,  9, 2021, 'Fitness Room',  1)
+
+add_populate_prenotation(session, "simone@gmail.com",      3,  9, 2021, 'Fitness Room',  3)
+add_populate_prenotation(session, "simone@gmail.com",      4,  9, 2021, 'Fitness Room',  3)
+add_populate_prenotation(session, "simone@gmail.com",      6,  9, 2021, 'Fitness Room',  3)
+add_populate_prenotation(session, "simone@gmail.com",      7,  9, 2021, 'Fitness Room',  3)
 
 
 add_course_sign_up(
     session,
     user=get_user(session, email='sebastiano@gmail.com'),
     course=get_course(session, name='Boxe')
+)
+
+add_course_sign_up(
+    session,
+    user=get_user(session, email='sebastiano@gmail.com'),
+    course=get_course(session, name='Judo')
 )
 
 add_course_sign_up(
@@ -182,5 +202,8 @@ add_course_sign_up(
     course=get_course(session, name='Judo')
 )
 
-
 session.commit()
+
+conn = engine.connect()
+conn.execute(create_no_past_deadline())
+conn.execute(create_no_past_course())
